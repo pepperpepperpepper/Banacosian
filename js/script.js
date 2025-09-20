@@ -311,13 +311,12 @@ class MelodicDictation {
             this.sequenceLength = parseInt(e.target.value);
         });
         
-        document.getElementById('scaleType').addEventListener('change', (e) => {
+document.getElementById('scaleType').addEventListener('change', (e) => {
             this.scaleType = e.target.value;
             this.updateKeyboardVisibility();
-        });
+});
         
-        document.getElementById('mode').addEventListener('change', (e) => {
-            try {
+        document.getElementById('mode').addEventListener('change', (e) => {            try {
                 this.mode = e.target.value;
                 this.diatonicNotes = this.generateDiatonicNotes();
                 this.updateKeyboardVisibility();
@@ -336,7 +335,7 @@ class MelodicDictation {
             }
         });
         
-        document.querySelectorAll('.white-key, .black-key').forEach(key => {
+document.querySelectorAll('.white-key, .black-key').forEach(key => {
             key.addEventListener('click', (e) => this.playNote(e.target.dataset.note));
         });
     }
@@ -485,7 +484,8 @@ async playNote(physicalNote) {
             // Check if this note is allowed in diatonic mode
             const isAllowed = this.diatonicNotes.includes(actualNote);
             if (!isAllowed) return;
-        }        
+        }
+        
         // Visual feedback on key press
         const key = document.querySelector(`[data-note="${physicalNote}"]`);
         key.classList.add('pressed');
@@ -507,7 +507,6 @@ async playNote(physicalNote) {
                 `Note ${this.userSequence.length} of ${this.currentSequence.length}`;
         }
     }
-
     checkSequence() {
         // Stop the sequence timer
         if (this.timerInterval) {
@@ -745,84 +744,63 @@ async playNote(physicalNote) {
         return a.length === b.length && a.every((val, i) => val === b[i]);
     }
 
-    updateKeyboardVisibility() {
-        console.log('=== Starting updateKeyboardVisibility ===');
+updateKeyboardVisibility() {
+        const showAllNotes = this.scaleType === 'chromatic';
         
-        try {
-            const showAllNotes = this.scaleType === 'chromatic';
-            console.log('showAllNotes:', showAllNotes);
-            
-            let keyboardMapping;
+        let keyboardMapping;
+        if (!showAllNotes) {
             try {
-                console.log('About to call getCurrentKeyboardMapping');
                 keyboardMapping = this.getCurrentKeyboardMapping();
-                console.log('Got keyboard mapping:', keyboardMapping);
             } catch (error) {
                 console.error('Error getting keyboard mapping:', error);
                 keyboardMapping = {}; // Fallback to empty mapping
             }
+        }
+        
+        // Update key states and labels based on current mode mapping
+        const keys = document.querySelectorAll('.white-key, .black-key');
+        
+        keys.forEach(key => {
+            const physicalNote = key.dataset.note;
             
-            console.log('About to process keyboard keys');
-            
-            // Update key states and labels based on current mode mapping
-            const keys = document.querySelectorAll('.white-key, .black-key');
-            console.log('Found', keys.length, 'keys to process');
-            
-keys.forEach((key, index) => {
-                try {
-                    const physicalNote = key.dataset.note;
+            if (showAllNotes) {
+                // Chromatic mode: all keys enabled, show physical note names
+                const noteName = physicalNote.slice(0, -1); // Remove octave number
+                key.textContent = noteName;
+                key.classList.remove('disabled');
+            } else {
+                // Diatonic mode: use keyboard mapping
+                const actualNote = keyboardMapping[physicalNote];
+                
+                if (actualNote && typeof actualNote === 'string') {
+                    // Update the key label to show the actual note
+                    const noteName = actualNote.slice(0, -1); // Remove octave number
+                    key.textContent = noteName;
                     
-                    if (showAllNotes) {
-                        // Chromatic mode: all keys enabled, show physical note names
-                        const noteName = physicalNote.slice(0, -1); // Remove octave number
-                        key.textContent = noteName;
+                    const isInDiatonicScale = this.diatonicNotes && this.diatonicNotes.includes(actualNote);
+                    
+                    // Diatonic mode: disable non-diatonic notes
+                    if (isInDiatonicScale) {
                         key.classList.remove('disabled');
                     } else {
-                        // Diatonic mode: use keyboard mapping
-                        const actualNote = keyboardMapping[physicalNote];
-                        
-                        console.log(`Processing key ${index}: physical=${physicalNote}, actual=${actualNote}`);
-                        
-                        if (actualNote && typeof actualNote === 'string') {
-                            console.log(`About to slice actualNote: "${actualNote}"`);
-                            // Update the key label to show the actual note
-                            const noteName = actualNote.slice(0, -1); // Remove octave number
-                            key.textContent = noteName;
-                            
-                            const isInDiatonicScale = this.diatonicNotes && this.diatonicNotes.includes(actualNote);
-                            
-                            // Diatonic mode: disable non-diatonic notes
-                            if (isInDiatonicScale) {
-                                key.classList.remove('disabled');
-                            } else {
-                                key.classList.add('disabled');
-                            }
-                        } else {
-                            // Key not mapped in current mode
-                            key.textContent = '';
-                            key.classList.add('disabled');
-                        }
+                        key.classList.add('disabled');
                     }
-                } catch (error) {
-                    console.error(`Error processing key ${index}:`, error);
+                } else {
+                    // Key not mapped in current mode
+                    key.textContent = '';
+                    key.classList.add('disabled');
                 }
-            });            
-            // Add visual indication for diatonic mode
-            const piano = document.querySelector('.piano');
-            if (this.scaleType === 'diatonic') {
-                piano.style.background = '#2d4a2b'; // Slightly green tint for diatonic
-            } else {
-                piano.style.background = '#333'; // Normal color for chromatic
             }
-            
-            console.log('=== Finished updateKeyboardVisibility ===');
-            
-        } catch (error) {
-            console.error('Error in updateKeyboardVisibility:', error);
-            console.error('Stack trace:', error.stack);
+        });
+        
+        // Add visual indication for diatonic mode
+        const piano = document.querySelector('.piano');
+        if (this.scaleType === 'diatonic') {
+            piano.style.background = '#2d4a2b'; // Slightly green tint for diatonic
+        } else {
+            piano.style.background = '#333'; // Normal color for chromatic
         }
     }
-
     startSequenceTimer() {
         // Clear any existing timer first
         if (this.timerInterval) {
