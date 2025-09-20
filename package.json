@@ -1,0 +1,18 @@
+{
+  "name": "ear-training-app",
+  "version": "1.0.0",
+  "description": "Melodic Dictation Ear Training App",
+  "main": "index.html",
+  "scripts": {
+    "dev": "live-server --port=8080 --host=localhost --quiet",
+    "dev:open": "live-server --port=8080 --host=localhost --open",
+    "build": "echo 'No build step needed for static site'",
+    "serve": "python3 -m http.server 8080"
+  },
+  "keywords": ["ear-training", "music", "education", "web-audio"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
