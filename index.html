@@ -11,15 +11,6 @@
         <h1>🎹 Melodic Dictation</h1>
         
         
-        <div class="timer-display">
-            <div class="timer" id="timer">00:00</div>
-            <div class="round-progress">
-                Round Progress: <span id="roundProgress">0/10</span>
-            </div>
-            <div class="round-accuracy">
-                Current Accuracy: <span id="currentAccuracy">0%</span>
-            </div>
-        </div>
         
         <div class="game-controls">
             <div class="main-action-row">
@@ -147,13 +138,16 @@
             </div>
         </div>
 
-        <div class="score-area">
-            <div class="score">
+<div class="timer-display">
+            <div class="timer" id="timer">00:00</div>
+            <div class="round-progress">
                 Score: <span id="correct">0</span> / <span id="total">0</span>
                 (<span id="percentage">0</span>%)
             </div>
+            <div class="round-accuracy">
+                Current Accuracy: <span id="currentAccuracy">0%</span>
+            </div>
         </div>
-
         <div class="data-controls">
             <div class="data-row">
                 <button class="control-btn" id="showHistoryBtn">📊 View History</button>

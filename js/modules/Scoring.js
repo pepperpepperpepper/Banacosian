@@ -184,12 +184,7 @@ class ScoringModule {
      * Update the round display
      */
     updateRoundDisplay() {
-        const roundProgressElement = document.getElementById('roundProgress');
         const currentAccuracyElement = document.getElementById('currentAccuracy');
-        
-        if (roundProgressElement) {
-            roundProgressElement.textContent = `${this.currentRound.total}/10`;
-        }
         
         const accuracy = this.currentRound.total > 0 ? 
             Math.round((this.currentRound.correct / this.currentRound.total) * 100) : 0;

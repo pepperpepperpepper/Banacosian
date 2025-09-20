@@ -836,14 +836,11 @@ updateKeyboardVisibility() {
         }, 1000);
     }
 
-    updateRoundDisplay() {
-        document.getElementById('roundProgress').textContent = `${this.currentRound.total}/10`;
-        
+updateRoundDisplay() {
         const accuracy = this.currentRound.total > 0 ? 
             Math.round((this.currentRound.correct / this.currentRound.total) * 100) : 0;
         document.getElementById('currentAccuracy').textContent = `${accuracy}%`;
     }
-
     completeRound() {
         // Stop timer
         if (this.timerInterval) {

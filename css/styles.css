@@ -39,18 +39,17 @@
             opacity: 0.9;
         }
 
-        .timer-display {
+.timer-display {
             background: rgba(255, 255, 255, 0.1);
             padding: 15px 20px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin: 20px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
         }
-
         .timer {
             font-size: 1.8em;
             font-weight: bold;
@@ -173,10 +172,6 @@
 
         .status-area.visible {
             display: block;
-        }
-        .score {
-            font-size: 1.3em;
-            margin-bottom: 15px;
         }
 
         .feedback {
@@ -349,13 +344,6 @@
             line-height: 1.4;
         }
 
-        .score-area {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 15px;
-            margin: 20px 0;
-            text-align: center;
-        }
 
         .data-controls {
             margin: 20px 0;
