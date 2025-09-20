@@ -316,10 +316,14 @@ document.getElementById('scaleType').addEventListener('change', (e) => {
             this.updateKeyboardVisibility();
 });
         
-        document.getElementById('mode').addEventListener('change', (e) => {            try {
+document.getElementById('mode').addEventListener('change', (e) => {            try {
                 this.mode = e.target.value;
                 this.diatonicNotes = this.generateDiatonicNotes();
                 this.updateKeyboardVisibility();
+                
+                // Hide status area when mode changes
+                const statusArea = document.querySelector('.status-area');
+                statusArea.classList.remove('visible');
                 
                 // Clear current sequence when mode changes
                 this.currentSequence = [];
@@ -333,8 +337,7 @@ document.getElementById('scaleType').addEventListener('change', (e) => {
                 document.getElementById('feedback').textContent = `Error switching to ${this.mode} mode. Please try again.`;
                 document.getElementById('feedback').className = 'feedback incorrect';
             }
-        });
-        
+        });        
 document.querySelectorAll('.white-key, .black-key').forEach(key => {
             key.addEventListener('click', (e) => this.playNote(e.target.dataset.note));
         });
@@ -367,7 +370,11 @@ document.querySelectorAll('.white-key, .black-key').forEach(key => {
         oscillator.stop(this.audioContext.currentTime + duration);
     }
 
-    generateNewSequence() {
+generateNewSequence() {
+        // Show the status area when generating a new sequence
+        const statusArea = document.querySelector('.status-area');
+        statusArea.classList.add('visible');
+        
         // Clear previous staff notes
         this.clearStaffNotes();
         
@@ -399,7 +406,6 @@ document.querySelectorAll('.white-key, .black-key').forEach(key => {
         document.getElementById('feedback').className = 'feedback';
         document.getElementById('playSequenceBtn').disabled = false;
     }
-
     async playSequence() {
         if (this.isPlaying) return;
         

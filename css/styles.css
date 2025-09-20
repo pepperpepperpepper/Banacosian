@@ -163,13 +163,17 @@
             transform: none;
         }
 
-        .status-area {
+.status-area {
             background: rgba(255, 255, 255, 0.1);
             padding: 20px;
             border-radius: 15px;
             margin: 20px 0;
+            display: none;
         }
 
+        .status-area.visible {
+            display: block;
+        }
         .score {
             font-size: 1.3em;
             margin-bottom: 15px;
