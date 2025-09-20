@@ -94,8 +94,9 @@ class MelodicDictation {
         // Show the status area when generating a new sequence
         this.uiModule.showStatusArea();
         
-        // Clear previous staff notes
+        // Clear previous staff notes and tonic highlights
         this.staffModule.clearStaffNotes();
+        this.staffModule.clearTonicHighlights();
         
         // Start new sequence in scoring module
         this.scoringModule.startNewSequence();
@@ -155,11 +156,16 @@ class MelodicDictation {
         }
         
         this.uiModule.updateFeedback(`Playing reference notes (${tonicName})...`);
+        
+        // Play audio and start visual feedback simultaneously (don't wait for highlight to finish)
         await this.audioModule.playTone(this.musicTheory.getNoteFrequency(tonic1), 0.6);
+        this.staffModule.highlightNoteOnStaff(tonic1, 600); // Don't await this
         await this.delay(300);
         await this.audioModule.playTone(this.musicTheory.getNoteFrequency(tonic2), 0.6);
+        this.staffModule.highlightNoteOnStaff(tonic2, 600); // Don't await this
         await this.delay(300);
         await this.audioModule.playTone(this.musicTheory.getNoteFrequency(tonic1), 0.6);
+        this.staffModule.highlightNoteOnStaff(tonic1, 600); // Don't await this
         await this.delay(800); // Longer pause before sequence
         
         this.uiModule.updateFeedback('Now the sequence...');
@@ -302,6 +308,7 @@ class MelodicDictation {
             this.currentSequence = [];
             this.userSequence = [];
             this.staffModule.clearStaffNotes();
+            this.staffModule.clearTonicHighlights();
             this.uiModule.updateFeedback(`Switched to ${this.mode} mode. Click "New Sequence" to start.`);
             this.uiModule.setPlayButtonState(true);
         } catch (error) {

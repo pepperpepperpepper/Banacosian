@@ -110,6 +110,61 @@ class StaffModule {
     getStaffNotesCount() {
         return this.staffNotes.length;
     }
+
+    /**
+     * Show a temporary highlight on the staff for a single note (used for tonic sequence)
+     * @param {string} note - Note name (e.g., 'C4')
+     * @param {number} duration - Duration in milliseconds to show the highlight
+     * @returns {Promise} Promise that resolves when the highlight is complete
+     */
+    async highlightNoteOnStaff(note, duration = 600) {
+        if (!note) {
+            console.warn('highlightNoteOnStaff: note is falsy');
+            return;
+        }
+
+        const staffNote = document.querySelector(`.staff .note.${note}`);
+        if (staffNote) {
+            // Position the note in the center for tonic highlighting
+            staffNote.style.left = '50%';
+            
+            // Show the note with tonic highlighting
+            staffNote.classList.add('tonic-highlight');
+            
+            // Show accidental if it's a sharp
+            if (note.includes('#')) {
+                const accidental = document.querySelector(`.staff .accidental[data-sharp="${note}"]`);
+                if (accidental) {
+                    accidental.style.left = '35%';
+                    accidental.classList.add('tonic-highlight');
+                }
+            }
+            
+            // Wait for the specified duration
+            await new Promise(resolve => setTimeout(resolve, duration));
+            
+            // Remove the highlighting
+            staffNote.classList.remove('tonic-highlight');
+            if (note.includes('#')) {
+                const accidental = document.querySelector(`.staff .accidental[data-sharp="${note}"]`);
+                if (accidental) {
+                    accidental.classList.remove('tonic-highlight');
+                }
+            }
+        }
+    }
+
+    /**
+     * Clear any tonic highlights from the staff
+     */
+    clearTonicHighlights() {
+        document.querySelectorAll('.staff .note.tonic-highlight').forEach(note => {
+            note.classList.remove('tonic-highlight');
+        });
+        document.querySelectorAll('.staff .accidental.tonic-highlight').forEach(accidental => {
+            accidental.classList.remove('tonic-highlight');
+        });
+    }
 }
 
 // Export the module
