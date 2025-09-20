@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melodic Dictation - Ear Training</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+            <div class="container">
+        <h1>🎹 Melodic Dictation</h1>
+        <p class="subtitle">Listen and Play Back</p>
+        
+        <div class="timer-display">
+            <div class="timer" id="timer">00:00</div>
+            <div class="round-progress">
+                Round Progress: <span id="roundProgress">0/10</span>
+            </div>
+            <div class="round-accuracy">
+                Current Accuracy: <span id="currentAccuracy">0%</span>
+            </div>
+        </div>
+        
+        <div class="game-controls">
+            <div class="main-action-row">
+                <button class="control-btn" id="newSequenceBtn">🎵 New</button>
+                <button class="control-btn" id="playSequenceBtn" disabled>🔄 Replay</button>
+            </div>
+            <div class="settings-row">
+                <select id="difficulty">
+                    <option value="2">2 notes</option>
+                    <option value="3" selected>3 notes</option>
+                    <option value="4">4 notes</option>
+                    <option value="5">5 notes</option>
+                </select>
+                <select id="scaleType">
+                    <option value="diatonic" selected>Diatonic</option>
+                    <option value="chromatic">All Notes</option>
+                </select>
+                <select id="mode">
+                    <option value="ionian" selected>Ionian</option>
+                    <option value="dorian">Dorian</option>
+                    <option value="phrygian">Phrygian</option>
+                    <option value="lydian">Lydian</option>
+                    <option value="mixolydian">Mixolydian</option>
+                    <option value="aeolian">Aeolian</option>
+                    <option value="locrian">Locrian</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="status-area">
+            <div class="feedback" id="feedback"></div>
+            
+            <div id="sequenceDisplay" class="sequence-display"></div>
+            
+            <div id="userSequenceDisplay" class="sequence-display" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="staff-container">
+            <div class="staff">
+                <div class="treble-clef">𝄞</div>
+                <div class="staff-line"></div>
+                <div class="staff-line"></div>
+                <div class="staff-line"></div>
+                <div class="staff-line"></div>
+                <div class="staff-line"></div>
+                
+                <!-- Ledger lines -->
+                <div class="ledger-line c4"></div>
+                <div class="ledger-line a5"></div>
+                
+                <!-- Notes -->
+                <div class="note C4"></div>
+                <div class="note D4"></div>
+                <div class="note E4"></div>
+                <div class="note F4"></div>
+                <div class="note G4"></div>
+                <div class="note A4"></div>
+                <div class="note B4"></div>
+                <div class="note C5"></div>
+                <div class="note D5"></div>
+                <div class="note E5"></div>
+                <div class="note F5"></div>
+                <div class="note G5"></div>
+                <div class="note A5"></div>
+                <div class="note B5"></div>
+                
+                <!-- Sharp notes -->
+                <div class="note C#4"></div>
+                <div class="note D#4"></div>
+                <div class="note F#4"></div>
+                <div class="note G#4"></div>
+                <div class="note A#4"></div>
+                <div class="note C#5"></div>
+                <div class="note D#5"></div>
+                <div class="note F#5"></div>
+                <div class="note G#5"></div>
+                <div class="note A#5"></div>
+                
+                <!-- Accidentals -->
+                <div class="accidental" style="top: 92px;" data-sharp="C#4">♯</div>
+                <div class="accidental" style="top: 85px;" data-sharp="D#4">♯</div>
+                <div class="accidental" style="top: 71px;" data-sharp="F#4">♯</div>
+                <div class="accidental" style="top: 64px;" data-sharp="G#4">♯</div>
+                <div class="accidental" style="top: 57px;" data-sharp="A#4">♯</div>
+                <div class="accidental" style="top: 43px;" data-sharp="C#5">♯</div>
+                <div class="accidental" style="top: 36px;" data-sharp="D#5">♯</div>
+                <div class="accidental" style="top: 29px;" data-sharp="F#5">♯</div>
+                <div class="accidental" style="top: 15px;" data-sharp="G#5">♯</div>
+                <div class="accidental" style="top: 8px;" data-sharp="A#5">♯</div>
+            </div>
+        </div>
+
+        <div class="piano">
+            <div class="piano-keys">
+                <!-- First octave (C4-B4) -->
+                <div class="white-key" data-note="C4"></div>
+                <div class="white-key" data-note="D4"></div>
+                <div class="white-key" data-note="E4"></div>
+                <div class="white-key" data-note="F4"></div>
+                <div class="white-key" data-note="G4"></div>
+                <div class="white-key" data-note="A4"></div>
+                <div class="white-key" data-note="B4"></div>
+                
+                <!-- Second octave (C5-B5) -->
+                <div class="white-key" data-note="C5"></div>
+                <div class="white-key" data-note="D5"></div>
+                <div class="white-key" data-note="E5"></div>
+                <div class="white-key" data-note="F5"></div>
+                <div class="white-key" data-note="G5"></div>
+                <div class="white-key" data-note="A5"></div>
+                <div class="white-key" data-note="B5"></div>
+                
+                <!-- Black keys - First octave -->
+                <div class="black-key" data-note="C#4"></div>
+                <div class="black-key" data-note="D#4"></div>
+                <div class="black-key" data-note="F#4"></div>
+                <div class="black-key" data-note="G#4"></div>
+                <div class="black-key" data-note="A#4"></div>
+                
+                <!-- Black keys - Second octave -->
+                <div class="black-key" data-note="C#5"></div>
+                <div class="black-key" data-note="D#5"></div>
+                <div class="black-key" data-note="F#5"></div>
+                <div class="black-key" data-note="G#5"></div>
+                <div class="black-key" data-note="A#5"></div>
+            </div>
+        </div>
+
+        <div class="score-area">
+            <div class="score">
+                Score: <span id="correct">0</span> / <span id="total">0</span>
+                (<span id="percentage">0</span>%)
+            </div>
+        </div>
+
+        <div class="data-controls">
+            <div class="data-row">
+                <button class="control-btn" id="showHistoryBtn">📊 View History</button>
+                <button class="control-btn" id="saveDataBtn">💾 Save to Drive</button>
+            </div>
+            <div class="data-row">
+                <button class="control-btn" id="loadDataBtn">📂 Load from Drive</button>
+            </div>
+        </div>
+
+        <div id="historyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;">
+            <div style="background: rgba(103, 126, 234, 0.95); margin: 50px auto; padding: 30px; border-radius: 20px; max-width: 800px; width: 90%; backdrop-filter: blur(10px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="color: white; margin: 0;">📊 Session History</h2>
+                    <button id="closeHistoryBtn" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 15px; border-radius: 10px; cursor: pointer;">✕ Close</button>
+                </div>
+                <div id="historyContent" style="color: white;"></div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <strong>How to play:</strong><br>
+            1. Choose sequence length and click "New Sequence"<br>
+            2. Listen carefully to the melody<br>
+            3. Play it back on the piano keyboard<br>
+            4. Get feedback after completing the sequence<br>
+            5. Use "Replay" to hear the original again
+        </div>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html>
