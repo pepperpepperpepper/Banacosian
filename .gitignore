@@ -1,0 +1,14 @@
+# Node.js dependencies
+node_modules/
+
+# Log files
+*.log
+
+# Android/Gradle build output
+android/.gradle/
+android/.idea/
+android/local.properties
+android/**/build/
+android/.cxx/
+android/captures/
+android/*.iml
