@@ -151,7 +151,7 @@ class MelodicDictation {
             return;
         }
 
-        const tonicName = tonic1.slice(0, -1); // Remove octave number
+        const tonicName = this.musicTheory.getDisplayNoteName(tonic1, this.mode, this.tonic);
 
         let tonic2 = tonic1;
         const tonicSemitone = this.musicTheory.noteToSemitone
@@ -312,6 +312,7 @@ class MelodicDictation {
             const requestedTonic = e.target.value;
             this.keyboardModule.setTonic(requestedTonic);
             this.tonic = this.keyboardModule.tonicLetter || requestedTonic;
+            const displayTonic = this.musicTheory.getDisplayTonicName(this.mode, this.tonic);
             this.uiModule.setTonicValue(this.tonic);
             this.keyboardModule.updateKeyboardVisibility();
             this.keyboardModule.positionBlackKeys();
@@ -321,7 +322,7 @@ class MelodicDictation {
             this.userSequence = [];
             this.staffModule.clearStaffNotes();
             this.staffModule.clearTonicHighlights();
-            this.uiModule.updateFeedback(`Tonic set to ${this.tonic} in ${this.mode} mode. Click "New Sequence" to start.`);
+            this.uiModule.updateFeedback(`Tonic set to ${displayTonic} in ${this.mode} mode. Click "New Sequence" to start.`);
             this.uiModule.setPlayButtonState(true);
         } catch (error) {
             console.error('Error changing tonic:', error);
@@ -341,6 +342,7 @@ class MelodicDictation {
             this.mode = selectedMode;
             this.keyboardModule.setMode(this.mode, previousTonic);
             this.tonic = this.keyboardModule.tonicLetter || previousTonic;
+            const displayTonic = this.musicTheory.getDisplayTonicName(this.mode, this.tonic);
             this.uiModule.setTonicValue(this.tonic);
             this.keyboardModule.updateKeyboardVisibility();
             this.keyboardModule.positionBlackKeys();
@@ -353,7 +355,7 @@ class MelodicDictation {
             this.userSequence = [];
             this.staffModule.clearStaffNotes();
             this.staffModule.clearTonicHighlights();
-            this.uiModule.updateFeedback(`Switched to ${this.mode} mode (tonic ${this.tonic}). Click "New Sequence" to start.`);
+            this.uiModule.updateFeedback(`Switched to ${this.mode} mode (tonic ${displayTonic}). Click "New Sequence" to start.`);
             this.uiModule.setPlayButtonState(true);
         } catch (error) {
             console.error('Error changing mode:', error);

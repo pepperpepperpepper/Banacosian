@@ -13,6 +13,8 @@ class KeyboardModule {
         this.blackKeyElements = Array.from(document.querySelectorAll('.black-key'));
         this.pianoKeysContainer = document.querySelector('.piano-keys');
         this.currentLayout = null;
+        this.boundKeyHandler = null;
+        this.onNotePlayedCallback = null;
         this.handleResize = this.handleResize.bind(this);
 
         if (typeof window !== 'undefined') {
@@ -35,7 +37,9 @@ class KeyboardModule {
     setMode(mode, tonicLetter) {
         this.mode = mode;
         if (tonicLetter) {
-            this.tonicLetter = tonicLetter.toUpperCase();
+            this.tonicLetter = this.musicTheory.normalizeTonic
+                ? this.musicTheory.normalizeTonic(tonicLetter)
+                : tonicLetter.toUpperCase();
         } else {
             this.tonicLetter = this.musicTheory.getDefaultTonicLetter(this.mode);
         }
@@ -49,66 +53,92 @@ class KeyboardModule {
      */
     setTonic(tonicLetter) {
         if (!tonicLetter) return;
-        this.tonicLetter = tonicLetter.toUpperCase();
+        this.tonicLetter = this.musicTheory.normalizeTonic
+            ? this.musicTheory.normalizeTonic(tonicLetter)
+            : tonicLetter.toUpperCase();
         this.applyModeLayout();
         this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
+    }
+
+    /**
+     * Render the physical keyboard based on the provided layout
+     * @param {Object} layout - Keyboard layout descriptor
+     */
+    renderKeyboard(layout) {
+        this.pianoKeysContainer = this.pianoKeysContainer || document.querySelector('.piano-keys');
+        if (!this.pianoKeysContainer) {
+            return;
+        }
+
+        const container = this.pianoKeysContainer;
+        container.innerHTML = '';
+
+        const whiteFragment = document.createDocumentFragment();
+        const whiteDetails = (layout && layout.whiteKeyDetails && layout.whiteKeyDetails.length > 0)
+            ? layout.whiteKeyDetails
+            : (layout && layout.whiteKeys ? layout.whiteKeys.map(note => ({ note })) : []);
+
+        whiteDetails.forEach((detail, index) => {
+            const keyEl = document.createElement('div');
+            keyEl.className = 'white-key';
+            keyEl.dataset.note = detail.note || '';
+            if (typeof detail.midi === 'number') {
+                keyEl.dataset.midi = String(detail.midi);
+            } else {
+                keyEl.removeAttribute('data-midi');
+            }
+            keyEl.dataset.whiteIndex = String(typeof detail.whiteIndex === 'number' ? detail.whiteIndex : index);
+            whiteFragment.appendChild(keyEl);
+        });
+
+        container.appendChild(whiteFragment);
+
+        const blackFragment = document.createDocumentFragment();
+        const blackDetails = (layout && layout.blackKeys) ? layout.blackKeys : [];
+
+        blackDetails.forEach(detail => {
+            const keyEl = document.createElement('div');
+            keyEl.className = 'black-key';
+            keyEl.dataset.note = detail.note || '';
+
+            if (typeof detail.precedingIndex === 'number') {
+                keyEl.dataset.precedingIndex = String(detail.precedingIndex);
+            } else {
+                keyEl.dataset.precedingIndex = '';
+            }
+
+            if (typeof detail.followingIndex === 'number') {
+                keyEl.dataset.followingIndex = String(detail.followingIndex);
+            } else {
+                keyEl.dataset.followingIndex = '';
+            }
+
+            if (detail.edge) {
+                keyEl.dataset.edge = detail.edge;
+            } else {
+                keyEl.removeAttribute('data-edge');
+            }
+
+            blackFragment.appendChild(keyEl);
+        });
+
+        container.appendChild(blackFragment);
+
+        this.whiteKeyElements = Array.from(container.querySelectorAll('.white-key'));
+        this.blackKeyElements = Array.from(container.querySelectorAll('.black-key'));
     }
 
     /**
      * Update the physical keyboard layout to match the current mode
      */
     applyModeLayout() {
-        if (!this.whiteKeyElements || this.whiteKeyElements.length === 0) {
-            this.whiteKeyElements = Array.from(document.querySelectorAll('.white-key'));
-        }
-
-        if (!this.blackKeyElements || this.blackKeyElements.length === 0) {
-            this.blackKeyElements = Array.from(document.querySelectorAll('.black-key'));
-        }
-
-        this.pianoKeysContainer = this.pianoKeysContainer || document.querySelector('.piano-keys');
-        if (!this.pianoKeysContainer) {
-            return;
-        }
-
         const layout = this.musicTheory.getKeyboardLayout(this.mode, this.tonicLetter);
         this.currentLayout = layout;
         if (layout && layout.tonicLetter) {
             this.tonicLetter = layout.tonicLetter;
         }
-
-        this.whiteKeyElements.forEach((keyEl, index) => {
-            const note = layout.whiteKeys[index];
-            if (note) {
-                keyEl.dataset.note = note;
-                keyEl.removeAttribute('hidden');
-            } else {
-                keyEl.dataset.note = '';
-                keyEl.setAttribute('hidden', '');
-            }
-        });
-
-        this.blackKeyElements.forEach((keyEl, index) => {
-            const descriptor = layout.blackKeys[index];
-            if (descriptor) {
-                keyEl.dataset.note = descriptor.note;
-                keyEl.dataset.precedingIndex = descriptor.precedingIndex;
-                keyEl.dataset.followingIndex = descriptor.followingIndex;
-                keyEl.removeAttribute('hidden');
-                keyEl.style.display = '';
-                keyEl.style.pointerEvents = '';
-                keyEl.style.opacity = '';
-            } else {
-                keyEl.dataset.note = '';
-                keyEl.removeAttribute('data-preceding-index');
-                keyEl.removeAttribute('data-following-index');
-                keyEl.setAttribute('hidden', '');
-                keyEl.style.display = 'none';
-                keyEl.style.pointerEvents = 'none';
-                keyEl.style.opacity = '';
-                keyEl.style.left = '';
-            }
-        });
+        this.renderKeyboard(layout);
+        this.updateKeyboardVisibility();
 
         if (typeof window !== 'undefined') {
             window.requestAnimationFrame(() => this.positionBlackKeys());
@@ -128,31 +158,68 @@ class KeyboardModule {
         const containerRect = this.pianoKeysContainer.getBoundingClientRect();
 
         this.blackKeyElements.forEach((keyEl) => {
-            if (keyEl.hasAttribute('hidden')) {
-                return;
-            }
+            const rawPreceding = keyEl.dataset.precedingIndex;
+            const rawFollowing = keyEl.dataset.followingIndex;
+            const edgeHint = keyEl.dataset.edge || '';
 
-            const precedingIndex = parseInt(keyEl.dataset.precedingIndex, 10);
-            const followingIndex = parseInt(keyEl.dataset.followingIndex, 10);
+            const precedingIndex = (rawPreceding === '' || typeof rawPreceding === 'undefined')
+                ? null
+                : parseInt(rawPreceding, 10);
+            const followingIndex = (rawFollowing === '' || typeof rawFollowing === 'undefined')
+                ? null
+                : parseInt(rawFollowing, 10);
 
-            if (Number.isNaN(precedingIndex) || Number.isNaN(followingIndex)) {
+            const precedingEl = (precedingIndex !== null) ? this.whiteKeyElements[precedingIndex] : null;
+            const followingEl = (followingIndex !== null) ? this.whiteKeyElements[followingIndex] : null;
+
+            if ((!precedingEl || precedingEl.hasAttribute('hidden')) && (!followingEl || followingEl.hasAttribute('hidden'))) {
                 keyEl.setAttribute('hidden', '');
                 return;
             }
 
-            const precedingEl = this.whiteKeyElements[precedingIndex];
-            const followingEl = this.whiteKeyElements[followingIndex];
+            keyEl.removeAttribute('hidden');
+            keyEl.style.display = '';
+            keyEl.style.pointerEvents = '';
+            keyEl.style.opacity = '';
 
-            if (!precedingEl || !followingEl || precedingEl.hasAttribute('hidden') || followingEl.hasAttribute('hidden')) {
-                keyEl.setAttribute('hidden', '');
-                return;
-            }
-
-            const precedingRect = precedingEl.getBoundingClientRect();
-            const followingRect = followingEl.getBoundingClientRect();
-            const midpoint = (precedingRect.right + followingRect.left) / 2;
             const keyWidth = keyEl.offsetWidth || 0;
-            const leftPx = midpoint - containerRect.left - (keyWidth / 2);
+            let leftPx = null;
+
+            if (precedingEl && followingEl && !precedingEl.hasAttribute('hidden') && !followingEl.hasAttribute('hidden')) {
+                const precedingRect = precedingEl.getBoundingClientRect();
+                const followingRect = followingEl.getBoundingClientRect();
+                const midpoint = (precedingRect.right + followingRect.left) / 2;
+                leftPx = midpoint - containerRect.left - (keyWidth / 2);
+            } else if (edgeHint === 'left' && followingEl && !followingEl.hasAttribute('hidden')) {
+                const followingRect = followingEl.getBoundingClientRect();
+                const whiteWidth = followingEl.offsetWidth || 0;
+                const center = (followingRect.left - whiteWidth) + (whiteWidth / 2);
+                leftPx = center - containerRect.left - (keyWidth / 2);
+            } else if (edgeHint === 'right' && precedingEl && !precedingEl.hasAttribute('hidden')) {
+                const precedingRect = precedingEl.getBoundingClientRect();
+                const whiteWidth = precedingEl.offsetWidth || 0;
+                const center = precedingRect.right + (whiteWidth / 2);
+                leftPx = center - containerRect.left - (keyWidth / 2);
+            } else if (precedingEl && !precedingEl.hasAttribute('hidden')) {
+                const precedingRect = precedingEl.getBoundingClientRect();
+                const whiteWidth = precedingEl.offsetWidth || 0;
+                const center = precedingRect.right + (whiteWidth / 2);
+                leftPx = center - containerRect.left - (keyWidth / 2);
+            } else if (followingEl && !followingEl.hasAttribute('hidden')) {
+                const followingRect = followingEl.getBoundingClientRect();
+                const whiteWidth = followingEl.offsetWidth || 0;
+                const center = (followingRect.left - whiteWidth) + (whiteWidth / 2);
+                leftPx = center - containerRect.left - (keyWidth / 2);
+            }
+
+            if (leftPx === null) {
+                keyEl.setAttribute('hidden', '');
+                return;
+            }
+
+            if (leftPx < 0) {
+                leftPx = 0;
+            }
 
             keyEl.style.left = `${leftPx}px`;
         });
@@ -185,8 +252,8 @@ class KeyboardModule {
                 return;
             }
 
-            const noteName = actualNote.slice(0, -1);
-            key.textContent = noteName;
+            const noteLabel = this.musicTheory.getDisplayNoteName(actualNote, this.mode, this.tonicLetter);
+            key.textContent = noteLabel;
 
             if (showAllNotes) {
                 key.classList.remove('disabled');
@@ -213,7 +280,7 @@ class KeyboardModule {
      * @param {string} physicalNote - The physical note that was clicked
      * @param {Function} onNotePlayed - Callback function when note is played
      */
-    async playNote(physicalNote, onNotePlayed) {
+    async playNote(physicalNote, onNotePlayed = this.onNotePlayedCallback) {
         if (this.audioModule.getIsPlaying()) return;
         
         let actualNote;
@@ -256,11 +323,22 @@ class KeyboardModule {
      * @param {Function} onNotePlayed - Callback function when note is played
      */
     setupEventListeners(onNotePlayed) {
-        document.querySelectorAll('.white-key, .black-key').forEach(key => {
-            key.addEventListener('click', (e) => {
-                this.playNote(e.target.dataset.note, onNotePlayed);
-            });
-        });
+        this.onNotePlayedCallback = onNotePlayed;
+        this.pianoKeysContainer = this.pianoKeysContainer || document.querySelector('.piano-keys');
+        if (!this.pianoKeysContainer) {
+            return;
+        }
+
+        if (!this.boundKeyHandler) {
+            this.boundKeyHandler = (event) => {
+                const target = event.target.closest('.white-key, .black-key');
+                if (!target || !this.pianoKeysContainer.contains(target)) {
+                    return;
+                }
+                this.playNote(target.dataset.note);
+            };
+            this.pianoKeysContainer.addEventListener('click', this.boundKeyHandler);
+        }
     }
 
     /**

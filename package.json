@@ -9,10 +9,18 @@
     "build": "echo 'No build step needed for static site'",
     "serve": "python3 -m http.server 8080"
   },
-  "keywords": ["ear-training", "music", "education", "web-audio"],
+  "keywords": [
+    "ear-training",
+    "music",
+    "education",
+    "web-audio"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "live-server": "^1.2.2"
+  },
+  "dependencies": {
+    "tonal": "^4.14.2"
   }
 }
