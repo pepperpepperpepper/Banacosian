@@ -14,20 +14,23 @@
         
         <div class="game-controls">
             <div class="main-action-row">
-                <button class="control-btn" id="newSequenceBtn">🎵 New</button>
-                <button class="control-btn" id="playSequenceBtn" disabled>🔄 Replay</button>
+                <button class="control-btn" id="newSequenceBtn">New</button>
+                <button class="control-btn" id="playSequenceBtn" disabled>Replay</button>
+                <button class="control-btn" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
             </div>
-            <div class="settings-row">
+            <div class="settings-row" id="settingsPanel" hidden>
                 <select id="difficulty">
                     <option value="2">2 notes</option>
                     <option value="3" selected>3 notes</option>
                     <option value="4">4 notes</option>
                     <option value="5">5 notes</option>
                 </select>
-<select id="scaleType">
+                <select id="tonicSelect" aria-label="Select tonic"></select>
+                <select id="scaleType">
                     <option value="diatonic" selected>Diatonic</option>
                     <option value="chromatic">Chromatic</option>
-                </select>                <select id="mode">
+                </select>
+                <select id="mode">
                     <option value="ionian" selected>Ionian</option>
                     <option value="dorian">Dorian</option>
                     <option value="phrygian">Phrygian</option>

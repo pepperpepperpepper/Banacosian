@@ -78,6 +78,7 @@
         .main-action-row {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap;
             gap: 15px;
         }
 
@@ -87,6 +88,13 @@
             justify-content: center;
             flex-wrap: wrap;
             align-items: center;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+        }
+
+        .settings-row[hidden] {
+            display: none;
         }
 
         .settings-row select {
@@ -160,6 +168,11 @@
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+        }
+
+        #settingsToggle[aria-expanded="true"] {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
         }
 
 .status-area {
@@ -303,6 +316,7 @@
             color: white;
             user-select: none;
             top: 0;
+            left: 0;
         }
 
         .black-key.disabled {
@@ -321,19 +335,6 @@
             background: #4CAF50;
             transform: translateY(1px);
         }
-
-        /* Responsive positioning for black keys using percentages */
-        .black-key[data-note="C#4"] { left: 5.1%; }
-        .black-key[data-note="D#4"] { left: 12.2%; }
-        .black-key[data-note="F#4"] { left: 26.5%; }
-        .black-key[data-note="G#4"] { left: 33.6%; }
-        .black-key[data-note="A#4"] { left: 40.8%; }
-        
-        .black-key[data-note="C#5"] { left: 55.1%; }
-        .black-key[data-note="D#5"] { left: 62.2%; }
-        .black-key[data-note="F#5"] { left: 76.5%; }
-        .black-key[data-note="G#5"] { left: 83.6%; }
-        .black-key[data-note="A#5"] { left: 90.8%; }
 
         .instructions {
             background: rgba(255, 255, 255, 0.1);
@@ -559,5 +560,20 @@
                 .data-row {
                     flex-direction: column;
                     align-items: center;
+                }
+            }
+
+            @media (max-width: 800px) and (orientation: portrait) {
+                body {
+                    padding: 0;
+                    justify-content: flex-start;
+                    align-items: stretch;
+                }
+
+                .container {
+                    padding: 20px 0;
+                    border-radius: 0;
+                    max-width: 100%;
+                    width: 100%;
                 }
             }

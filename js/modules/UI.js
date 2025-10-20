@@ -18,9 +18,24 @@ class UIModule {
         document.getElementById('closeHistoryBtn').addEventListener('click', callbacks.onHideHistory);
         document.getElementById('saveDataBtn').addEventListener('click', callbacks.onSaveData);
         document.getElementById('loadDataBtn').addEventListener('click', callbacks.onLoadData);
+
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsPanel = document.getElementById('settingsPanel');
+        if (settingsToggle && settingsPanel) {
+            settingsToggle.addEventListener('click', () => {
+                const isHidden = settingsPanel.hasAttribute('hidden');
+                if (isHidden) {
+                    settingsPanel.removeAttribute('hidden');
+                } else {
+                    settingsPanel.setAttribute('hidden', '');
+                }
+                settingsToggle.setAttribute('aria-expanded', (!isHidden).toString());
+            });
+        }
         
         // Settings event listeners
         document.getElementById('difficulty').addEventListener('change', callbacks.onDifficultyChange);
+        document.getElementById('tonicSelect').addEventListener('change', callbacks.onTonicChange);
         document.getElementById('scaleType').addEventListener('change', callbacks.onScaleTypeChange);
         document.getElementById('mode').addEventListener('change', callbacks.onModeChange);
     }
@@ -32,6 +47,37 @@ class UIModule {
         const statusArea = document.querySelector('.status-area');
         if (statusArea) {
             statusArea.classList.add('visible');
+        }
+    }
+
+    /**
+     * Populate tonic dropdown with options
+     * @param {Array<string>} tonics - List of tonic labels
+     * @param {string} selectedValue - Currently selected tonic
+     */
+    populateTonicOptions(tonics, selectedValue) {
+        const tonicSelect = document.getElementById('tonicSelect');
+        if (!tonicSelect) return;
+
+        tonicSelect.innerHTML = '';
+        tonics.forEach(tonic => {
+            const option = document.createElement('option');
+            option.value = tonic;
+            option.textContent = tonic;
+            tonicSelect.appendChild(option);
+        });
+
+        this.setTonicValue(selectedValue);
+    }
+
+    /**
+     * Update tonic select current value
+     * @param {string} value - Tonic value to set
+     */
+    setTonicValue(value) {
+        const tonicSelect = document.getElementById('tonicSelect');
+        if (tonicSelect && value) {
+            tonicSelect.value = value;
         }
     }
 
@@ -303,6 +349,7 @@ class UIModule {
     getFormValues() {
         return {
             difficulty: document.getElementById('difficulty').value,
+            tonic: document.getElementById('tonicSelect').value,
             scaleType: document.getElementById('scaleType').value,
             mode: document.getElementById('mode').value
         };
@@ -315,6 +362,9 @@ class UIModule {
     setFormValues(values) {
         if (values.difficulty !== undefined) {
             document.getElementById('difficulty').value = values.difficulty;
+        }
+        if (values.tonic !== undefined) {
+            this.setTonicValue(values.tonic);
         }
         if (values.scaleType !== undefined) {
             document.getElementById('scaleType').value = values.scaleType;

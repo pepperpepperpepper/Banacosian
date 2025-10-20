@@ -8,6 +8,16 @@ class KeyboardModule {
         this.scaleType = 'diatonic';
         this.mode = 'ionian';
         this.diatonicNotes = [];
+        this.tonicLetter = this.musicTheory.getDefaultTonicLetter(this.mode);
+        this.whiteKeyElements = Array.from(document.querySelectorAll('.white-key'));
+        this.blackKeyElements = Array.from(document.querySelectorAll('.black-key'));
+        this.pianoKeysContainer = document.querySelector('.piano-keys');
+        this.currentLayout = null;
+        this.handleResize = this.handleResize.bind(this);
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('resize', this.handleResize);
+        }
     }
 
     /**
@@ -22,9 +32,127 @@ class KeyboardModule {
      * Set the current mode
      * @param {string} mode - Mode name (e.g., 'ionian', 'dorian')
      */
-    setMode(mode) {
+    setMode(mode, tonicLetter) {
         this.mode = mode;
-        this.diatonicNotes = this.musicTheory.generateDiatonicNotes(mode);
+        if (tonicLetter) {
+            this.tonicLetter = tonicLetter.toUpperCase();
+        } else {
+            this.tonicLetter = this.musicTheory.getDefaultTonicLetter(this.mode);
+        }
+        this.applyModeLayout();
+        this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
+    }
+
+    /**
+     * Set the tonic for the current mode
+     * @param {string} tonicLetter - New tonic letter
+     */
+    setTonic(tonicLetter) {
+        if (!tonicLetter) return;
+        this.tonicLetter = tonicLetter.toUpperCase();
+        this.applyModeLayout();
+        this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
+    }
+
+    /**
+     * Update the physical keyboard layout to match the current mode
+     */
+    applyModeLayout() {
+        if (!this.whiteKeyElements || this.whiteKeyElements.length === 0) {
+            this.whiteKeyElements = Array.from(document.querySelectorAll('.white-key'));
+        }
+
+        if (!this.blackKeyElements || this.blackKeyElements.length === 0) {
+            this.blackKeyElements = Array.from(document.querySelectorAll('.black-key'));
+        }
+
+        this.pianoKeysContainer = this.pianoKeysContainer || document.querySelector('.piano-keys');
+        if (!this.pianoKeysContainer) {
+            return;
+        }
+
+        const layout = this.musicTheory.getKeyboardLayout(this.mode, this.tonicLetter);
+        this.currentLayout = layout;
+
+        this.whiteKeyElements.forEach((keyEl, index) => {
+            const note = layout.whiteKeys[index];
+            if (note) {
+                keyEl.dataset.note = note;
+                keyEl.removeAttribute('hidden');
+            } else {
+                keyEl.dataset.note = '';
+                keyEl.setAttribute('hidden', '');
+            }
+        });
+
+        this.blackKeyElements.forEach((keyEl, index) => {
+            const descriptor = layout.blackKeys[index];
+            if (descriptor) {
+                keyEl.dataset.note = descriptor.note;
+                keyEl.dataset.precedingIndex = descriptor.precedingIndex;
+                keyEl.dataset.followingIndex = descriptor.followingIndex;
+                keyEl.removeAttribute('hidden');
+            } else {
+                keyEl.dataset.note = '';
+                keyEl.removeAttribute('data-preceding-index');
+                keyEl.removeAttribute('data-following-index');
+                keyEl.setAttribute('hidden', '');
+            }
+        });
+
+        if (typeof window !== 'undefined') {
+            window.requestAnimationFrame(() => this.positionBlackKeys());
+        } else {
+            this.positionBlackKeys();
+        }
+    }
+
+    /**
+     * Reposition black keys based on the current white key layout
+     */
+    positionBlackKeys() {
+        if (!this.pianoKeysContainer || !this.currentLayout) {
+            return;
+        }
+
+        const containerRect = this.pianoKeysContainer.getBoundingClientRect();
+
+        this.blackKeyElements.forEach((keyEl) => {
+            if (keyEl.hasAttribute('hidden')) {
+                return;
+            }
+
+            const precedingIndex = parseInt(keyEl.dataset.precedingIndex, 10);
+            const followingIndex = parseInt(keyEl.dataset.followingIndex, 10);
+
+            if (Number.isNaN(precedingIndex) || Number.isNaN(followingIndex)) {
+                keyEl.setAttribute('hidden', '');
+                return;
+            }
+
+            const precedingEl = this.whiteKeyElements[precedingIndex];
+            const followingEl = this.whiteKeyElements[followingIndex];
+
+            if (!precedingEl || !followingEl || precedingEl.hasAttribute('hidden') || followingEl.hasAttribute('hidden')) {
+                keyEl.setAttribute('hidden', '');
+                return;
+            }
+
+            const precedingRect = precedingEl.getBoundingClientRect();
+            const followingRect = followingEl.getBoundingClientRect();
+            const midpoint = (precedingRect.right + followingRect.left) / 2;
+            const keyWidth = keyEl.offsetWidth || 0;
+            const leftPx = midpoint - containerRect.left - (keyWidth / 2);
+
+            keyEl.style.left = `${leftPx}px`;
+        });
+    }
+
+    /**
+     * Handle resize events so the black keys stay aligned
+     */
+    handleResize() {
+        this.positionBlackKeys();
     }
 
     /**
@@ -32,48 +160,30 @@ class KeyboardModule {
      */
     updateKeyboardVisibility() {
         const showAllNotes = this.scaleType === 'chromatic';
-        
-        let keyboardMapping;
         if (!showAllNotes) {
-            try {
-                keyboardMapping = this.musicTheory.getCurrentKeyboardMapping(this.mode);
-            } catch (error) {
-                console.error('Error getting keyboard mapping:', error);
-                keyboardMapping = {}; // Fallback to empty mapping
-            }
+            this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
         }
-        
-        // Update key states and labels based on current mode mapping
+        const activeNotes = new Set(this.diatonicNotes);
+
         const keys = document.querySelectorAll('.white-key, .black-key');
-        
+
         keys.forEach(key => {
-            const physicalNote = key.dataset.note;
-            
+            const actualNote = key.dataset.note;
+            if (key.hasAttribute('hidden') || !actualNote) {
+                key.textContent = '';
+                key.classList.add('disabled');
+                return;
+            }
+
+            const noteName = actualNote.slice(0, -1);
+            key.textContent = noteName;
+
             if (showAllNotes) {
-                // Chromatic mode: all keys enabled, show physical note names
-                const noteName = physicalNote.slice(0, -1); // Remove octave number
-                key.textContent = noteName;
                 key.classList.remove('disabled');
             } else {
-                // Diatonic mode: use keyboard mapping
-                const actualNote = keyboardMapping[physicalNote];
-                
-                if (actualNote && typeof actualNote === 'string') {
-                    // Update the key label to show the actual note
-                    const noteName = actualNote.slice(0, -1); // Remove octave number
-                    key.textContent = noteName;
-                    
-                    const isInDiatonicScale = this.diatonicNotes && this.diatonicNotes.includes(actualNote);
-                    
-                    // Diatonic mode: disable non-diatonic notes
-                    if (isInDiatonicScale) {
-                        key.classList.remove('disabled');
-                    } else {
-                        key.classList.add('disabled');
-                    }
+                if (activeNotes.has(actualNote)) {
+                    key.classList.remove('disabled');
                 } else {
-                    // Key not mapped in current mode
-                    key.textContent = '';
                     key.classList.add('disabled');
                 }
             }
@@ -98,28 +208,32 @@ class KeyboardModule {
         
         let actualNote;
         
-        if (this.scaleType === 'chromatic') {
-            // In chromatic mode, use the physical note directly
-            actualNote = physicalNote;
-        } else {
-            // In diatonic mode, get the mapped note for the current mode
-            const keyboardMapping = this.musicTheory.getCurrentKeyboardMapping(this.mode);
-            actualNote = keyboardMapping[physicalNote];
-            
-            if (!actualNote) return; // Key not mapped in current mode
-            
-            // Check if this note is allowed in diatonic mode
-            const isAllowed = this.diatonicNotes.includes(actualNote);
-            if (!isAllowed) return;
+        actualNote = physicalNote;
+        if (!actualNote) return;
+
+        if (this.scaleType !== 'chromatic') {
+            if (!this.diatonicNotes || this.diatonicNotes.length === 0) {
+                this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
+            }
+            if (!this.diatonicNotes.includes(actualNote)) {
+                return;
+            }
         }
         
         // Visual feedback on key press
-        const key = document.querySelector(`[data-note="${physicalNote}"]`);
+        const key = document.querySelector(`.white-key[data-note="${actualNote}"], .black-key[data-note="${actualNote}"]`);
+        if (!key || key.classList.contains('disabled')) {
+            return;
+        }
         key.classList.add('pressed');
         setTimeout(() => key.classList.remove('pressed'), 150);
         
         // Play the note
-        await this.audioModule.playTone(this.musicTheory.getNoteFrequency(actualNote), 0.5);
+        const frequency = this.musicTheory.getNoteFrequency(actualNote);
+        if (!frequency) {
+            return;
+        }
+        await this.audioModule.playTone(frequency, 0.5);
         
         // Call the callback with the actual note played
         if (onNotePlayed) {

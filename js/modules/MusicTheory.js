@@ -46,15 +46,19 @@ class MusicTheoryModule {
             'F6': 1396.91
         };
 
-        // Mode ranges - each mode gets its specific range
-        this.modeRanges = {
-            'ionian': { whiteKeys: ['C4','D4','E4','F4','G4','A4','B4','C5','D5','E5','F5','G5','A5','B5'] },
-            'dorian': { whiteKeys: ['D4','E4','F4','G4','A4','B4','C5'] },
-            'phrygian': { whiteKeys: ['E4','F4','G4','A4','B4','C5','D5'] },
-            'lydian': { whiteKeys: ['F4','G4','A4','B4','C5','D5','E5'] },
-            'mixolydian': { whiteKeys: ['G3','A3','B3','C4','D4','E4','F4'] },
-            'aeolian': { whiteKeys: ['A3','B3','C4','D4','E4','F4','G4'] },
-            'locrian': { whiteKeys: ['B3','C4','D4','E4','F4','G4','A4'] }
+        this.chromaticNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        this.naturalNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+        this.availableTonics = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+        this.whiteKeyCount = 14;
+
+        this.modeConfigs = {
+            'ionian': { tonic: 'C4' },
+            'dorian': { tonic: 'D4' },
+            'phrygian': { tonic: 'E4' },
+            'lydian': { tonic: 'F4' },
+            'mixolydian': { tonic: 'G3' },
+            'aeolian': { tonic: 'A3' },
+            'locrian': { tonic: 'B3' }
         };
 
         // Mode patterns (semitone intervals from tonic)
@@ -68,7 +72,14 @@ class MusicTheoryModule {
             'locrian': [0, 1, 3, 5, 6, 8, 10]      // Diminished
         };
 
-        this.notes = Object.keys(this.noteFrequencies);
+        this.notes = Object.keys(this.noteFrequencies).sort(
+            (a, b) => this.noteToSemitone(a) - this.noteToSemitone(b)
+        );
+        this.modeLayouts = new Map();
+        this.modeRanges = new Map();
+        this.defaultTonicLetters = {};
+
+        this.initializeModeLayouts();
     }
 
     /**
@@ -76,28 +87,35 @@ class MusicTheoryModule {
      * @param {string} mode - The current mode (e.g., 'ionian', 'dorian')
      * @returns {Array} Array of diatonic notes
      */
-    generateDiatonicNotes(mode) {
-        const currentRange = this.modeRanges[mode];
+    generateDiatonicNotes(mode, tonicLetter) {
+        const layout = this.getKeyboardLayout(mode, tonicLetter);
         const pattern = this.modePatterns[mode];
+        if (!layout || !layout.whiteKeys || layout.whiteKeys.length === 0 || !pattern) {
+            return [];
+        }
+
         const diatonicNotes = [];
-        
-        // Get all available notes for this mode's range
-        const allNotesInRange = this.getAllNotesInRange(currentRange.whiteKeys[0], currentRange.whiteKeys[currentRange.whiteKeys.length - 1]);
-        
-        // Filter to only include notes that match the mode pattern
-        const chromaticNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        const startNoteIndex = chromaticNotes.indexOf(currentRange.whiteKeys[0].slice(0, -1));
-        
+        const startNote = layout.whiteKeys[0];
+        const endNote = layout.whiteKeys[layout.whiteKeys.length - 1];
+        const allNotesInRange = this.getAllNotesInRange(startNote, endNote);
+
+        const startNoteName = startNote.slice(0, -1);
+        const startNoteIndex = this.chromaticNotes.indexOf(startNoteName);
+        if (startNoteIndex === -1) {
+            return diatonicNotes;
+        }
+
         allNotesInRange.forEach(note => {
             const noteName = note.slice(0, -1);
-            const noteIndex = chromaticNotes.indexOf(noteName);
+            const noteIndex = this.chromaticNotes.indexOf(noteName);
+            if (noteIndex === -1) return;
+
             const intervalFromStart = (noteIndex - startNoteIndex + 12) % 12;
-            
             if (pattern.includes(intervalFromStart)) {
                 diatonicNotes.push(note);
             }
         });
-        
+
         return diatonicNotes;
     }
 
@@ -108,47 +126,338 @@ class MusicTheoryModule {
      * @returns {Array} Array of notes in the range
      */
     getAllNotesInRange(startNote, endNote) {
-        console.log('getAllNotesInRange called with:', startNote, endNote);
-        
-        if (!startNote || !endNote || typeof startNote !== 'string' || typeof endNote !== 'string') {
-            console.error('Invalid start or end note for range', startNote, endNote);
+        if (!startNote || !endNote) {
             return [];
         }
-        
-        const allNotes = Object.keys(this.noteFrequencies);
-        console.log('All available notes (type):', typeof allNotes, 'isArray:', Array.isArray(allNotes));
-        console.log('All available notes:', allNotes);
-        
+
+        const allNotes = this.notes;
         const startIndex = allNotes.indexOf(startNote);
         const endIndex = allNotes.indexOf(endNote);
-        
-        console.log('Start index:', startIndex, 'End index:', endIndex);
-        
+
         if (startIndex === -1 || endIndex === -1) {
-            console.error('Start or end note not found in frequencies', startNote, endNote);
             return [];
         }
-        
-        const result = allNotes.slice(startIndex, endIndex + 1);
-        console.log('Notes in range result (type):', typeof result, 'isArray:', Array.isArray(result));
-        console.log('Notes in range result:', result);
-        console.log('Result length:', result ? result.length : 'undefined');
-        
-        // Filter out any undefined or invalid notes
-        const filteredResult = result.filter(note => note && typeof note === 'string');
-        console.log('Filtered notes in range (type):', typeof filteredResult, 'isArray:', Array.isArray(filteredResult));
-        console.log('Filtered notes in range:', filteredResult);
-        console.log('Filtered length:', filteredResult ? filteredResult.length : 'undefined');
-        
-        // Test first few elements
-        if (filteredResult && filteredResult.length > 0) {
-            console.log('First element:', filteredResult[0], 'type:', typeof filteredResult[0]);
-            if (filteredResult.length > 1) {
-                console.log('Second element:', filteredResult[1], 'type:', typeof filteredResult[1]);
+
+        if (startIndex <= endIndex) {
+            return allNotes.slice(startIndex, endIndex + 1);
+        }
+
+        return allNotes.slice(endIndex, startIndex + 1).reverse();
+    }
+
+    /**
+     * Initialize cached layouts and ranges for all modes
+     */
+    initializeModeLayouts() {
+        Object.keys(this.modeConfigs).forEach(mode => {
+            const config = this.modeConfigs[mode];
+            if (!config) return;
+
+            const defaultLetter = this.extractNoteLetter(config.tonic);
+            this.defaultTonicLetters[mode] = defaultLetter;
+
+            const layout = this.buildKeyboardLayout(mode, defaultLetter);
+            const cacheKey = this.getLayoutCacheKey(mode, defaultLetter);
+            this.modeLayouts.set(cacheKey, layout);
+            this.modeRanges.set(cacheKey, { whiteKeys: layout.whiteKeys.slice() });
+        });
+    }
+
+    /**
+     * Build the keyboard layout structure for a mode
+     * @param {{tonic: string, whiteKeyCount?: number}} config - Mode configuration
+     * @returns {{whiteKeys: string[], blackKeys: Array, mapping: Object}}
+     */
+    buildKeyboardLayout(mode, tonicLetter) {
+        const config = this.modeConfigs[mode] || this.modeConfigs['ionian'];
+        const defaultTonicNote = config.tonic;
+        const whiteKeyCount = config.whiteKeyCount || this.whiteKeyCount;
+
+        const targetLetter = this.normalizeTonic(tonicLetter) || this.extractNoteLetter(defaultTonicNote);
+        const tonicNote = this.resolveTonicNote(defaultTonicNote, targetLetter);
+
+        let whiteKeys = this.buildWhiteKeySeries(tonicNote, whiteKeyCount);
+        let appliedTonicNote = tonicNote;
+        let appliedTonicLetter = targetLetter;
+
+        if (whiteKeys.length < whiteKeyCount) {
+            // Fallback to default layout if requested tonic is out of supported range
+            whiteKeys = this.buildWhiteKeySeries(defaultTonicNote, whiteKeyCount);
+            appliedTonicNote = defaultTonicNote;
+            appliedTonicLetter = this.extractNoteLetter(defaultTonicNote);
+        }
+
+        const blackKeys = this.buildBlackKeySeries(whiteKeys);
+
+        const mapping = {};
+        whiteKeys.forEach(note => {
+            mapping[note] = note;
+        });
+        blackKeys.forEach(key => {
+            mapping[key.note] = key.note;
+        });
+
+        return {
+            tonicNote: appliedTonicNote,
+            tonicLetter: appliedTonicLetter,
+            whiteKeys,
+            blackKeys,
+            mapping
+        };
+    }
+
+    /**
+     * Build sequential white keys starting from tonic
+     * @param {string} tonic - Starting note (natural)
+     * @param {number} count - Number of white keys to generate
+     * @returns {string[]} Array of white key note names
+     */
+    buildWhiteKeySeries(tonic, count) {
+        if (!tonic || typeof tonic !== 'string') {
+            return [];
+        }
+
+        const noteName = tonic.slice(0, -1);
+        const octave = parseInt(tonic.slice(-1), 10);
+        if (Number.isNaN(octave)) {
+            return [];
+        }
+
+        const startIndex = this.naturalNotes.indexOf(noteName);
+        if (startIndex === -1) {
+            return [];
+        }
+
+        const whiteKeys = [];
+        let currentIndex = startIndex;
+        let currentOctave = octave;
+
+        for (let i = 0; i < count; i++) {
+            const naturalNote = this.naturalNotes[currentIndex];
+            const noteKey = `${naturalNote}${currentOctave}`;
+            if (!this.noteFrequencies[noteKey]) {
+                break;
+            }
+            whiteKeys.push(noteKey);
+
+            currentIndex = (currentIndex + 1) % this.naturalNotes.length;
+            if (currentIndex === 0) {
+                currentOctave += 1;
             }
         }
-        
-        return filteredResult;
+
+        return whiteKeys;
+    }
+
+    /**
+     * Build black key definitions between white keys
+     * @param {string[]} whiteKeys - Ordered white keys
+     * @returns {Array<{note: string, precedingIndex: number, followingIndex: number}>}
+     */
+    buildBlackKeySeries(whiteKeys) {
+        const blackKeys = [];
+        for (let i = 0; i < whiteKeys.length - 1; i++) {
+            const lower = whiteKeys[i];
+            const upper = whiteKeys[i + 1];
+
+            const lowerValue = this.noteToSemitone(lower);
+            const upperValue = this.noteToSemitone(upper);
+            if (lowerValue === null || upperValue === null) continue;
+
+            if (upperValue - lowerValue === 2) {
+                const sharpValue = lowerValue + 1;
+                const sharpNote = this.semitoneToNote(sharpValue);
+                if (this.noteFrequencies[sharpNote]) {
+                    blackKeys.push({
+                        note: sharpNote,
+                        precedingIndex: i,
+                        followingIndex: i + 1
+                    });
+                }
+            }
+        }
+
+        return blackKeys;
+    }
+
+    /**
+     * Extract the letter portion of a note (without octave)
+     * @param {string} note - Note string (e.g., 'C4')
+     * @returns {string} Note letter (e.g., 'C')
+     */
+    extractNoteLetter(note) {
+        if (!note || typeof note !== 'string') {
+            return '';
+        }
+        return note.replace(/[0-9]/g, '');
+    }
+
+    /**
+     * Normalize tonic input
+     * @param {string} tonic - Raw tonic string
+     * @returns {string} Normalized tonic
+     */
+    normalizeTonic(tonic) {
+        if (!tonic || typeof tonic !== 'string') {
+            return '';
+        }
+        return tonic.trim().toUpperCase();
+    }
+
+    /**
+     * Build a cache key for mode layouts
+     * @param {string} mode - Mode name
+     * @param {string} tonicLetter - Tonic letter
+     * @returns {string} Cache key
+     */
+    getLayoutCacheKey(mode, tonicLetter) {
+        const safeMode = mode || 'ionian';
+        const safeTonic = tonicLetter || this.getDefaultTonicLetter(safeMode);
+        return `${safeMode}:${safeTonic}`;
+    }
+
+    /**
+     * Clone a layout object to avoid external mutation
+     * @param {Object} layout - Layout to clone
+     * @returns {Object} Cloned layout
+     */
+    cloneLayout(layout) {
+        if (!layout) {
+            return { whiteKeys: [], blackKeys: [], mapping: {} };
+        }
+        return {
+            tonicNote: layout.tonicNote,
+            tonicLetter: layout.tonicLetter,
+            whiteKeys: layout.whiteKeys ? layout.whiteKeys.slice() : [],
+            blackKeys: layout.blackKeys ? layout.blackKeys.map(key => ({ ...key })) : [],
+            mapping: layout.mapping ? { ...layout.mapping } : {}
+        };
+    }
+
+    /**
+     * Resolve the tonic note closest to the default for a given letter
+     * @param {string} defaultNote - Default tonic note (e.g., 'C4')
+     * @param {string} tonicLetter - Requested tonic letter (e.g., 'D')
+     * @returns {string} Resolved tonic note
+     */
+    resolveTonicNote(defaultNote, tonicLetter) {
+        if (!tonicLetter) {
+            return defaultNote;
+        }
+
+        const defaultLetter = this.extractNoteLetter(defaultNote);
+        if (defaultLetter === tonicLetter) {
+            return defaultNote;
+        }
+
+        const baseIndex = this.notes.indexOf(defaultNote);
+        if (baseIndex === -1) {
+            return defaultNote;
+        }
+
+        const candidates = [];
+        const upward = this.findNearestNaturalNote(baseIndex, tonicLetter, 1);
+        if (upward) candidates.push(upward);
+        const downward = this.findNearestNaturalNote(baseIndex, tonicLetter, -1);
+        if (downward) candidates.push(downward);
+
+        const whiteKeyTarget = this.whiteKeyCount;
+        const validCandidates = candidates.filter(note => (
+            this.buildWhiteKeySeries(note, whiteKeyTarget).length === whiteKeyTarget
+        ));
+
+        if (validCandidates.length === 0) {
+            return defaultNote;
+        }
+
+        const defaultValue = this.noteToSemitone(defaultNote);
+        let best = validCandidates[0];
+        let bestDiff = Math.abs(this.noteToSemitone(best) - defaultValue);
+
+        for (let i = 1; i < validCandidates.length; i++) {
+            const candidate = validCandidates[i];
+            const diff = Math.abs(this.noteToSemitone(candidate) - defaultValue);
+
+            if (diff < bestDiff) {
+                best = candidate;
+                bestDiff = diff;
+            } else if (diff === bestDiff) {
+                const candidateValue = this.noteToSemitone(candidate);
+                const bestValue = this.noteToSemitone(best);
+                // Prefer candidates that stay at or above the default register
+                if (candidateValue >= defaultValue && bestValue < defaultValue) {
+                    best = candidate;
+                }
+            }
+        }
+
+        return best || defaultNote;
+    }
+
+    /**
+     * Find nearest natural note with given letter from base index
+     * @param {number} startIndex - Starting index in notes array
+     * @param {string} targetLetter - Target note letter
+     * @param {number} direction - 1 for upward, -1 for downward
+     * @returns {string|null} Note string if found
+     */
+    findNearestNaturalNote(startIndex, targetLetter, direction = 1) {
+        if (direction >= 0) {
+            for (let i = startIndex; i < this.notes.length; i++) {
+                const note = this.notes[i];
+                if (!note.includes('#') && this.extractNoteLetter(note) === targetLetter) {
+                    return note;
+                }
+            }
+        } else {
+            for (let i = startIndex; i >= 0; i--) {
+                const note = this.notes[i];
+                if (!note.includes('#') && this.extractNoteLetter(note) === targetLetter) {
+                    return note;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Convert note string to semitone index
+     * @param {string} note - Note (e.g., 'C#4')
+     * @returns {number|null} Semitone index or null if invalid
+     */
+    noteToSemitone(note) {
+        if (!note || typeof note !== 'string') {
+            return null;
+        }
+
+        const octave = parseInt(note.slice(-1), 10);
+        if (Number.isNaN(octave)) {
+            return null;
+        }
+
+        const noteName = note.slice(0, -1);
+        const chromaticIndex = this.chromaticNotes.indexOf(noteName);
+        if (chromaticIndex === -1) {
+            return null;
+        }
+
+        return octave * 12 + chromaticIndex;
+    }
+
+    /**
+     * Convert semitone index back to note string
+     * @param {number} value - Semitone index
+     * @returns {string} Note string
+     */
+    semitoneToNote(value) {
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            return '';
+        }
+
+        const octave = Math.floor(value / 12);
+        const noteIndex = ((value % 12) + 12) % 12;
+        const noteName = this.chromaticNotes[noteIndex];
+        return `${noteName}${octave}`;
     }
 
     /**
@@ -156,118 +465,37 @@ class MusicTheoryModule {
      * @param {string} mode - The current mode
      * @returns {Object} Keyboard mapping object
      */
-    getCurrentKeyboardMapping(mode) {
-        console.log('=== Starting getCurrentKeyboardMapping ===');
-        console.log('Current mode:', mode);
-        
-        try {
-            const currentRange = this.modeRanges[mode];
-            console.log('Current range:', currentRange);
-            
-            if (!currentRange || !currentRange.whiteKeys || !Array.isArray(currentRange.whiteKeys)) {
-                console.error('Invalid current range for mode', mode);
-                return {};
-            }
-            
-            console.log('White keys for this mode:', currentRange.whiteKeys);
-            
-            const mapping = {};
-            
-            // Map the physical white key positions to the current mode's white keys
-            const physicalWhiteKeys = ['C4','D4','E4','F4','G4','A4','B4','C5','D5','E5','F5','G5','A5','B5'];
-            
-            console.log('About to map white keys');
-            
-            // Only map as many keys as the current mode has
-            physicalWhiteKeys.forEach((physicalKey, index) => {
-                console.log(`Mapping white key ${index}: ${physicalKey}`);
-                
-                if (index < currentRange.whiteKeys.length && currentRange.whiteKeys[index]) {
-                    const targetNote = currentRange.whiteKeys[index];
-                    console.log(`  -> maps to: ${targetNote} (type: ${typeof targetNote})`);
-                    mapping[physicalKey] = targetNote;
-                } else {
-                    console.log(`  -> no mapping (beyond range or undefined)`);
-                }
-            });
-            
-            console.log('White key mapping complete. About to map black keys');
-            
-            // Map black keys based on their positions between active white keys
-            const physicalBlackKeys = ['C#4','D#4','F#4','G#4','A#4','C#5','D#5','F#5','G#5','A#5'];
-            const blackKeyPositions = [0.5, 1.5, 3.5, 4.5, 5.5, 7.5, 8.5, 10.5, 11.5, 12.5]; // Position between white keys
-            
-            physicalBlackKeys.forEach((physicalBlackKey, index) => {
-                console.log(`Processing black key ${index}: ${physicalBlackKey}`);
-                
-                try {
-                    const position = blackKeyPositions[index];
-                    const lowerWhiteIndex = Math.floor(position);
-                    const upperWhiteIndex = Math.ceil(position);
-                    
-                    console.log(`  Position: ${position}, lower: ${lowerWhiteIndex}, upper: ${upperWhiteIndex}`);
-                    
-                    // Only map black keys if both surrounding white keys are active
-                    if (lowerWhiteIndex < currentRange.whiteKeys.length && 
-                        upperWhiteIndex < currentRange.whiteKeys.length &&
-                        currentRange.whiteKeys[lowerWhiteIndex] && 
-                        currentRange.whiteKeys[upperWhiteIndex]) {
-                        
-                        const lowerNote = currentRange.whiteKeys[lowerWhiteIndex];
-                        const upperNote = currentRange.whiteKeys[upperWhiteIndex];
-                        
-                        console.log(`  Lower note: ${lowerNote} (type: ${typeof lowerNote})`);
-                        console.log(`  Upper note: ${upperNote} (type: ${typeof upperNote})`);
-                        
-                        if (!lowerNote || !upperNote || typeof lowerNote !== 'string' || typeof upperNote !== 'string') {
-                            console.log(`  -> Skipping due to invalid notes`);
-                            return;
-                        }
-                        
-                        console.log(`  About to slice lowerNote: "${lowerNote}"`);
-                        // Calculate what the black key should be
-                        const lowerNoteName = lowerNote.slice(0, -1);
-                        const lowerOctave = parseInt(lowerNote.slice(-1));
-                        console.log(`  Lower note name: ${lowerNoteName}, octave: ${lowerOctave}`);
-                        
-                        const chromaticNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-                        const lowerIndex = chromaticNotes.indexOf(lowerNoteName);
-                        
-                        let blackNoteIndex = (lowerIndex + 1) % 12;
-                        let blackOctave = lowerOctave;
-                        if (lowerIndex === 11) blackOctave++; // B to C# goes up an octave
-                        
-                        const blackNoteName = chromaticNotes[blackNoteIndex];
-                        console.log(`  Calculated black note: ${blackNoteName}${blackOctave}`);
-                        
-                        if (blackNoteName && blackNoteName.includes('#')) {
-                            const blackNote = `${blackNoteName}${blackOctave}`;
-                            if (this.noteFrequencies[blackNote]) {
-                                console.log(`  -> Mapping ${physicalBlackKey} to ${blackNote}`);
-                                mapping[physicalBlackKey] = blackNote;
-                            } else {
-                                console.log(`  -> ${blackNote} not found in frequencies`);
-                            }
-                        } else {
-                            console.log(`  -> Not a sharp note: ${blackNoteName}`);
-                        }
-                    } else {
-                        console.log(`  -> Skipping, white keys not in range`);
-                    }
-                } catch (error) {
-                    console.error(`Error processing black key ${physicalBlackKey}:`, error);
-                }
-            });
-            
-            console.log('Final mapping:', mapping);
-            console.log('=== Finished getCurrentKeyboardMapping ===');
-            return mapping;
-            
-        } catch (error) {
-            console.error('Error in getCurrentKeyboardMapping:', error);
-            console.error('Stack trace:', error.stack);
+    getCurrentKeyboardMapping(mode, tonicLetter) {
+        const layout = this.getKeyboardLayout(mode, tonicLetter);
+        if (!layout) {
             return {};
         }
+
+        return { ...layout.mapping };
+    }
+
+    /**
+     * Get or compute the keyboard layout for a mode
+     * @param {string} mode - Mode name
+     * @returns {{whiteKeys: string[], blackKeys: Array, mapping: Object}}
+     */
+    getKeyboardLayout(mode, tonicLetter) {
+        const normalizedMode = mode || 'ionian';
+        const targetLetter = this.normalizeTonic(tonicLetter) || this.getDefaultTonicLetter(normalizedMode);
+        const cacheKey = this.getLayoutCacheKey(normalizedMode, targetLetter);
+
+        if (!this.modeLayouts.has(cacheKey)) {
+            const layout = this.buildKeyboardLayout(normalizedMode, targetLetter);
+            this.modeLayouts.set(cacheKey, layout);
+            this.modeRanges.set(cacheKey, { whiteKeys: layout.whiteKeys.slice() });
+        }
+
+        const cachedLayout = this.modeLayouts.get(cacheKey);
+        if (!cachedLayout) {
+            return { whiteKeys: [], blackKeys: [], mapping: {} };
+        }
+
+        return this.cloneLayout(cachedLayout);
     }
 
     /**
@@ -288,11 +516,31 @@ class MusicTheoryModule {
     }
 
     /**
-     * Get mode ranges
-     * @returns {Object} Mode ranges object
+     * Get the white-key range for a mode/tonic combination
+     * @param {string} mode - Mode name
+     * @param {string} tonicLetter - Tonic letter
+     * @returns {{whiteKeys: string[]}} Range descriptor
      */
-    getModeRanges() {
-        return this.modeRanges;
+    getModeRange(mode, tonicLetter) {
+        const layout = this.getKeyboardLayout(mode, tonicLetter);
+        return { whiteKeys: layout.whiteKeys.slice() };
+    }
+
+    /**
+     * Get the default tonic letter for a mode
+     * @param {string} mode - Mode name
+     * @returns {string} Default tonic letter
+     */
+    getDefaultTonicLetter(mode) {
+        return this.defaultTonicLetters[mode] || 'C';
+    }
+
+    /**
+     * Get available tonic options
+     * @returns {Array<string>} tonics
+     */
+    getAvailableTonics() {
+        return this.availableTonics.slice();
     }
 
     /**

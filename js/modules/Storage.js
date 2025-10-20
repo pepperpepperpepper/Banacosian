@@ -136,13 +136,15 @@ class StorageModule {
      * @param {number} sequenceLength - Current sequence length
      * @param {string} scaleType - Current scale type
      * @param {string} mode - Current mode
+     * @param {string} tonic - Current tonic letter
      * @returns {Object} Settings object
      */
-    getCurrentSettings(sequenceLength, scaleType, mode) {
+    getCurrentSettings(sequenceLength, scaleType, mode, tonic) {
         return {
             sequenceLength: sequenceLength,
             scaleType: scaleType,
-            mode: mode
+            mode: mode,
+            tonic: tonic
         };
     }
 }

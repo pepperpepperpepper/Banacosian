@@ -19,11 +19,13 @@ class MelodicDictation {
         this.sequenceLength = 3;
         this.scaleType = 'diatonic';
         this.mode = 'ionian';
+        this.tonic = this.musicTheory.getDefaultTonicLetter(this.mode);
+        this.availableTonics = this.musicTheory.getAvailableTonics();
         this.autoPlayNext = false;
 
         // Initialize keyboard module with current settings
         this.keyboardModule.setScaleType(this.scaleType);
-        this.keyboardModule.setMode(this.mode);
+        this.keyboardModule.setMode(this.mode, this.tonic);
 
         // Initialize the application
         this.initialize();
@@ -39,6 +41,7 @@ class MelodicDictation {
             
             // Setup event listeners
             this.setupEventListeners();
+            this.uiModule.populateTonicOptions(this.availableTonics, this.tonic);
             
             // Update displays
             this.scoringModule.updateScore();
@@ -47,8 +50,8 @@ class MelodicDictation {
             // Generate initial diatonic notes
             console.log('=== INITIALIZATION: About to generate initial diatonic notes ===');
             try {
-                const diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode);
-                this.keyboardModule.setMode(this.mode); // This will update diatonic notes
+                const diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonic);
+                this.keyboardModule.setMode(this.mode, this.tonic); // This will update diatonic notes
                 console.log('INITIALIZATION: Successfully generated diatonic notes:', diatonicNotes);
             } catch (error) {
                 console.error('Error generating diatonic notes:', error);
@@ -57,6 +60,7 @@ class MelodicDictation {
             
             // Update keyboard visibility
             this.keyboardModule.updateKeyboardVisibility();
+            this.keyboardModule.positionBlackKeys();
             
         } catch (error) {
             console.error('Error during initialization:', error);
@@ -77,6 +81,7 @@ class MelodicDictation {
             onSaveData: () => this.saveToGoogleDrive(),
             onLoadData: () => this.loadFromGoogleDrive(),
             onDifficultyChange: (e) => this.handleDifficultyChange(e),
+            onTonicChange: (e) => this.handleTonicChange(e),
             onScaleTypeChange: (e) => this.handleScaleTypeChange(e),
             onModeChange: (e) => this.handleModeChange(e)
         });
@@ -134,8 +139,7 @@ class MelodicDictation {
         this.uiModule.setPlayButtonState(true);
         
         // First play the reference: tonic notes of current mode
-        const modeRanges = this.musicTheory.getModeRanges();
-        const currentRange = modeRanges[this.mode];
+        const currentRange = this.musicTheory.getModeRange(this.mode, this.tonic);
         if (!currentRange || !currentRange.whiteKeys || currentRange.whiteKeys.length === 0) {
             console.error('Invalid mode range for', this.mode);
             return;
@@ -260,7 +264,7 @@ class MelodicDictation {
         
         // Auto-save to Google Drive
         this.storageModule.autoSaveToGoogleDrive(
-            this.storageModule.getCurrentSettings(this.sequenceLength, this.scaleType, this.mode)
+            this.storageModule.getCurrentSettings(this.sequenceLength, this.scaleType, this.mode, this.tonic)
         );
         
         // Show completion message
@@ -289,6 +293,31 @@ class MelodicDictation {
         this.scaleType = e.target.value;
         this.keyboardModule.setScaleType(this.scaleType);
         this.keyboardModule.updateKeyboardVisibility();
+        this.keyboardModule.positionBlackKeys();
+    }
+
+    /**
+     * Handle tonic change
+     * @param {Event} e - Change event
+     */
+    handleTonicChange(e) {
+        try {
+            this.tonic = e.target.value;
+            this.keyboardModule.setTonic(this.tonic);
+            this.keyboardModule.updateKeyboardVisibility();
+            this.keyboardModule.positionBlackKeys();
+
+            this.uiModule.hideStatusArea();
+            this.currentSequence = [];
+            this.userSequence = [];
+            this.staffModule.clearStaffNotes();
+            this.staffModule.clearTonicHighlights();
+            this.uiModule.updateFeedback(`Tonic set to ${this.tonic} in ${this.mode} mode. Click "New Sequence" to start.`);
+            this.uiModule.setPlayButtonState(true);
+        } catch (error) {
+            console.error('Error changing tonic:', error);
+            this.uiModule.updateFeedback('Error updating tonic. Please try again.', 'incorrect');
+        }
     }
 
     /**
@@ -298,8 +327,11 @@ class MelodicDictation {
     handleModeChange(e) {
         try {
             this.mode = e.target.value;
-            this.keyboardModule.setMode(this.mode);
+            this.tonic = this.musicTheory.getDefaultTonicLetter(this.mode);
+            this.uiModule.setTonicValue(this.tonic);
+            this.keyboardModule.setMode(this.mode, this.tonic);
             this.keyboardModule.updateKeyboardVisibility();
+            this.keyboardModule.positionBlackKeys();
             
             // Hide status area when mode changes
             this.uiModule.hideStatusArea();
@@ -309,7 +341,7 @@ class MelodicDictation {
             this.userSequence = [];
             this.staffModule.clearStaffNotes();
             this.staffModule.clearTonicHighlights();
-            this.uiModule.updateFeedback(`Switched to ${this.mode} mode. Click "New Sequence" to start.`);
+            this.uiModule.updateFeedback(`Switched to ${this.mode} mode (tonic ${this.tonic}). Click "New Sequence" to start.`);
             this.uiModule.setPlayButtonState(true);
         } catch (error) {
             console.error('Error changing mode:', error);
@@ -341,9 +373,10 @@ class MelodicDictation {
     async saveToGoogleDrive() {
         try {
             const settings = this.storageModule.getCurrentSettings(
-                this.sequenceLength, 
-                this.scaleType, 
-                this.mode
+                this.sequenceLength,
+                this.scaleType,
+                this.mode,
+                this.tonic
             );
             const message = await this.storageModule.saveToGoogleDrive(settings);
             this.uiModule.updateFeedback(message, 'correct');
@@ -364,17 +397,22 @@ class MelodicDictation {
                     this.sequenceLength = result.data.settings.sequenceLength || 3;
                     this.scaleType = result.data.settings.scaleType || 'diatonic';
                     this.mode = result.data.settings.mode || 'ionian';
+                    this.tonic = result.data.settings.tonic || this.musicTheory.getDefaultTonicLetter(this.mode);
                     
                     this.uiModule.setFormValues({
                         difficulty: this.sequenceLength,
+                        tonic: this.tonic,
                         scaleType: this.scaleType,
                         mode: this.mode
                     });
                     
                     this.keyboardModule.setScaleType(this.scaleType);
-                    this.keyboardModule.setMode(this.mode);
-                    this.keyboardModule.updateKeyboardVisibility();
+                    this.keyboardModule.setMode(this.mode, this.tonic);
+                } else {
+                    this.uiModule.setTonicValue(this.tonic);
                 }
+                this.keyboardModule.updateKeyboardVisibility();
+                this.keyboardModule.positionBlackKeys();
                 
                 // Update displays
                 this.scoringModule.updateScore();
