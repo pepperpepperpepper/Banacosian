@@ -92,11 +92,18 @@ class KeyboardModule {
                 keyEl.dataset.precedingIndex = descriptor.precedingIndex;
                 keyEl.dataset.followingIndex = descriptor.followingIndex;
                 keyEl.removeAttribute('hidden');
+                keyEl.style.display = '';
+                keyEl.style.pointerEvents = '';
+                keyEl.style.opacity = '';
             } else {
                 keyEl.dataset.note = '';
                 keyEl.removeAttribute('data-preceding-index');
                 keyEl.removeAttribute('data-following-index');
                 keyEl.setAttribute('hidden', '');
+                keyEl.style.display = 'none';
+                keyEl.style.pointerEvents = 'none';
+                keyEl.style.opacity = '';
+                keyEl.style.left = '';
             }
         });
 
