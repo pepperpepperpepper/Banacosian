@@ -48,7 +48,7 @@ class MusicTheoryModule {
 
         this.chromaticNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         this.naturalNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-        this.availableTonics = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+        this.availableTonics = this.chromaticNotes.slice();
         this.whiteKeyCount = 14;
 
         this.modeConfigs = {
@@ -58,7 +58,11 @@ class MusicTheoryModule {
             'lydian': { tonic: 'F4' },
             'mixolydian': { tonic: 'G3' },
             'aeolian': { tonic: 'A3' },
-            'locrian': { tonic: 'B3' }
+            'locrian': { tonic: 'B3' },
+            'chromatic': { tonic: 'C4' },
+            'half-whole': { tonic: 'C4' },
+            'whole-half': { tonic: 'C4' },
+            'whole-tone': { tonic: 'C4' }
         };
 
         // Mode patterns (semitone intervals from tonic)
@@ -69,7 +73,11 @@ class MusicTheoryModule {
             'lydian': [0, 2, 4, 6, 7, 9, 11],      // Major with raised 4th
             'mixolydian': [0, 2, 4, 5, 7, 9, 10],  // Major with lowered 7th
             'aeolian': [0, 2, 3, 5, 7, 8, 10],     // Natural minor
-            'locrian': [0, 1, 3, 5, 6, 8, 10]      // Diminished
+            'locrian': [0, 1, 3, 5, 6, 8, 10],     // Diminished
+            'chromatic': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            'half-whole': [0, 1, 3, 4, 6, 7, 9, 10],
+            'whole-half': [0, 2, 3, 5, 6, 8, 9, 11],
+            'whole-tone': [0, 2, 4, 6, 8, 10]
         };
 
         this.notes = Object.keys(this.noteFrequencies).sort(
@@ -97,21 +105,21 @@ class MusicTheoryModule {
         const diatonicNotes = [];
         const startNote = layout.whiteKeys[0];
         const endNote = layout.whiteKeys[layout.whiteKeys.length - 1];
-        const allNotesInRange = this.getAllNotesInRange(startNote, endNote);
 
-        const startNoteName = startNote.slice(0, -1);
-        const startNoteIndex = this.chromaticNotes.indexOf(startNoteName);
-        if (startNoteIndex === -1) {
+        const tonicNote = layout.tonicNote || startNote;
+        const tonicValue = this.noteToSemitone(tonicNote);
+        if (tonicValue === null) {
             return diatonicNotes;
         }
 
-        allNotesInRange.forEach(note => {
-            const noteName = note.slice(0, -1);
-            const noteIndex = this.chromaticNotes.indexOf(noteName);
-            if (noteIndex === -1) return;
+        const allNotesInRange = this.getAllNotesInRange(startNote, endNote);
 
-            const intervalFromStart = (noteIndex - startNoteIndex + 12) % 12;
-            if (pattern.includes(intervalFromStart)) {
+        allNotesInRange.forEach(note => {
+            const noteValue = this.noteToSemitone(note);
+            if (noteValue === null) return;
+
+            const intervalFromTonic = (noteValue - tonicValue + 1200) % 12;
+            if (pattern.includes(intervalFromTonic)) {
                 diatonicNotes.push(note);
             }
         });
@@ -173,19 +181,24 @@ class MusicTheoryModule {
         const defaultTonicNote = config.tonic;
         const whiteKeyCount = config.whiteKeyCount || this.whiteKeyCount;
 
-        const targetLetter = this.normalizeTonic(tonicLetter) || this.extractNoteLetter(defaultTonicNote);
-        const tonicNote = this.resolveTonicNote(defaultTonicNote, targetLetter);
+        const normalizedTarget = this.normalizeTonic(tonicLetter) || this.extractNoteLetter(defaultTonicNote);
+        const fallbackLetter = this.extractNoteLetter(defaultTonicNote);
+        const anchorLetterCandidate = normalizedTarget ? normalizedTarget.charAt(0) : fallbackLetter;
+        const anchorLetter = this.naturalNotes.includes(anchorLetterCandidate) ? anchorLetterCandidate : fallbackLetter;
 
-        let whiteKeys = this.buildWhiteKeySeries(tonicNote, whiteKeyCount);
-        let appliedTonicNote = tonicNote;
-        let appliedTonicLetter = targetLetter;
+        let anchorNote = this.resolveTonicNote(defaultTonicNote, anchorLetter) || defaultTonicNote;
+        let whiteKeys = this.buildWhiteKeySeries(anchorNote, whiteKeyCount);
 
-        if (whiteKeys.length < whiteKeyCount) {
-            // Fallback to default layout if requested tonic is out of supported range
-            whiteKeys = this.buildWhiteKeySeries(defaultTonicNote, whiteKeyCount);
-            appliedTonicNote = defaultTonicNote;
-            appliedTonicLetter = this.extractNoteLetter(defaultTonicNote);
+        if (!Array.isArray(whiteKeys) || whiteKeys.length < whiteKeyCount) {
+            anchorNote = defaultTonicNote;
+            whiteKeys = this.buildWhiteKeySeries(anchorNote, whiteKeyCount);
         }
+
+        let appliedTonicNote = this.resolveChromaticTonicNote(defaultTonicNote, normalizedTarget);
+        if (!appliedTonicNote) {
+            appliedTonicNote = this.resolveChromaticTonicNote(defaultTonicNote, fallbackLetter);
+        }
+        const appliedTonicLetter = this.extractNoteLetter(appliedTonicNote);
 
         const blackKeys = this.buildBlackKeySeries(whiteKeys);
 
@@ -196,6 +209,9 @@ class MusicTheoryModule {
         blackKeys.forEach(key => {
             mapping[key.note] = key.note;
         });
+        if (appliedTonicNote && !mapping[appliedTonicNote]) {
+            mapping[appliedTonicNote] = appliedTonicNote;
+        }
 
         return {
             tonicNote: appliedTonicNote,
@@ -341,12 +357,14 @@ class MusicTheoryModule {
      * @returns {string} Resolved tonic note
      */
     resolveTonicNote(defaultNote, tonicLetter) {
-        if (!tonicLetter) {
+        const normalized = this.normalizeTonic(tonicLetter);
+        const targetLetter = normalized ? normalized.charAt(0) : '';
+        if (!targetLetter || !this.naturalNotes.includes(targetLetter)) {
             return defaultNote;
         }
 
         const defaultLetter = this.extractNoteLetter(defaultNote);
-        if (defaultLetter === tonicLetter) {
+        if (defaultLetter === targetLetter) {
             return defaultNote;
         }
 
@@ -356,9 +374,9 @@ class MusicTheoryModule {
         }
 
         const candidates = [];
-        const upward = this.findNearestNaturalNote(baseIndex, tonicLetter, 1);
+        const upward = this.findNearestNaturalNote(baseIndex, targetLetter, 1);
         if (upward) candidates.push(upward);
-        const downward = this.findNearestNaturalNote(baseIndex, tonicLetter, -1);
+        const downward = this.findNearestNaturalNote(baseIndex, targetLetter, -1);
         if (downward) candidates.push(downward);
 
         const whiteKeyTarget = this.whiteKeyCount;
@@ -385,6 +403,51 @@ class MusicTheoryModule {
                 const candidateValue = this.noteToSemitone(candidate);
                 const bestValue = this.noteToSemitone(best);
                 // Prefer candidates that stay at or above the default register
+                if (candidateValue >= defaultValue && bestValue < defaultValue) {
+                    best = candidate;
+                }
+            }
+        }
+
+        return best || defaultNote;
+    }
+
+    /**
+     * Resolve a chromatic tonic note (including sharps) near the default
+     * @param {string} defaultNote - Default tonic note (e.g., 'C4')
+     * @param {string} tonicLetter - Requested tonic letter (e.g., 'C#')
+     * @returns {string} Resolved tonic note (e.g., 'C#4')
+     */
+    resolveChromaticTonicNote(defaultNote, tonicLetter) {
+        const target = this.normalizeTonic(tonicLetter);
+        if (!target || !this.chromaticNotes.includes(target)) {
+            return defaultNote;
+        }
+
+        const baseIndex = this.notes.indexOf(defaultNote);
+        if (baseIndex === -1) {
+            return defaultNote;
+        }
+
+        const candidates = this.notes.filter(note => this.extractNoteLetter(note) === target);
+        if (candidates.length === 0) {
+            return defaultNote;
+        }
+
+        const defaultValue = this.noteToSemitone(defaultNote);
+        let best = candidates[0];
+        let bestDiff = Math.abs(this.noteToSemitone(best) - defaultValue);
+
+        for (let i = 1; i < candidates.length; i++) {
+            const candidate = candidates[i];
+            const diff = Math.abs(this.noteToSemitone(candidate) - defaultValue);
+
+            if (diff < bestDiff) {
+                best = candidate;
+                bestDiff = diff;
+            } else if (diff === bestDiff) {
+                const candidateValue = this.noteToSemitone(candidate);
+                const bestValue = this.noteToSemitone(best);
                 if (candidateValue >= defaultValue && bestValue < defaultValue) {
                     best = candidate;
                 }
@@ -523,7 +586,11 @@ class MusicTheoryModule {
      */
     getModeRange(mode, tonicLetter) {
         const layout = this.getKeyboardLayout(mode, tonicLetter);
-        return { whiteKeys: layout.whiteKeys.slice() };
+        return {
+            tonicNote: layout.tonicNote,
+            tonicLetter: layout.tonicLetter,
+            whiteKeys: layout.whiteKeys.slice()
+        };
     }
 
     /**

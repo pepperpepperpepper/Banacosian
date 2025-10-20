@@ -144,19 +144,26 @@ class MelodicDictation {
             console.error('Invalid mode range for', this.mode);
             return;
         }
-        
-        const tonic1 = currentRange.whiteKeys[0]; // First tonic
+
+        const tonic1 = currentRange.tonicNote || currentRange.whiteKeys[0];
         if (!tonic1 || typeof tonic1 !== 'string') {
             console.error('No valid tonic found for mode', this.mode);
             return;
         }
-        
+
         const tonicName = tonic1.slice(0, -1); // Remove octave number
-        
-        // For modes with enough range, play octave; otherwise just repeat the tonic
+
         let tonic2 = tonic1;
-        if (currentRange.whiteKeys.length >= 8) {
-            tonic2 = currentRange.whiteKeys[7]; // Tonic one octave up if available
+        const tonicSemitone = this.musicTheory.noteToSemitone
+            ? this.musicTheory.noteToSemitone(tonic1)
+            : null;
+        if (tonicSemitone !== null) {
+            const octaveCandidate = this.musicTheory.semitoneToNote
+                ? this.musicTheory.semitoneToNote(tonicSemitone + 12)
+                : null;
+            if (octaveCandidate && this.musicTheory.getNoteFrequency(octaveCandidate)) {
+                tonic2 = octaveCandidate;
+            }
         }
         
         this.uiModule.updateFeedback(`Playing reference notes (${tonicName})...`);
@@ -302,8 +309,10 @@ class MelodicDictation {
      */
     handleTonicChange(e) {
         try {
-            this.tonic = e.target.value;
-            this.keyboardModule.setTonic(this.tonic);
+            const requestedTonic = e.target.value;
+            this.keyboardModule.setTonic(requestedTonic);
+            this.tonic = this.keyboardModule.tonicLetter || requestedTonic;
+            this.uiModule.setTonicValue(this.tonic);
             this.keyboardModule.updateKeyboardVisibility();
             this.keyboardModule.positionBlackKeys();
 
@@ -326,10 +335,13 @@ class MelodicDictation {
      */
     handleModeChange(e) {
         try {
-            this.mode = e.target.value;
-            this.tonic = this.musicTheory.getDefaultTonicLetter(this.mode);
+            const selectedMode = e.target.value;
+            const previousTonic = this.tonic || this.musicTheory.getDefaultTonicLetter(selectedMode);
+
+            this.mode = selectedMode;
+            this.keyboardModule.setMode(this.mode, previousTonic);
+            this.tonic = this.keyboardModule.tonicLetter || previousTonic;
             this.uiModule.setTonicValue(this.tonic);
-            this.keyboardModule.setMode(this.mode, this.tonic);
             this.keyboardModule.updateKeyboardVisibility();
             this.keyboardModule.positionBlackKeys();
             

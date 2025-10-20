@@ -73,6 +73,9 @@ class KeyboardModule {
 
         const layout = this.musicTheory.getKeyboardLayout(this.mode, this.tonicLetter);
         this.currentLayout = layout;
+        if (layout && layout.tonicLetter) {
+            this.tonicLetter = layout.tonicLetter;
+        }
 
         this.whiteKeyElements.forEach((keyEl, index) => {
             const note = layout.whiteKeys[index];
