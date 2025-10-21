@@ -271,7 +271,7 @@
             width: var(--white-key-width);
             max-width: 50px;
             height: 160px;
-            margin: 0 1px;
+            margin: 0;
             border-radius: 0 0 8px 8px;
             cursor: pointer;
             display: flex;

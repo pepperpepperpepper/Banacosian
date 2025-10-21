@@ -313,12 +313,13 @@ class KeyboardModule {
             }
         }
 
+        const computedStyle = (typeof window !== 'undefined' && window.getComputedStyle)
+            ? window.getComputedStyle(firstWhite)
+            : null;
+        const marginLeft = computedStyle ? parseFloat(computedStyle.marginLeft) || 0 : 0;
+        const marginRight = computedStyle ? parseFloat(computedStyle.marginRight) || 0 : 0;
+
         if (step <= 0) {
-            const computedStyle = (typeof window !== 'undefined' && window.getComputedStyle)
-                ? window.getComputedStyle(firstWhite)
-                : null;
-            const marginLeft = computedStyle ? parseFloat(computedStyle.marginLeft) || 0 : 0;
-            const marginRight = computedStyle ? parseFloat(computedStyle.marginRight) || 0 : 0;
             step = whiteWidth + marginLeft + marginRight;
         }
 
@@ -326,8 +327,17 @@ class KeyboardModule {
             this.pianoKeysContainer.style.setProperty('--white-key-step', `${step}px`);
         }
 
+        let leadingPad = 0;
         if (this.hasLeadingBlack && step > 0) {
-            this.pianoKeysContainer.style.paddingLeft = `${step / 2}px`;
+            const leadingBlackEl = this.blackKeyElements.find(el => el.dataset.edge === 'left') || this.blackKeyElements[0];
+            const blackWidth = leadingBlackEl ? leadingBlackEl.offsetWidth || 0 : 0;
+            if (blackWidth > 0) {
+                leadingPad = Math.max(0, (blackWidth / 2) - marginLeft);
+                this.pianoKeysContainer.style.paddingLeft = `${leadingPad}px`;
+            } else {
+                leadingPad = step / 2;
+                this.pianoKeysContainer.style.paddingLeft = `${leadingPad}px`;
+            }
         } else {
             this.pianoKeysContainer.style.paddingLeft = '0px';
         }
