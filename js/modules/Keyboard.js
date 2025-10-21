@@ -15,6 +15,9 @@ class KeyboardModule {
         this.currentLayout = null;
         this.boundKeyHandler = null;
         this.onNotePlayedCallback = null;
+        this.hasLeadingBlack = false;
+        this.hasTrailingBlack = false;
+        this.updateMetricsHandle = null;
         this.handleResize = this.handleResize.bind(this);
 
         if (typeof window !== 'undefined') {
@@ -141,6 +144,26 @@ class KeyboardModule {
 
         this.whiteKeyElements = Array.from(container.querySelectorAll('.white-key'));
         this.blackKeyElements = Array.from(container.querySelectorAll('.black-key'));
+
+        const leadingBlack = blackDetails.some(detail => detail.edge === 'left');
+        const trailingEdgeBlack = blackDetails.some(detail => detail.edge === 'right');
+        const trailingBlack = trailingEdgeBlack || leadingBlack;
+
+        this.hasLeadingBlack = leadingBlack;
+        this.hasTrailingBlack = trailingBlack;
+
+        container.classList.toggle('piano-leading-black', leadingBlack);
+        container.classList.toggle('piano-trailing-black', trailingBlack);
+        if (whiteDetails && whiteDetails.length > 0) {
+            container.style.setProperty('--white-key-count', String(whiteDetails.length));
+        }
+
+        if (!leadingBlack && !trailingBlack) {
+            container.style.paddingLeft = '0px';
+            container.style.paddingRight = '0px';
+        }
+
+        this.queueWhiteKeyMetricUpdate();
     }
 
     /**
@@ -154,12 +177,6 @@ class KeyboardModule {
         }
         this.renderKeyboard(layout);
         this.updateKeyboardVisibility();
-
-        if (typeof window !== 'undefined') {
-            window.requestAnimationFrame(() => this.positionBlackKeys());
-        } else {
-            this.positionBlackKeys();
-        }
     }
 
     /**
@@ -237,10 +254,89 @@ class KeyboardModule {
     }
 
     /**
+     * Queue a white key metric update (debounced to animation frame)
+     */
+    queueWhiteKeyMetricUpdate() {
+        if (!this.pianoKeysContainer) {
+            return;
+        }
+
+        if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+            this.updateWhiteKeyMetrics();
+            this.positionBlackKeys();
+            return;
+        }
+
+        if (this.updateMetricsHandle) {
+            if (typeof window.cancelAnimationFrame === 'function') {
+                window.cancelAnimationFrame(this.updateMetricsHandle);
+            } else {
+                clearTimeout(this.updateMetricsHandle);
+            }
+        }
+
+        this.updateMetricsHandle = window.requestAnimationFrame(() => {
+            this.updateMetricsHandle = null;
+            this.updateWhiteKeyMetrics();
+            this.positionBlackKeys();
+        });
+    }
+
+    /**
      * Handle resize events so the black keys stay aligned
      */
     handleResize() {
-        this.positionBlackKeys();
+        this.queueWhiteKeyMetricUpdate();
+    }
+
+    updateWhiteKeyMetrics() {
+        if (!this.pianoKeysContainer || !this.whiteKeyElements || this.whiteKeyElements.length === 0) {
+            return;
+        }
+        const firstWhite = this.whiteKeyElements[0];
+        if (!firstWhite) {
+            return;
+        }
+        const whiteWidth = firstWhite.offsetWidth;
+        if (whiteWidth > 0) {
+            this.pianoKeysContainer.style.setProperty('--white-key-width', `${whiteWidth}px`);
+        }
+
+        let step = 0;
+
+        if (this.whiteKeyElements.length > 1 && typeof firstWhite.getBoundingClientRect === 'function') {
+            const firstRect = firstWhite.getBoundingClientRect();
+            const secondRect = this.whiteKeyElements[1].getBoundingClientRect();
+            const measured = secondRect.left - firstRect.left;
+            if (Number.isFinite(measured) && measured > 0) {
+                step = measured;
+            }
+        }
+
+        if (step <= 0) {
+            const computedStyle = (typeof window !== 'undefined' && window.getComputedStyle)
+                ? window.getComputedStyle(firstWhite)
+                : null;
+            const marginLeft = computedStyle ? parseFloat(computedStyle.marginLeft) || 0 : 0;
+            const marginRight = computedStyle ? parseFloat(computedStyle.marginRight) || 0 : 0;
+            step = whiteWidth + marginLeft + marginRight;
+        }
+
+        if (step > 0) {
+            this.pianoKeysContainer.style.setProperty('--white-key-step', `${step}px`);
+        }
+
+        if (this.hasLeadingBlack && step > 0) {
+            this.pianoKeysContainer.style.paddingLeft = `${step / 2}px`;
+        } else {
+            this.pianoKeysContainer.style.paddingLeft = '0px';
+        }
+
+        if (this.hasTrailingBlack && step > 0) {
+            this.pianoKeysContainer.style.paddingRight = `${step / 2}px`;
+        } else {
+            this.pianoKeysContainer.style.paddingRight = '0px';
+        }
     }
 
     /**
