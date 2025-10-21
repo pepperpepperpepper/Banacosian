@@ -253,13 +253,13 @@
             display: flex;
             justify-content: flex-start;
             align-items: flex-start;
-            height: 160px;
+            height: 200px;
             position: relative;
             width: 100%;
             max-width: 100%;
             overflow: hidden;
             --white-key-count: 14;
-            --white-key-width: calc((100% - ((var(--white-key-count) - 1) * 2px)) / var(--white-key-count));
+            --white-key-width: calc(100% / var(--white-key-count));
             --white-key-step: var(--white-key-width);
             padding-left: 0;
             padding-right: 0;
@@ -267,10 +267,8 @@
 
         .white-key {
             background: white;
-            border: 2px solid #ddd;
             width: var(--white-key-width);
-            max-width: 50px;
-            height: 160px;
+            height: 200px;
             margin: 0;
             border-radius: 0 0 8px 8px;
             cursor: pointer;
@@ -283,6 +281,8 @@
             transition: all 0.1s ease;
             user-select: none;
             flex-shrink: 0;
+            border: 2px solid #ddd;
+            box-sizing: border-box;
         }
 
         .white-key.disabled {
@@ -307,8 +307,7 @@
             background: #222;
             border: 2px solid #111;
             width: calc(var(--white-key-width) * 0.65);
-            max-width: 35px;
-            height: 100px;
+            height: 150px;
             border-radius: 0 0 6px 6px;
             cursor: pointer;
             position: absolute;
@@ -323,6 +322,7 @@
             user-select: none;
             top: 0;
             left: 0;
+            box-sizing: border-box;
         }
 
         .piano-keys.piano-leading-black {

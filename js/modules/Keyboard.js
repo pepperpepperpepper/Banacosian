@@ -147,7 +147,7 @@ class KeyboardModule {
 
         const leadingBlack = blackDetails.some(detail => detail.edge === 'left');
         const trailingEdgeBlack = blackDetails.some(detail => detail.edge === 'right');
-        const trailingBlack = trailingEdgeBlack || leadingBlack;
+        const trailingBlack = trailingEdgeBlack;
 
         this.hasLeadingBlack = leadingBlack;
         this.hasTrailingBlack = trailingBlack;
