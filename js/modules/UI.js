@@ -4,6 +4,17 @@
 class UIModule {
     constructor() {
         this.countdownInterval = null;
+        this.noteLabelFormatter = null;
+    }
+
+    /**
+     * Set a formatter used to display note labels
+     * @param {Function|null} formatter - Function that receives note string and returns formatted label
+     */
+    setNoteLabelFormatter(formatter) {
+        if (typeof formatter === 'function' || formatter === null) {
+            this.noteLabelFormatter = formatter;
+        }
     }
 
     /**
@@ -38,6 +49,11 @@ class UIModule {
         document.getElementById('tonicSelect').addEventListener('change', callbacks.onTonicChange);
         document.getElementById('scaleType').addEventListener('change', callbacks.onScaleTypeChange);
         document.getElementById('mode').addEventListener('change', callbacks.onModeChange);
+
+        const timbreSelect = document.getElementById('timbreSelect');
+        if (timbreSelect && typeof callbacks.onTimbreChange === 'function') {
+            timbreSelect.addEventListener('change', callbacks.onTimbreChange);
+        }
     }
 
     /**
@@ -78,6 +94,37 @@ class UIModule {
         const tonicSelect = document.getElementById('tonicSelect');
         if (tonicSelect && value) {
             tonicSelect.value = value;
+        }
+    }
+
+    /**
+     * Populate timbre dropdown with available options
+     * @param {Array<{id:string,label:string}>} timbres
+     * @param {string} selectedValue
+     */
+    populateTimbreOptions(timbres, selectedValue) {
+        const timbreSelect = document.getElementById('timbreSelect');
+        if (!timbreSelect) return;
+
+        timbreSelect.innerHTML = '';
+        timbres.forEach(timbre => {
+            const option = document.createElement('option');
+            option.value = timbre.id;
+            option.textContent = timbre.label;
+            timbreSelect.appendChild(option);
+        });
+
+        this.setTimbreValue(selectedValue);
+    }
+
+    /**
+     * Update the current timbre selection
+     * @param {string} value
+     */
+    setTimbreValue(value) {
+        const timbreSelect = document.getElementById('timbreSelect');
+        if (timbreSelect && value) {
+            timbreSelect.value = value;
         }
     }
 
@@ -140,7 +187,8 @@ class UIModule {
         userSequence.forEach((note, index) => {
             const noteEl = document.createElement('div');
             noteEl.className = 'sequence-note user';
-            noteEl.textContent = note;
+            const displayLabel = this.noteLabelFormatter ? this.noteLabelFormatter(note, index) : note;
+            noteEl.textContent = displayLabel;
             
             // Add comparison styling if we have a target sequence
             if (currentSequence && index < currentSequence.length) {
@@ -173,9 +221,11 @@ class UIModule {
         userDisplay.appendChild(title);
         
         for (let i = 0; i < currentSequence.length; i++) {
+            const actualNote = userSequence[i] || '?';
             const noteEl = document.createElement('div');
             noteEl.className = 'sequence-note user';
-            noteEl.textContent = userSequence[i] || '?';
+            const displayLabel = this.noteLabelFormatter ? this.noteLabelFormatter(actualNote, i) : actualNote;
+            noteEl.textContent = displayLabel;
             
             if (i < userSequence.length) {
                 if (userSequence[i] === currentSequence[i]) {
@@ -351,7 +401,8 @@ class UIModule {
             difficulty: document.getElementById('difficulty').value,
             tonic: document.getElementById('tonicSelect').value,
             scaleType: document.getElementById('scaleType').value,
-            mode: document.getElementById('mode').value
+            mode: document.getElementById('mode').value,
+            timbre: document.getElementById('timbreSelect') ? document.getElementById('timbreSelect').value : undefined
         };
     }
 
@@ -371,6 +422,9 @@ class UIModule {
         }
         if (values.mode !== undefined) {
             document.getElementById('mode').value = values.mode;
+        }
+        if (values.timbre !== undefined) {
+            this.setTimbreValue(values.timbre);
         }
     }
 }

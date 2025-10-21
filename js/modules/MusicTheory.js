@@ -96,6 +96,7 @@ class MusicTheoryModule {
         this.tonalNote = this.tonal ? this.tonal.Note : null;
         this.tonalInterval = this.tonal ? this.tonal.Interval : null;
         this.tonalKey = this.tonal ? this.tonal.Key : null;
+        this.tonalScale = this.tonal ? this.tonal.Scale : null;
         this.keySignatureCache = new Map();
 
         this.modeConfigs = {
@@ -271,7 +272,9 @@ class MusicTheoryModule {
             }
         }
 
-        const context = { preference, displayTonic };
+        const chromaDisplayMap = this.computeChromaDisplayMap(normalizedMode, displayTonic || normalizedTonic);
+
+        const context = { preference, displayTonic, chromaDisplayMap };
         this.keySignatureCache.set(cacheKey, context);
         return context;
     }
@@ -304,7 +307,12 @@ class MusicTheoryModule {
         }
 
         const index = ((value % 12) + 12) % 12;
-        const { preference } = this.getKeySignatureContext(mode, tonic);
+        const context = this.getKeySignatureContext(mode, tonic);
+        const { preference, chromaDisplayMap } = context;
+
+        if (Array.isArray(chromaDisplayMap) && chromaDisplayMap[index]) {
+            return chromaDisplayMap[index];
+        }
 
         if (preference === 'flat') {
             return this.flatNoteNames[index];
@@ -353,16 +361,144 @@ class MusicTheoryModule {
     }
 
     /**
+     * Compute ordered semitone offsets for the diatonic collection of a mode within the keyboard span
+     * @param {string} mode - Mode name (lowercase)
+     * @returns {Array<number>} Sorted offsets from tonic
+     */
+    computeDiatonicOffsets(mode) {
+        const normalizedMode = (mode || 'ionian').toLowerCase();
+        const fallbackPattern = this.modePatterns['ionian'] || [];
+        const rawPattern = this.modePatterns[normalizedMode] || fallbackPattern;
+
+        if (!Array.isArray(rawPattern) || rawPattern.length === 0) {
+            return [];
+        }
+
+        const sanitized = Array.from(new Set(
+            rawPattern
+                .map((value) => {
+                    if (typeof value !== 'number' || !Number.isFinite(value)) {
+                        return null;
+                    }
+                    const rounded = Math.round(value);
+                    return ((rounded % 12) + 12) % 12;
+                })
+                .filter((value) => value !== null)
+        )).sort((a, b) => a - b);
+
+        if (sanitized.length === 0) {
+            return [];
+        }
+
+        const maxSpan = this.baseMidiSpan;
+        const highestStep = sanitized[sanitized.length - 1];
+        const offsets = [];
+
+        for (let octaveShift = 0; octaveShift <= maxSpan; octaveShift += 12) {
+            sanitized.forEach((step) => {
+                const candidate = step + octaveShift;
+                if (candidate <= maxSpan) {
+                    offsets.push(candidate);
+                }
+            });
+            if (highestStep + octaveShift >= maxSpan) {
+                break;
+            }
+        }
+
+        return offsets;
+    }
+
+    /**
+     * Build a chroma -> display-name map for the given mode and tonic using Tonal
+     * @param {string} mode
+     * @param {string} tonic
+     * @returns {Array<string|null>} Array indexed by chroma
+     */
+    computeChromaDisplayMap(mode, tonic) {
+        const chromaDisplay = new Array(12).fill(null);
+        if (!this.tonalScale || typeof this.tonalScale.get !== 'function') {
+            return chromaDisplay;
+        }
+
+        const sanitizedTonic = this.standardizeNoteName(tonic);
+        if (!sanitizedTonic) {
+            return chromaDisplay;
+        }
+
+        const aliases = this.getModeScaleAliases(mode);
+        for (let idx = 0; idx < aliases.length; idx += 1) {
+            const alias = aliases[idx];
+            if (!alias || typeof alias !== 'string') {
+                continue;
+            }
+            const query = `${sanitizedTonic} ${alias}`.trim();
+            try {
+                const scale = this.tonalScale.get ? this.tonalScale.get(query) : null;
+                if (!scale || !Array.isArray(scale.notes) || scale.notes.length === 0) {
+                    continue;
+                }
+
+                scale.notes.forEach((noteName) => {
+                    const normalized = this.standardizeNoteName(noteName);
+                    const chroma = this.noteNameToChromaticIndex(normalized);
+                    if (chroma !== null && chromaDisplay[chroma] === null) {
+                        chromaDisplay[chroma] = normalized;
+                    }
+                });
+
+                // Stop after first successful alias to avoid overriding spellings
+                break;
+            } catch (error) {
+                // Ignore and try next alias
+                console.warn(`Failed to derive scale for query "${query}":`, error);
+            }
+        }
+
+        return chromaDisplay;
+    }
+
+    /**
+     * Provide Tonal scale name aliases for supported modes
+     * @param {string} mode
+     * @returns {Array<string>} Alias list
+     */
+    getModeScaleAliases(mode) {
+        const normalized = (mode || 'ionian').toLowerCase();
+        const aliasMap = {
+            'ionian': ['ionian', 'major'],
+            'dorian': ['dorian'],
+            'phrygian': ['phrygian'],
+            'lydian': ['lydian'],
+            'mixolydian': ['mixolydian'],
+            'aeolian': ['aeolian', 'minor', 'natural minor'],
+            'locrian': ['locrian'],
+            'chromatic': ['chromatic'],
+            'half-whole': ['dominant diminished', 'diminished whole tone'],
+            'whole-half': ['diminished', 'whole-half diminished'],
+            'whole-tone': ['whole tone', 'whole-tone']
+        };
+
+        return aliasMap[normalized] ? aliasMap[normalized].slice() : [normalized];
+    }
+
+    /**
      * Generate diatonic notes for the current mode
      * @param {string} mode - The current mode (e.g., 'ionian', 'dorian')
      * @returns {Array} Array of diatonic notes
      */
     generateDiatonicNotes(mode, tonicLetter) {
         const layout = this.getKeyboardLayout(mode, tonicLetter);
-        if (!layout || !layout.whiteKeys || layout.whiteKeys.length === 0) {
+        if (!layout) {
             return [];
         }
-        return layout.whiteKeys.slice();
+        if (layout.diatonicKeys && layout.diatonicKeys.length > 0) {
+            return layout.diatonicKeys.slice();
+        }
+        if (layout.whiteKeys && layout.whiteKeys.length > 0) {
+            return layout.whiteKeys.slice();
+        }
+        return [];
     }
 
     /**
@@ -379,7 +515,14 @@ class MusicTheoryModule {
             const layout = this.buildKeyboardLayout(mode, defaultLetter);
             const cacheKey = this.getLayoutCacheKey(mode, defaultLetter);
             this.modeLayouts.set(cacheKey, layout);
-            this.modeRanges.set(cacheKey, { whiteKeys: layout.whiteKeys.slice() });
+            this.modeRanges.set(cacheKey, {
+                tonicNote: layout.tonicNote,
+                tonicLetter: layout.tonicLetter,
+                whiteKeys: layout.whiteKeys.slice(),
+                diatonicKeys: layout.diatonicKeys ? layout.diatonicKeys.slice() : layout.whiteKeys.slice(),
+                diatonicKeyDetails: layout.diatonicKeyDetails ? layout.diatonicKeyDetails.map(key => ({ ...key })) : [],
+                physicalWhiteKeys: layout.physicalWhiteKeys ? layout.physicalWhiteKeys.slice() : []
+            });
         });
     }
 
@@ -389,12 +532,13 @@ class MusicTheoryModule {
      * @returns {{whiteKeys: string[], blackKeys: Array, mapping: Object}}
      */
     buildKeyboardLayout(mode, tonicLetter) {
-        const config = this.modeConfigs[mode] || this.modeConfigs['ionian'];
+        const normalizedMode = (mode || 'ionian').toLowerCase();
+        const config = this.modeConfigs[normalizedMode] || this.modeConfigs['ionian'];
         const defaultTonicNote = config.tonic;
 
         const normalizedTarget = this.normalizeTonic(tonicLetter) || this.extractNoteLetter(defaultTonicNote);
         const fallbackLetter = this.extractNoteLetter(defaultTonicNote);
-        const { displayTonic } = this.getKeySignatureContext(mode, normalizedTarget || fallbackLetter);
+        const { displayTonic } = this.getKeySignatureContext(normalizedMode, normalizedTarget || fallbackLetter);
 
         const resolvedTonicCandidate = this.resolveChromaticTonicNote(defaultTonicNote, normalizedTarget) ||
             this.resolveChromaticTonicNote(defaultTonicNote, fallbackLetter) ||
@@ -414,12 +558,13 @@ class MusicTheoryModule {
         const primaryKeys = this.whiteKeyOffsets.map(offset => {
             const midi = effectiveStartMidi + offset;
             const rawNote = this.semitoneToNote(midi);
-            const label = this.getDisplayNoteLabel(rawNote, mode, normalizedTarget, { includeOctave: true });
-            const displayName = this.getDisplayNoteName(rawNote, mode, normalizedTarget);
+            const label = this.getDisplayNoteLabel(rawNote, normalizedMode, normalizedTarget, { includeOctave: true });
+            const displayName = this.getDisplayNoteName(rawNote, normalizedMode, normalizedTarget);
             return {
                 midi,
                 rawNote,
-                note: label,
+                note: rawNote,
+                displayLabel: label,
                 displayName
             };
         });
@@ -428,14 +573,15 @@ class MusicTheoryModule {
         for (let step = 0; step <= this.baseMidiSpan; step += 1) {
             const midi = effectiveStartMidi + step;
             const rawNote = this.semitoneToNote(midi);
-            const label = this.getDisplayNoteLabel(rawNote, mode, normalizedTarget, { includeOctave: true });
-            const displayName = this.getDisplayNoteName(rawNote, mode, normalizedTarget);
+            const label = this.getDisplayNoteLabel(rawNote, normalizedMode, normalizedTarget, { includeOctave: true });
+            const displayName = this.getDisplayNoteName(rawNote, normalizedMode, normalizedTarget);
             const chroma = ((midi % 12) + 12) % 12;
             const isWhite = this.naturalChromas.has(chroma);
             orderedKeys.push({
                 midi,
                 rawNote,
-                note: label,
+                note: rawNote,
+                displayLabel: label,
                 displayName,
                 isWhite,
                 orderedIndex: step
@@ -450,8 +596,9 @@ class MusicTheoryModule {
                 whiteKeyDetails.push({
                     midi: entry.midi,
                     rawNote: entry.rawNote,
-                    note: entry.note,
+                    note: entry.rawNote,
                     displayName: entry.displayName,
+                    displayLabel: entry.displayLabel,
                     orderedIndex: entry.orderedIndex,
                     whiteIndex
                 });
@@ -487,8 +634,9 @@ class MusicTheoryModule {
             blackKeyDetails.push({
                 midi: entry.midi,
                 rawNote: entry.rawNote,
-                note: entry.note,
+                note: entry.rawNote,
                 displayName: entry.displayName,
+                displayLabel: entry.displayLabel,
                 precedingIndex,
                 followingIndex,
                 edge
@@ -496,7 +644,7 @@ class MusicTheoryModule {
         });
 
         const mapping = {};
-        orderedKeys.forEach(entry => {
+        orderedKeys.forEach((entry) => {
             mapping[entry.note] = entry.note;
         });
 
@@ -504,10 +652,70 @@ class MusicTheoryModule {
             mapping[tonicNote] = tonicNote;
         }
 
+        const diatonicOffsets = this.computeDiatonicOffsets(normalizedMode);
+        const diatonicKeyDetails = [];
+        const diatonicKeys = [];
+        const seenDiatonic = new Set();
+
+        diatonicOffsets.forEach((offset) => {
+            if (offset < 0 || offset >= orderedKeys.length) {
+                return;
+            }
+            const entry = orderedKeys[offset];
+            if (!entry || !entry.rawNote || seenDiatonic.has(entry.rawNote)) {
+                return;
+            }
+            seenDiatonic.add(entry.rawNote);
+            diatonicKeys.push(entry.rawNote);
+            diatonicKeyDetails.push({
+                midi: entry.midi,
+                rawNote: entry.rawNote,
+                note: entry.rawNote,
+                displayName: entry.displayName,
+                displayLabel: entry.displayLabel,
+                orderedIndex: entry.orderedIndex,
+                isWhite: entry.isWhite
+            });
+        });
+
+        if (diatonicKeys.length === 0) {
+            primaryKeys.forEach((key) => {
+                if (!key || !key.note || seenDiatonic.has(key.note)) {
+                    return;
+                }
+                const matchingEntry = orderedKeys.find((entry) => entry.rawNote === key.note);
+                const detail = matchingEntry || {
+                    midi: key.midi,
+                    rawNote: key.rawNote,
+                    note: key.note,
+                    displayName: key.displayName,
+                    displayLabel: key.displayLabel,
+                    orderedIndex: matchingEntry ? matchingEntry.orderedIndex : null,
+                    isWhite: matchingEntry ? matchingEntry.isWhite : true
+                };
+                seenDiatonic.add(detail.note);
+                diatonicKeys.push(detail.note);
+                diatonicKeyDetails.push({
+                    midi: detail.midi,
+                    rawNote: detail.rawNote,
+                    note: detail.note,
+                    displayName: detail.displayName,
+                    displayLabel: detail.displayLabel,
+                    orderedIndex: detail.orderedIndex,
+                    isWhite: detail.isWhite
+                });
+            });
+        }
+
+        const physicalWhiteKeys = primaryKeys.map(key => key.note);
+
         return {
             tonicNote,
             tonicLetter: tonicDisplayBase,
-            whiteKeys: primaryKeys.map(key => key.note),
+            whiteKeys: diatonicKeys.slice(),
+            diatonicKeys: diatonicKeys.slice(),
+            diatonicKeyDetails: diatonicKeyDetails.map(key => ({ ...key })),
+            physicalWhiteKeys,
             whiteKeyDetails,
             blackKeys: blackKeyDetails,
             blackKeyDetails,
@@ -549,7 +757,7 @@ class MusicTheoryModule {
      * @returns {string} Cache key
      */
     getLayoutCacheKey(mode, tonicLetter) {
-        const safeMode = mode || 'ionian';
+        const safeMode = (mode || 'ionian').toLowerCase();
         const safeTonic = tonicLetter || this.getDefaultTonicLetter(safeMode);
         return `${safeMode}:${safeTonic}`;
     }
@@ -567,6 +775,9 @@ class MusicTheoryModule {
             tonicNote: layout.tonicNote,
             tonicLetter: layout.tonicLetter,
             whiteKeys: layout.whiteKeys ? layout.whiteKeys.slice() : [],
+            diatonicKeys: layout.diatonicKeys ? layout.diatonicKeys.slice() : (layout.whiteKeys ? layout.whiteKeys.slice() : []),
+            diatonicKeyDetails: layout.diatonicKeyDetails ? layout.diatonicKeyDetails.map(key => ({ ...key })) : [],
+            physicalWhiteKeys: layout.physicalWhiteKeys ? layout.physicalWhiteKeys.slice() : [],
             whiteKeyDetails: layout.whiteKeyDetails ? layout.whiteKeyDetails.map(key => ({ ...key })) : [],
             blackKeys: layout.blackKeys ? layout.blackKeys.map(key => ({ ...key })) : [],
             blackKeyDetails: layout.blackKeyDetails ? layout.blackKeyDetails.map(key => ({ ...key })) : [],
@@ -651,7 +862,7 @@ class MusicTheoryModule {
             return null;
         }
 
-        return octave * 12 + chromaticIndex;
+        return (octave + 1) * 12 + chromaticIndex;
     }
 
     /**
@@ -671,7 +882,7 @@ class MusicTheoryModule {
             }
         }
 
-        const octave = Math.floor(value / 12);
+        const octave = Math.floor(value / 12) - 1;
         const noteIndex = ((value % 12) + 12) % 12;
         const noteName = this.sharpNoteNames[noteIndex];
         return `${noteName}${octave}`;
@@ -697,14 +908,21 @@ class MusicTheoryModule {
      * @returns {{whiteKeys: string[], blackKeys: Array, mapping: Object}}
      */
     getKeyboardLayout(mode, tonicLetter) {
-        const normalizedMode = mode || 'ionian';
+        const normalizedMode = (mode || 'ionian').toLowerCase();
         const targetLetter = this.normalizeTonic(tonicLetter) || this.getDefaultTonicLetter(normalizedMode);
         const cacheKey = this.getLayoutCacheKey(normalizedMode, targetLetter);
 
         if (!this.modeLayouts.has(cacheKey)) {
             const layout = this.buildKeyboardLayout(normalizedMode, targetLetter);
             this.modeLayouts.set(cacheKey, layout);
-            this.modeRanges.set(cacheKey, { whiteKeys: layout.whiteKeys.slice() });
+            this.modeRanges.set(cacheKey, {
+                tonicNote: layout.tonicNote,
+                tonicLetter: layout.tonicLetter,
+                whiteKeys: layout.whiteKeys.slice(),
+                diatonicKeys: layout.diatonicKeys ? layout.diatonicKeys.slice() : layout.whiteKeys.slice(),
+                diatonicKeyDetails: layout.diatonicKeyDetails ? layout.diatonicKeyDetails.map(key => ({ ...key })) : [],
+                physicalWhiteKeys: layout.physicalWhiteKeys ? layout.physicalWhiteKeys.slice() : []
+            });
         }
 
         const cachedLayout = this.modeLayouts.get(cacheKey);
@@ -760,10 +978,15 @@ class MusicTheoryModule {
      */
     getModeRange(mode, tonicLetter) {
         const layout = this.getKeyboardLayout(mode, tonicLetter);
+        const diatonicKeys = (layout.diatonicKeys && layout.diatonicKeys.length > 0)
+            ? layout.diatonicKeys.slice()
+            : (layout.whiteKeys ? layout.whiteKeys.slice() : []);
         return {
             tonicNote: layout.tonicNote,
             tonicLetter: layout.tonicLetter,
-            whiteKeys: layout.whiteKeys.slice()
+            whiteKeys: diatonicKeys,
+            diatonicKeys,
+            diatonicKeyDetails: layout.diatonicKeyDetails ? layout.diatonicKeyDetails.map(key => ({ ...key })) : []
         };
     }
 
@@ -773,7 +996,8 @@ class MusicTheoryModule {
      * @returns {string} Default tonic letter
      */
     getDefaultTonicLetter(mode) {
-        return this.defaultTonicLetters[mode] || 'C';
+        const normalizedMode = (mode || 'ionian').toLowerCase();
+        return this.defaultTonicLetters[normalizedMode] || 'C';
     }
 
     /**

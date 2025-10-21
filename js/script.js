@@ -329,7 +329,7 @@ document.getElementById('mode').addEventListener('change', (e) => {            t
                 this.currentSequence = [];
                 this.userSequence = [];
                 this.clearStaffNotes();
-                document.getElementById('feedback').textContent = `Switched to ${this.mode} mode. Click "New Sequence" to start.`;
+                document.getElementById('feedback').textContent = `Switched to ${this.mode} mode. Click "Start" to begin.`;
                 document.getElementById('feedback').className = 'feedback';
                 document.getElementById('playSequenceBtn').disabled = true;
             } catch (error) {
@@ -871,7 +871,7 @@ updateRoundDisplay() {
         
         // Show completion message
         document.getElementById('feedback').textContent = 
-            `Round Complete! ${accuracy}% accuracy in ${this.formatDuration(duration)}. Click "New Sequence" to start next round.`;
+            `Round Complete! ${accuracy}% accuracy in ${this.formatDuration(duration)}. Click "Start" to begin the next round.`;
         document.getElementById('feedback').className = 'feedback correct';
         
         // Reset for next round

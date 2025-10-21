@@ -14,7 +14,7 @@
         
         <div class="game-controls">
             <div class="main-action-row">
-                <button class="control-btn" id="newSequenceBtn">New</button>
+                <button class="control-btn" id="newSequenceBtn">Start</button>
                 <button class="control-btn" id="playSequenceBtn" disabled>Replay</button>
                 <button class="control-btn" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
             </div>
@@ -43,6 +43,7 @@
                     <option value="whole-half">Whole-Half</option>
                     <option value="whole-tone">Whole Tone</option>
                 </select>
+                <select id="timbreSelect" aria-label="Select timbre"></select>
             </div>
         </div>
 
@@ -177,7 +178,7 @@
 
         <div class="instructions">
             <strong>How to play:</strong><br>
-            1. Choose sequence length and click "New"<br>
+            1. Choose sequence length and click "Start"<br>
             2. Listen carefully to the melody<br>
             3. Play it back on the piano keyboard<br>
             4. Get feedback after completing the sequence<br>

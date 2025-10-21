@@ -12,6 +12,7 @@ class MelodicDictation {
         this.storageModule = new StorageModule(this.scoringModule);
         this.uiModule = new UIModule();
         this.keyboardModule = new KeyboardModule(this.musicTheory, this.audioModule);
+        this.uiModule.setNoteLabelFormatter((note) => this.formatNoteLabel(note));
 
         // Application state
         this.currentSequence = [];
@@ -21,6 +22,8 @@ class MelodicDictation {
         this.mode = 'ionian';
         this.tonic = this.musicTheory.getDefaultTonicLetter(this.mode);
         this.availableTonics = this.musicTheory.getAvailableTonics();
+        this.availableTimbres = this.audioModule.getAvailableTimbres();
+        this.timbre = this.audioModule.getCurrentTimbreId();
         this.autoPlayNext = false;
 
         // Initialize keyboard module with current settings
@@ -42,6 +45,8 @@ class MelodicDictation {
             // Setup event listeners
             this.setupEventListeners();
             this.uiModule.populateTonicOptions(this.availableTonics, this.tonic);
+            this.uiModule.populateTimbreOptions(this.availableTimbres, this.timbre);
+            this.audioModule.setTimbre(this.timbre);
             
             // Update displays
             this.scoringModule.updateScore();
@@ -69,6 +74,18 @@ class MelodicDictation {
     }
 
     /**
+     * Convert an internal note identifier to a display label
+     * @param {string} note
+     * @returns {string}
+     */
+    formatNoteLabel(note) {
+        if (!note || typeof note !== 'string' || note === '?') {
+            return note || '';
+        }
+        return this.musicTheory.getDisplayNoteName(note, this.mode, this.tonic) || note;
+    }
+
+    /**
      * Setup all event listeners
      */
     setupEventListeners() {
@@ -83,7 +100,8 @@ class MelodicDictation {
             onDifficultyChange: (e) => this.handleDifficultyChange(e),
             onTonicChange: (e) => this.handleTonicChange(e),
             onScaleTypeChange: (e) => this.handleScaleTypeChange(e),
-            onModeChange: (e) => this.handleModeChange(e)
+            onModeChange: (e) => this.handleModeChange(e),
+            onTimbreChange: (e) => this.handleTimbreChange(e)
         });
 
         // Setup keyboard event listeners
@@ -271,12 +289,12 @@ class MelodicDictation {
         
         // Auto-save to Google Drive
         this.storageModule.autoSaveToGoogleDrive(
-            this.storageModule.getCurrentSettings(this.sequenceLength, this.scaleType, this.mode, this.tonic)
+            this.storageModule.getCurrentSettings(this.sequenceLength, this.scaleType, this.mode, this.tonic, this.timbre)
         );
         
         // Show completion message
         this.uiModule.updateFeedback(
-            `Round Complete! ${roundResult.accuracy}% accuracy in ${roundResult.duration}. Click "New Sequence" to start next round.`,
+            `Round Complete! ${roundResult.accuracy}% accuracy in ${roundResult.duration}. Click "Start" to begin the next round.`,
             'correct'
         );
         
@@ -304,6 +322,28 @@ class MelodicDictation {
     }
 
     /**
+     * Handle timbre (sound) change
+     * @param {Event} e - Change event
+     */
+    handleTimbreChange(e) {
+        try {
+            const requestedTimbre = e && e.target ? e.target.value : null;
+            const appliedTimbre = this.audioModule.setTimbre(requestedTimbre);
+            this.timbre = appliedTimbre;
+            this.uiModule.setTimbreValue(appliedTimbre);
+
+            const timbreLabel = this.audioModule.getTimbreLabel(appliedTimbre);
+            if (!this.audioModule.getIsPlaying()) {
+                this.uiModule.showStatusArea();
+                this.uiModule.updateFeedback(`Timbre set to ${timbreLabel}. Click "Start" to begin.`, 'feedback');
+            }
+        } catch (error) {
+            console.error('Error changing timbre:', error);
+            this.uiModule.updateFeedback('Error updating timbre. Please try again.', 'incorrect');
+        }
+    }
+
+    /**
      * Handle tonic change
      * @param {Event} e - Change event
      */
@@ -322,7 +362,7 @@ class MelodicDictation {
             this.userSequence = [];
             this.staffModule.clearStaffNotes();
             this.staffModule.clearTonicHighlights();
-            this.uiModule.updateFeedback(`Tonic set to ${displayTonic} in ${this.mode} mode. Click "New Sequence" to start.`);
+            this.uiModule.updateFeedback(`Tonic set to ${displayTonic} in ${this.mode} mode. Click "Start" to begin.`);
             this.uiModule.setPlayButtonState(true);
         } catch (error) {
             console.error('Error changing tonic:', error);
@@ -355,7 +395,7 @@ class MelodicDictation {
             this.userSequence = [];
             this.staffModule.clearStaffNotes();
             this.staffModule.clearTonicHighlights();
-            this.uiModule.updateFeedback(`Switched to ${this.mode} mode (tonic ${displayTonic}). Click "New Sequence" to start.`);
+            this.uiModule.updateFeedback(`Switched to ${this.mode} mode (tonic ${displayTonic}). Click "Start" to begin.`);
             this.uiModule.setPlayButtonState(true);
         } catch (error) {
             console.error('Error changing mode:', error);
@@ -390,7 +430,8 @@ class MelodicDictation {
                 this.sequenceLength,
                 this.scaleType,
                 this.mode,
-                this.tonic
+                this.tonic,
+                this.timbre
             );
             const message = await this.storageModule.saveToGoogleDrive(settings);
             this.uiModule.updateFeedback(message, 'correct');
@@ -412,6 +453,7 @@ class MelodicDictation {
                     this.scaleType = result.data.settings.scaleType || 'diatonic';
                     this.mode = result.data.settings.mode || 'ionian';
                     this.tonic = result.data.settings.tonic || this.musicTheory.getDefaultTonicLetter(this.mode);
+                    this.timbre = result.data.settings.timbre || this.audioModule.getCurrentTimbreId();
                     
                     this.uiModule.setFormValues({
                         difficulty: this.sequenceLength,
@@ -419,6 +461,7 @@ class MelodicDictation {
                         scaleType: this.scaleType,
                         mode: this.mode
                     });
+                    this.uiModule.setTimbreValue(this.timbre);
                     
                     this.keyboardModule.setScaleType(this.scaleType);
                     this.keyboardModule.setMode(this.mode, this.tonic);
@@ -426,7 +469,8 @@ class MelodicDictation {
                     this.uiModule.setTonicValue(this.tonic);
                 }
                 this.keyboardModule.updateKeyboardVisibility();
-                this.keyboardModule.positionBlackKeys();
+                    this.keyboardModule.positionBlackKeys();
+                    this.audioModule.setTimbre(this.timbre);
                 
                 // Update displays
                 this.scoringModule.updateScore();

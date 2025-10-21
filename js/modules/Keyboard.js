@@ -76,18 +76,25 @@ class KeyboardModule {
         const whiteFragment = document.createDocumentFragment();
         const whiteDetails = (layout && layout.whiteKeyDetails && layout.whiteKeyDetails.length > 0)
             ? layout.whiteKeyDetails
-            : (layout && layout.whiteKeys ? layout.whiteKeys.map(note => ({ note })) : []);
+            : (layout && layout.physicalWhiteKeys ? layout.physicalWhiteKeys.map(note => ({ note })) : (layout && layout.whiteKeys ? layout.whiteKeys.map(note => ({ note })) : []));
 
         whiteDetails.forEach((detail, index) => {
             const keyEl = document.createElement('div');
             keyEl.className = 'white-key';
-            keyEl.dataset.note = detail.note || '';
+            keyEl.dataset.note = detail.note || detail.rawNote || '';
             if (typeof detail.midi === 'number') {
                 keyEl.dataset.midi = String(detail.midi);
             } else {
                 keyEl.removeAttribute('data-midi');
             }
             keyEl.dataset.whiteIndex = String(typeof detail.whiteIndex === 'number' ? detail.whiteIndex : index);
+            if (detail.displayLabel) {
+                keyEl.dataset.displayLabel = detail.displayLabel;
+            } else if (detail.displayName) {
+                keyEl.dataset.displayLabel = detail.displayName;
+            } else {
+                keyEl.removeAttribute('data-display-label');
+            }
             whiteFragment.appendChild(keyEl);
         });
 
@@ -99,7 +106,15 @@ class KeyboardModule {
         blackDetails.forEach(detail => {
             const keyEl = document.createElement('div');
             keyEl.className = 'black-key';
-            keyEl.dataset.note = detail.note || '';
+            keyEl.dataset.note = detail.note || detail.rawNote || '';
+
+            if (detail.displayLabel) {
+                keyEl.dataset.displayLabel = detail.displayLabel;
+            } else if (detail.displayName) {
+                keyEl.dataset.displayLabel = detail.displayName;
+            } else {
+                keyEl.removeAttribute('data-display-label');
+            }
 
             if (typeof detail.precedingIndex === 'number') {
                 keyEl.dataset.precedingIndex = String(detail.precedingIndex);
@@ -172,7 +187,10 @@ class KeyboardModule {
             const precedingEl = (precedingIndex !== null) ? this.whiteKeyElements[precedingIndex] : null;
             const followingEl = (followingIndex !== null) ? this.whiteKeyElements[followingIndex] : null;
 
-            if ((!precedingEl || precedingEl.hasAttribute('hidden')) && (!followingEl || followingEl.hasAttribute('hidden'))) {
+            const precedingVisible = precedingEl && !precedingEl.hasAttribute('hidden');
+            const followingVisible = followingEl && !followingEl.hasAttribute('hidden');
+
+            if (!precedingVisible && !followingVisible) {
                 keyEl.setAttribute('hidden', '');
                 return;
             }
@@ -185,31 +203,16 @@ class KeyboardModule {
             const keyWidth = keyEl.offsetWidth || 0;
             let leftPx = null;
 
-            if (precedingEl && followingEl && !precedingEl.hasAttribute('hidden') && !followingEl.hasAttribute('hidden')) {
-                const precedingRect = precedingEl.getBoundingClientRect();
-                const followingRect = followingEl.getBoundingClientRect();
+            const precedingRect = precedingVisible ? precedingEl.getBoundingClientRect() : null;
+            const followingRect = followingVisible ? followingEl.getBoundingClientRect() : null;
+
+            if (precedingRect && followingRect) {
                 const midpoint = (precedingRect.right + followingRect.left) / 2;
                 leftPx = midpoint - containerRect.left - (keyWidth / 2);
-            } else if (edgeHint === 'left' && followingEl && !followingEl.hasAttribute('hidden')) {
-                const followingRect = followingEl.getBoundingClientRect();
-                const whiteWidth = followingEl.offsetWidth || 0;
-                const center = (followingRect.left - whiteWidth) + (whiteWidth / 2);
-                leftPx = center - containerRect.left - (keyWidth / 2);
-            } else if (edgeHint === 'right' && precedingEl && !precedingEl.hasAttribute('hidden')) {
-                const precedingRect = precedingEl.getBoundingClientRect();
-                const whiteWidth = precedingEl.offsetWidth || 0;
-                const center = precedingRect.right + (whiteWidth / 2);
-                leftPx = center - containerRect.left - (keyWidth / 2);
-            } else if (precedingEl && !precedingEl.hasAttribute('hidden')) {
-                const precedingRect = precedingEl.getBoundingClientRect();
-                const whiteWidth = precedingEl.offsetWidth || 0;
-                const center = precedingRect.right + (whiteWidth / 2);
-                leftPx = center - containerRect.left - (keyWidth / 2);
-            } else if (followingEl && !followingEl.hasAttribute('hidden')) {
-                const followingRect = followingEl.getBoundingClientRect();
-                const whiteWidth = followingEl.offsetWidth || 0;
-                const center = (followingRect.left - whiteWidth) + (whiteWidth / 2);
-                leftPx = center - containerRect.left - (keyWidth / 2);
+            } else if (precedingRect) {
+                leftPx = precedingRect.right - containerRect.left - (keyWidth / 2);
+            } else if (followingRect) {
+                leftPx = followingRect.left - containerRect.left - (keyWidth / 2);
             }
 
             if (leftPx === null) {
@@ -219,6 +222,14 @@ class KeyboardModule {
 
             if (leftPx < 0) {
                 leftPx = 0;
+            }
+
+            const containerWidth = containerRect.width || this.pianoKeysContainer.offsetWidth || 0;
+            if (containerWidth > 0) {
+                const maxLeft = containerWidth - keyWidth;
+                if (leftPx > maxLeft) {
+                    leftPx = maxLeft;
+                }
             }
 
             keyEl.style.left = `${leftPx}px`;

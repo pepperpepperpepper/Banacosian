@@ -139,12 +139,13 @@ class StorageModule {
      * @param {string} tonic - Current tonic letter
      * @returns {Object} Settings object
      */
-    getCurrentSettings(sequenceLength, scaleType, mode, tonic) {
+    getCurrentSettings(sequenceLength, scaleType, mode, tonic, timbre) {
         return {
             sequenceLength: sequenceLength,
             scaleType: scaleType,
             mode: mode,
-            tonic: tonic
+            tonic: tonic,
+            timbre: timbre
         };
     }
 }
