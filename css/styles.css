@@ -253,14 +253,15 @@
             display: flex;
             justify-content: flex-start;
             align-items: flex-start;
-            height: 200px;
+            --white-key-count: 14;
+            --white-key-width: calc(100% / var(--white-key-count));
+            --white-key-step: var(--white-key-width);
+            --white-key-height: 200px;
+            height: var(--white-key-height);
             position: relative;
             width: 100%;
             max-width: 100%;
             overflow: hidden;
-            --white-key-count: 14;
-            --white-key-width: calc(100% / var(--white-key-count));
-            --white-key-step: var(--white-key-width);
             padding-left: 0;
             padding-right: 0;
         }
@@ -268,7 +269,7 @@
         .white-key {
             background: white;
             width: var(--white-key-width);
-            height: 200px;
+            height: var(--white-key-height);
             margin: 0;
             border-radius: 0 0 8px 8px;
             cursor: pointer;
@@ -307,7 +308,7 @@
             background: #222;
             border: 2px solid #111;
             width: calc(var(--white-key-width) * 0.65);
-            height: 150px;
+            height: calc(var(--white-key-height) * 0.6);
             border-radius: 0 0 6px 6px;
             cursor: pointer;
             position: absolute;
@@ -545,16 +546,17 @@
                 }
                 
                 .piano-keys {
-                    height: 140px;
+                    --white-key-height: 140px;
+                    height: var(--white-key-height);
                 }
-                
+
                 .white-key {
-                    height: 140px;
+                    height: var(--white-key-height);
                     padding-bottom: 6px;
                 }
-                
+
                 .black-key {
-                    height: 85px;
+                    height: calc(var(--white-key-height) * 0.6);
                     padding-bottom: 4px;
                 }
                 
