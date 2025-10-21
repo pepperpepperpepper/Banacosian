@@ -242,7 +242,8 @@ class KeyboardModule {
             }
 
             const containerWidth = containerRect.width || this.pianoKeysContainer.offsetWidth || 0;
-            if (containerWidth > 0) {
+            const isTrailingEdge = edgeHint === 'right';
+            if (containerWidth > 0 && !isTrailingEdge) {
                 const maxLeft = containerWidth - keyWidth;
                 if (leftPx > maxLeft) {
                     leftPx = maxLeft;
