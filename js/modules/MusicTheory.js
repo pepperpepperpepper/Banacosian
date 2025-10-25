@@ -64,6 +64,8 @@ class MusicTheoryModule {
             'Ab', 'A', 'A#', 'Bb', 'B'
         ];
         this.whiteKeyCount = 14;
+        this.whiteKeyUnitWidth = 1;
+        this.blackKeyUnitWidth = 0.64;
 
         this.baseWhiteKeys = [
             'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4',
@@ -589,10 +591,13 @@ class MusicTheoryModule {
         }
 
         const whiteKeyDetails = [];
+        let runningWhiteUnit = 0;
         orderedKeys.forEach((entry) => {
             if (entry.isWhite) {
                 const whiteIndex = whiteKeyDetails.length;
                 entry.whiteIndex = whiteIndex;
+                entry.leftUnits = runningWhiteUnit;
+                entry.widthUnits = this.whiteKeyUnitWidth;
                 whiteKeyDetails.push({
                     midi: entry.midi,
                     rawNote: entry.rawNote,
@@ -600,8 +605,11 @@ class MusicTheoryModule {
                     displayName: entry.displayName,
                     displayLabel: entry.displayLabel,
                     orderedIndex: entry.orderedIndex,
-                    whiteIndex
+                    whiteIndex,
+                    leftUnits: entry.leftUnits,
+                    widthUnits: entry.widthUnits
                 });
+                runningWhiteUnit += this.whiteKeyUnitWidth;
             }
         });
 
@@ -631,6 +639,21 @@ class MusicTheoryModule {
                 ? null
                 : (precedingIndex === null ? 'left' : (followingIndex === null ? 'right' : null));
 
+            let leftUnits = null;
+            if (precedingIndex !== null || followingIndex !== null) {
+                const precedingLeftUnits = (precedingIndex !== null)
+                    ? whiteKeyDetails[precedingIndex].leftUnits
+                    : (followingIndex !== null
+                        ? whiteKeyDetails[followingIndex].leftUnits - this.whiteKeyUnitWidth
+                        : null);
+                if (typeof precedingLeftUnits === 'number') {
+                    leftUnits = precedingLeftUnits + this.whiteKeyUnitWidth - (this.blackKeyUnitWidth / 2);
+                }
+            }
+
+            entry.leftUnits = leftUnits;
+            entry.widthUnits = this.blackKeyUnitWidth;
+
             blackKeyDetails.push({
                 midi: entry.midi,
                 rawNote: entry.rawNote,
@@ -639,7 +662,9 @@ class MusicTheoryModule {
                 displayLabel: entry.displayLabel,
                 precedingIndex,
                 followingIndex,
-                edge
+                edge,
+                leftUnits,
+                widthUnits: this.blackKeyUnitWidth
             });
         });
 
@@ -651,6 +676,17 @@ class MusicTheoryModule {
         if (!mapping[tonicNote]) {
             mapping[tonicNote] = tonicNote;
         }
+
+        const unitKeyMetrics = [...whiteKeyDetails, ...blackKeyDetails].filter(key => typeof key.leftUnits === 'number');
+        let unitMinLeft = 0;
+        let unitMaxRight = this.whiteKeyCount * this.whiteKeyUnitWidth;
+        if (unitKeyMetrics.length > 0) {
+            unitMinLeft = Math.min(...unitKeyMetrics.map(key => key.leftUnits));
+            unitMaxRight = Math.max(...unitKeyMetrics.map(key => key.leftUnits + (key.widthUnits || 0)));
+        }
+        const unitSpan = unitMaxRight - unitMinLeft;
+        const hasLeadingBlack = blackKeyDetails.some(detail => detail.edge === 'left');
+        const hasTrailingBlack = blackKeyDetails.some(detail => detail.edge === 'right');
 
         const diatonicOffsets = this.computeDiatonicOffsets(normalizedMode);
         const diatonicKeyDetails = [];
@@ -720,7 +756,12 @@ class MusicTheoryModule {
             blackKeys: blackKeyDetails,
             blackKeyDetails,
             orderedKeys,
-            mapping
+            mapping,
+            unitMinLeft,
+            unitMaxRight,
+            unitSpan,
+            hasLeadingBlack,
+            hasTrailingBlack
         };
     }
 
@@ -782,7 +823,12 @@ class MusicTheoryModule {
             blackKeys: layout.blackKeys ? layout.blackKeys.map(key => ({ ...key })) : [],
             blackKeyDetails: layout.blackKeyDetails ? layout.blackKeyDetails.map(key => ({ ...key })) : [],
             orderedKeys: layout.orderedKeys ? layout.orderedKeys.map(key => ({ ...key })) : [],
-            mapping: layout.mapping ? { ...layout.mapping } : {}
+            mapping: layout.mapping ? { ...layout.mapping } : {},
+            unitMinLeft: layout.unitMinLeft,
+            unitMaxRight: layout.unitMaxRight,
+            unitSpan: layout.unitSpan,
+            hasLeadingBlack: layout.hasLeadingBlack,
+            hasTrailingBlack: layout.hasTrailingBlack
         };
     }
 

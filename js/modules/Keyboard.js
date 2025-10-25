@@ -76,6 +76,13 @@ class KeyboardModule {
         const container = this.pianoKeysContainer;
         container.innerHTML = '';
 
+        const usingUnitLayout = layout
+            && typeof layout.unitSpan === 'number'
+            && Number.isFinite(layout.unitSpan)
+            && layout.unitSpan > 0;
+        const spanUnits = usingUnitLayout ? layout.unitSpan : null;
+        const minLeftUnits = usingUnitLayout ? (layout.unitMinLeft || 0) : 0;
+
         const whiteFragment = document.createDocumentFragment();
         const whiteDetails = (layout && layout.whiteKeyDetails && layout.whiteKeyDetails.length > 0)
             ? layout.whiteKeyDetails
@@ -83,7 +90,7 @@ class KeyboardModule {
 
         whiteDetails.forEach((detail, index) => {
             const keyEl = document.createElement('div');
-            keyEl.className = 'white-key';
+            keyEl.className = 'white-key flat-key white';
             keyEl.dataset.note = detail.note || detail.rawNote || '';
             if (typeof detail.midi === 'number') {
                 keyEl.dataset.midi = String(detail.midi);
@@ -98,6 +105,22 @@ class KeyboardModule {
             } else {
                 keyEl.removeAttribute('data-display-label');
             }
+            if (usingUnitLayout && typeof detail.leftUnits === 'number' && typeof detail.widthUnits === 'number' && spanUnits) {
+                const leftPercent = ((detail.leftUnits - minLeftUnits) / spanUnits) * 100;
+                const widthPercent = (detail.widthUnits / spanUnits) * 100;
+                keyEl.style.left = `${leftPercent}%`;
+                keyEl.style.width = `${widthPercent}%`;
+            } else {
+                keyEl.style.left = '';
+                keyEl.style.width = '';
+            }
+
+            if (!keyEl.querySelector('.key-label')) {
+                const labelEl = document.createElement('span');
+                labelEl.className = 'key-label';
+                keyEl.appendChild(labelEl);
+            }
+
             whiteFragment.appendChild(keyEl);
         });
 
@@ -108,7 +131,7 @@ class KeyboardModule {
 
         blackDetails.forEach(detail => {
             const keyEl = document.createElement('div');
-            keyEl.className = 'black-key';
+            keyEl.className = 'black-key flat-key black';
             keyEl.dataset.note = detail.note || detail.rawNote || '';
 
             if (detail.displayLabel) {
@@ -137,6 +160,22 @@ class KeyboardModule {
                 keyEl.removeAttribute('data-edge');
             }
 
+            if (usingUnitLayout && typeof detail.leftUnits === 'number' && typeof detail.widthUnits === 'number' && spanUnits) {
+                const leftPercent = ((detail.leftUnits - minLeftUnits) / spanUnits) * 100;
+                const widthPercent = (detail.widthUnits / spanUnits) * 100;
+                keyEl.style.left = `${leftPercent}%`;
+                keyEl.style.width = `${widthPercent}%`;
+            } else {
+                keyEl.style.left = '';
+                keyEl.style.width = '';
+            }
+
+            if (!keyEl.querySelector('.key-label')) {
+                const labelEl = document.createElement('span');
+                labelEl.className = 'key-label';
+                keyEl.appendChild(labelEl);
+            }
+
             blackFragment.appendChild(keyEl);
         });
 
@@ -145,13 +184,18 @@ class KeyboardModule {
         this.whiteKeyElements = Array.from(container.querySelectorAll('.white-key'));
         this.blackKeyElements = Array.from(container.querySelectorAll('.black-key'));
 
-        const leadingBlack = blackDetails.some(detail => detail.edge === 'left');
-        const trailingEdgeBlack = blackDetails.some(detail => detail.edge === 'right');
+        const leadingBlack = usingUnitLayout
+            ? Boolean(layout && layout.hasLeadingBlack)
+            : blackDetails.some(detail => detail.edge === 'left');
+        const trailingEdgeBlack = usingUnitLayout
+            ? Boolean(layout && layout.hasTrailingBlack)
+            : blackDetails.some(detail => detail.edge === 'right');
         const trailingBlack = trailingEdgeBlack;
 
         this.hasLeadingBlack = leadingBlack;
         this.hasTrailingBlack = trailingBlack;
 
+        container.dataset.layoutMode = usingUnitLayout ? 'unit' : 'legacy';
         container.classList.toggle('piano-leading-black', leadingBlack);
         container.classList.toggle('piano-trailing-black', trailingBlack);
         if (whiteDetails && whiteDetails.length > 0) {
@@ -161,9 +205,14 @@ class KeyboardModule {
         if (!leadingBlack && !trailingBlack) {
             container.style.paddingLeft = '0px';
             container.style.paddingRight = '0px';
+        } else if (usingUnitLayout) {
+            container.style.paddingLeft = '0px';
+            container.style.paddingRight = '0px';
         }
 
-        this.queueWhiteKeyMetricUpdate();
+        if (!usingUnitLayout) {
+            this.queueWhiteKeyMetricUpdate();
+        }
     }
 
     /**
@@ -184,6 +233,10 @@ class KeyboardModule {
      */
     positionBlackKeys() {
         if (!this.pianoKeysContainer || !this.currentLayout) {
+            return;
+        }
+
+        if (this.pianoKeysContainer.dataset.layoutMode === 'unit') {
             return;
         }
 
@@ -252,6 +305,75 @@ class KeyboardModule {
 
             keyEl.style.left = `${leftPx}px`;
         });
+
+        this.adjustKeyboardOffset();
+    }
+
+    adjustKeyboardOffset() {
+        if (!this.pianoKeysContainer || !this.whiteKeyElements || this.whiteKeyElements.length === 0) {
+            return;
+        }
+
+        const container = this.pianoKeysContainer;
+        container.style.transform = 'translateX(0)';
+
+        const containerRect = container.getBoundingClientRect();
+        const containerWidth = containerRect.width;
+
+        const firstVisibleWhite = this.whiteKeyElements.find(el => !el.hasAttribute('hidden')) || this.whiteKeyElements[0];
+        if (!firstVisibleWhite) {
+            container.style.transform = 'translateX(0)';
+            return;
+        }
+
+        const firstRect = firstVisibleWhite.getBoundingClientRect();
+        const firstOffset = firstRect.left - containerRect.left;
+
+        let trailingKey = null;
+        if (this.hasTrailingBlack) {
+            trailingKey = this.blackKeyElements.find(el => (el.dataset.edge === 'right') && !el.hasAttribute('hidden'));
+        }
+
+        if (!trailingKey) {
+            for (let i = this.whiteKeyElements.length - 1; i >= 0; i -= 1) {
+                const candidate = this.whiteKeyElements[i];
+                if (!candidate.hasAttribute('hidden')) {
+                    trailingKey = candidate;
+                    break;
+                }
+            }
+        }
+
+        if (!trailingKey) {
+            container.style.transform = 'translateX(0)';
+            return;
+        }
+
+        const isTrailingBlack = trailingKey.classList.contains('black-key');
+        let trailingEdgePosition;
+        if (isTrailingBlack) {
+            const leftValue = parseFloat(trailingKey.style.left || '0');
+            trailingEdgePosition = leftValue + trailingKey.offsetWidth;
+        } else {
+            const trailingRect = trailingKey.getBoundingClientRect();
+            trailingEdgePosition = trailingRect.right - containerRect.left;
+        }
+
+        const desiredRightMargin = isTrailingBlack ? Math.min(containerWidth * 0.015, 8) : Math.min(containerWidth * 0.01, 6);
+        let shift = trailingEdgePosition - (containerWidth - desiredRightMargin);
+        if (shift < 0) {
+            shift = 0;
+        }
+
+        const firstWidth = firstVisibleWhite.offsetWidth || 0;
+        const leftAllowance = isTrailingBlack ? firstWidth * 0.35 : firstWidth * 0.25;
+        const maxShift = Math.max(0, firstOffset + leftAllowance);
+
+        if (shift > maxShift) {
+            shift = maxShift;
+        }
+
+        container.style.transform = shift > 0 ? `translateX(${-shift}px)` : 'translateX(0)';
     }
 
     /**
@@ -259,6 +381,10 @@ class KeyboardModule {
      */
     queueWhiteKeyMetricUpdate() {
         if (!this.pianoKeysContainer) {
+            return;
+        }
+
+        if (this.pianoKeysContainer.dataset.layoutMode === 'unit') {
             return;
         }
 
@@ -292,6 +418,9 @@ class KeyboardModule {
 
     updateWhiteKeyMetrics() {
         if (!this.pianoKeysContainer || !this.whiteKeyElements || this.whiteKeyElements.length === 0) {
+            return;
+        }
+        if (this.pianoKeysContainer.dataset.layoutMode === 'unit') {
             return;
         }
         const firstWhite = this.whiteKeyElements[0];
@@ -365,13 +494,30 @@ class KeyboardModule {
         keys.forEach(key => {
             const actualNote = key.dataset.note;
             if (key.hasAttribute('hidden') || !actualNote) {
-                key.textContent = '';
+                const labelEl = key.querySelector('.key-label');
+                if (labelEl) {
+                    labelEl.textContent = '';
+                    labelEl.style.visibility = 'hidden';
+                }
                 key.classList.add('disabled');
                 return;
             }
 
             const noteLabel = this.musicTheory.getDisplayNoteName(actualNote, this.mode, this.tonicLetter);
-            key.textContent = noteLabel;
+            const labelEl = key.querySelector('.key-label') || (() => {
+                const created = document.createElement('span');
+                created.className = 'key-label';
+                key.appendChild(created);
+                return created;
+            })();
+            const labelText = noteLabel ? noteLabel.replace(/[0-9]/g, '') : '';
+            labelEl.textContent = labelText;
+            labelEl.style.visibility = labelText ? 'visible' : 'hidden';
+            if (noteLabel) {
+                key.dataset.displayLabel = noteLabel;
+            } else {
+                key.removeAttribute('data-display-label');
+            }
 
             if (showAllNotes) {
                 key.classList.remove('disabled');
@@ -384,12 +530,11 @@ class KeyboardModule {
             }
         });
         
-        // Add visual indication for diatonic mode
+        // Ensure inline styling does not override CSS sizing/background
         const piano = document.querySelector('.piano');
-        if (this.scaleType === 'diatonic') {
-            piano.style.background = '#2d4a2b'; // Slightly green tint for diatonic
-        } else {
-            piano.style.background = '#333'; // Normal color for chromatic
+        if (piano) {
+            piano.style.removeProperty('background');
+            piano.style.removeProperty('padding');
         }
     }
 

@@ -23,8 +23,8 @@
             text-align: center;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            max-width: 800px;
-            width: 100%;
+            max-width: 1200px;
+            width: min(100%, 1200px);
         }
 
         h1 {
@@ -242,113 +242,117 @@
         }
 
         .piano {
-            background: #333;
+            background: transparent;
+            border-radius: 0;
             padding: 0;
             margin: 0;
-            max-width: 100%;
+            max-width: none;
             width: 100%;
+            box-shadow: none;
         }
 
         .piano-keys {
-            display: flex;
-            justify-content: flex-start;
-            align-items: flex-start;
-            --white-key-count: 14;
-            --white-key-width: calc(100% / var(--white-key-count));
-            --white-key-step: var(--white-key-width);
-            --white-key-height: 200px;
-            height: var(--white-key-height);
             position: relative;
             width: 100%;
-            max-width: 100%;
+            height: clamp(140px, 32vw, 220px);
             overflow: hidden;
-            padding-left: 0;
-            padding-right: 0;
+            border-radius: 14px;
+            /* background: linear-gradient(180deg, #111827 0%, #0b1220 100%); */
+            touch-action: none;
+        }
+
+        .flat-key {
+            position: absolute;
+            top: 0;
+            display: block;
+            border: 1px solid rgba(8, 13, 22, 0.55);
+            border-radius: 0 0 10px 10px;
+            transition: transform 0.08s ease, box-shadow 0.1s ease;
+            cursor: pointer;
+            touch-action: none;
+            box-sizing: border-box;
         }
 
         .white-key {
-            background: white;
-            width: var(--white-key-width);
-            height: var(--white-key-height);
-            margin: 0;
-            border-radius: 0 0 8px 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 8px;
-            font-weight: bold;
-            color: #333;
-            transition: all 0.1s ease;
-            user-select: none;
-            flex-shrink: 0;
-            border: 2px solid #ddd;
-            box-sizing: border-box;
-        }
-
-        .white-key.disabled {
-            background: #f5f5f5;
-            color: #ccc;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .white-key:hover:not(.disabled) {
-            background: #f0f0f0;
-            transform: translateY(-2px);
-        }
-
-        .white-key:active:not(.disabled), .white-key.pressed:not(.disabled) {
-            background: #4CAF50;
-            color: white;
-            transform: translateY(2px);
+            background: linear-gradient(180deg, #f7f8fb 0%, #dfe4f5 98%);
+            height: 100%;
+            z-index: 1;
+            color: rgba(30, 41, 59, 0.9);
         }
 
         .black-key {
-            background: #222;
-            border: 2px solid #111;
-            width: calc(var(--white-key-width) * 0.65);
-            height: calc(var(--white-key-height) * 0.6);
-            border-radius: 0 0 6px 6px;
-            cursor: pointer;
-            position: absolute;
+            background: linear-gradient(180deg, #222b3f 0%, #0f1627 96%);
+            height: 68%;
+            border-radius: 0 0 8px 8px;
             z-index: 2;
-            transition: all 0.1s ease;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 6px;
-            font-weight: bold;
-            color: white;
+            color: rgba(226, 232, 240, 0.92);
+            box-shadow: 0 12px 20px rgba(7, 11, 20, 0.55);
+        }
+
+        .key-label {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: clamp(0.55rem, 1.6vw, 0.8rem);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            pointer-events: none;
             user-select: none;
-            top: 0;
-            left: 0;
-            box-sizing: border-box;
+            text-transform: uppercase;
+            text-shadow: none;
         }
 
-        .piano-keys.piano-leading-black {
-            padding-left: calc(var(--white-key-step) / 2);
+        .white-key .key-label {
+            bottom: clamp(6px, 1.4vw, 12px);
         }
 
-        .piano-keys.piano-trailing-black {
-            padding-right: calc(var(--white-key-step) / 2);
+        .black-key .key-label {
+            top: clamp(6px, 1.4vw, 12px);
+        }
+
+        .flat-key.pressed,
+        .flat-key.active {
+            transform: translateY(1px);
+            box-shadow: 0 8px 16px rgba(12, 18, 30, 0.45);
+        }
+
+        .white-key.pressed,
+        .white-key.active {
+            background: linear-gradient(180deg, #ffe6ac 0%, #ffd27a 100%);
+            border-color: rgba(255, 193, 79, 0.9);
+        }
+
+        .black-key.pressed,
+        .black-key.active {
+            background: linear-gradient(180deg, #ffb400 0%, #de7d00 92%);
+            border-color: rgba(246, 176, 40, 0.95);
+            box-shadow: 0 10px 18px rgba(246, 176, 40, 0.55);
+        }
+
+        .flat-key.disabled {
+            pointer-events: none;
+            box-shadow: inset 0 0 0 2px #4b5563, 0 0 0 1px rgba(8, 13, 22, 0.25);
+        }
+
+        .white-key.disabled {
+            background:
+                repeating-linear-gradient(135deg, rgba(75, 85, 99, 0.26) 0 9px, rgba(75, 85, 99, 0.06) 9px 18px),
+                linear-gradient(180deg, #f4f6fb 0%, #d9deea 98%);
+            color: rgba(55, 65, 81, 0.4);
         }
 
         .black-key.disabled {
-            background: #666;
-            color: #999;
-            cursor: not-allowed;
-            opacity: 0.4;
+            background:
+                repeating-linear-gradient(135deg, rgba(75, 85, 99, 0.3) 0 9px, rgba(15, 22, 39, 0.85) 9px 18px),
+                linear-gradient(180deg, #1e2432 0%, #0a101b 96%);
+            color: rgba(209, 213, 219, 0.45);
         }
 
-        .black-key:hover:not(.disabled) {
-            background: #444;
-            transform: translateY(-1px);
-        }
-
-        .black-key:active:not(.disabled), .black-key.pressed:not(.disabled) {
-            background: #4CAF50;
-            transform: translateY(1px);
+        @media (max-width: 640px) {
+            .piano-keys {
+                height: clamp(120px, 38vw, 180px);
+                border-radius: 0;
+            }
         }
 
         .instructions {
