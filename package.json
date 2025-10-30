@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "live-server --port=8080 --host=localhost --quiet",
     "dev:open": "live-server --port=8080 --host=localhost --open",
+    "dev:lan": "live-server --port=8080 --host=0.0.0.0 --quiet",
+    "dev:open:lan": "live-server --port=8080 --host=0.0.0.0 --open",
     "build": "echo 'No build step needed for static site'",
     "serve": "python3 -m http.server 8080"
   },
@@ -21,6 +23,8 @@
     "live-server": "^1.2.2"
   },
   "dependencies": {
+    "abcjs": "^6.2.2",
+    "jsdom": "^27.0.1",
     "tonal": "^4.14.2"
   }
 }

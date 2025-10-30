@@ -1,0 +1,10 @@
+handle_path /staff/font/* {
+  @otf {
+    path_regexp fontfiles \.otf$
+  }
+  handle @otf {
+    header Content-Type "application/font-sfnt"
+    file_server
+  }
+  file_server
+}

@@ -12,6 +12,9 @@ class MelodicDictation {
         this.storageModule = new StorageModule(this.scoringModule);
         this.uiModule = new UIModule();
         this.keyboardModule = new KeyboardModule(this.musicTheory, this.audioModule);
+        this.midiModule = (typeof MidiInputModule !== 'undefined')
+            ? new MidiInputModule(this.musicTheory, this.keyboardModule)
+            : null;
         this.uiModule.setNoteLabelFormatter((note) => this.formatNoteLabel(note));
 
         // Application state
@@ -26,7 +29,23 @@ class MelodicDictation {
         this.timbre = this.audioModule.getCurrentTimbreId();
         this.autoPlayNext = false;
 
-        // Initialize keyboard module with current settings
+        // Load saved settings (if any) before configuring modules
+        try {
+            if (window.SettingsStore && typeof window.SettingsStore.load === 'function') {
+                const saved = window.SettingsStore.load();
+                if (saved) {
+                    if (saved.sequenceLength != null) this.sequenceLength = parseInt(saved.sequenceLength);
+                    if (saved.scaleType) this.scaleType = saved.scaleType;
+                    if (saved.mode) this.mode = saved.mode;
+                    if (saved.tonic) this.tonic = saved.tonic;
+                    if (saved.timbre) this.timbre = this.audioModule.setTimbre(saved.timbre);
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to load saved settings:', e);
+        }
+
+        // Initialize keyboard module with current settings (possibly restored)
         this.keyboardModule.setScaleType(this.scaleType);
         this.keyboardModule.setMode(this.mode, this.tonic);
 
@@ -46,6 +65,14 @@ class MelodicDictation {
             this.setupEventListeners();
             this.uiModule.populateTonicOptions(this.availableTonics, this.tonic);
             this.uiModule.populateTimbreOptions(this.availableTimbres, this.timbre);
+            // Reflect restored settings in the UI controls
+            this.uiModule.setFormValues({
+                difficulty: this.sequenceLength,
+                tonic: this.tonic,
+                scaleType: this.scaleType,
+                mode: this.mode,
+                timbre: this.timbre
+            });
             this.audioModule.setTimbre(this.timbre);
             
             // Update displays
@@ -67,6 +94,14 @@ class MelodicDictation {
             this.keyboardModule.updateKeyboardVisibility();
             this.keyboardModule.positionBlackKeys();
             
+            // Start MIDI input if available
+            if (this.midiModule) {
+                const midiInfo = await this.midiModule.start();
+                if (midiInfo && midiInfo.supported) {
+                    console.log('[MIDI] Ready', this.midiModule.listInputs());
+                }
+            }
+
         } catch (error) {
             console.error('Error during initialization:', error);
             this.uiModule.updateFeedback('Error initializing application. Please refresh the page.', 'incorrect');
@@ -308,6 +343,7 @@ class MelodicDictation {
      */
     handleDifficultyChange(e) {
         this.sequenceLength = parseInt(e.target.value);
+        this.persistSettings();
     }
 
     /**
@@ -319,6 +355,7 @@ class MelodicDictation {
         this.keyboardModule.setScaleType(this.scaleType);
         this.keyboardModule.updateKeyboardVisibility();
         this.keyboardModule.positionBlackKeys();
+        this.persistSettings();
     }
 
     /**
@@ -341,6 +378,7 @@ class MelodicDictation {
             console.error('Error changing timbre:', error);
             this.uiModule.updateFeedback('Error updating timbre. Please try again.', 'incorrect');
         }
+        this.persistSettings();
     }
 
     /**
@@ -368,6 +406,7 @@ class MelodicDictation {
             console.error('Error changing tonic:', error);
             this.uiModule.updateFeedback('Error updating tonic. Please try again.', 'incorrect');
         }
+        this.persistSettings();
     }
 
     /**
@@ -400,6 +439,31 @@ class MelodicDictation {
         } catch (error) {
             console.error('Error changing mode:', error);
             this.uiModule.updateFeedback(`Error switching to ${this.mode} mode. Please try again.`, 'incorrect');
+        }
+        this.persistSettings();
+    }
+
+    /**
+     * Persist current settings to localStorage and store a simple hash
+     */
+    async persistSettings() {
+        try {
+            const settings = {
+                sequenceLength: this.sequenceLength,
+                scaleType: this.scaleType,
+                mode: this.mode,
+                tonic: this.tonic,
+                timbre: this.timbre
+            };
+            if (window.SettingsStore && typeof window.SettingsStore.save === 'function') {
+                window.SettingsStore.save(settings);
+                if (typeof window.SettingsStore.sha256Hex === 'function') {
+                    const hex = await window.SettingsStore.sha256Hex(JSON.stringify(settings));
+                    if (hex) window.SettingsStore.setHash(hex);
+                }
+            }
+        } catch (err) {
+            console.warn('Persist settings failed:', err);
         }
     }
 

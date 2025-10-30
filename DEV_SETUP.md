@@ -16,7 +16,7 @@
    npm install
    ```
 
-3. **Start development server**:
+3. **Start development server (desktop)**:
    ```bash
    # Start server (will open browser automatically)
    npm run dev:open
@@ -26,6 +26,18 @@
    ```
 
 4. **Open your browser** to `http://localhost:8080`
+
+### LAN testing with auto-reload (phone/tablet)
+
+```bash
+# Serve to your local network (0.0.0.0) so phones can connect
+npm run dev:lan
+
+# Or open the default browser automatically
+npm run dev:open:lan
+```
+
+Then visit `http://YOUR-LAN-IP:8080` on your device (the `start-dev.sh` script prints the IP).
 
 ### Option 2: Using Python (No Node.js required)
 
