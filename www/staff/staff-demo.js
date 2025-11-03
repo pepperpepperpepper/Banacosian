@@ -1,3 +1,5 @@
+import { createSmuflRenderer } from './font/smufl-shim.js';
+
 const staffContainer = document.getElementById('staff-container');
 const keySelect = document.getElementById('key-select');
 const statusEl = document.getElementById('staff-status');
@@ -5,6 +7,7 @@ const statusEl = document.getElementById('staff-status');
 let isLoading = false;
 let lastSelected = null; // { key, start, end }
 let dragState = null; // { key, startChar, endChar, startChrom, accum, lastY, pxPerSemitone, svgGroup, svgRoot, previewDelta, baseTransform, baseHeadX, baseHeadY, baseHeadWidth, baseDiatonic, staffStep, noteOverlay, basePitch, baseDuration }
+const smuflRenderer = createSmuflRenderer({ fontKey: 'bravura' });
 
 function waitForABCJS() {
   return new Promise((resolve, reject) => {
@@ -446,7 +449,9 @@ async function renderSelection(key, opts = {}) {
     // Wheel-to-semitone support and custom chromatic drag
     try {
       const svgs = staffContainer.querySelectorAll('svg');
+      const bindPromises = [];
       svgs.forEach(s => {
+        bindPromises.push(smuflRenderer.bindSvg(s, { keySignature: key }));
         s.addEventListener('wheel', (ev) => {
           if (!lastSelected) return;
           ev.preventDefault();
@@ -499,6 +504,10 @@ async function renderSelection(key, opts = {}) {
           const noteOverlay = ensureNoteOverlay(s);
           const basePitchText = `${tok.acc || ''}${tok.letter}${tok.oct || ''}`;
           const baseDuration = tok.dur || '';
+          const smuflNote = smuflRenderer.getNoteForGroup(group);
+          if (smuflNote) {
+            smuflNote.beginDrag();
+          }
           dragState = {
             key,
             startChar: tok.start,
@@ -519,7 +528,8 @@ async function renderSelection(key, opts = {}) {
             staffStep,
             noteOverlay,
             basePitch: basePitchText,
-            baseDuration
+            baseDuration,
+            smuflNote
           };
           if (dragState.pointerId != null && typeof group.setPointerCapture === 'function') {
             try { group.setPointerCapture(dragState.pointerId); } catch (captureErr) { /* ignore */ }
@@ -561,6 +571,7 @@ async function renderSelection(key, opts = {}) {
           startDragFromEvent(ev);
         });
       });
+      await Promise.all(bindPromises);
     } catch (e) { /* ignore */ }
     statusEl.textContent = '';
   } catch (error) {
@@ -668,6 +679,9 @@ function onDragMove(ev) {
     const targetAbc = scientificToAbc(sci);
     const targetDiatonic = abcTokenToDiatonicIndex(targetAbc);
     const diatonicDelta = targetDiatonic - dragState.baseDiatonic;
+    if (dragState.smuflNote) {
+      dragState.smuflNote.previewDrag({ diatonic: diatonicDelta, semitone: preview });
+    }
 
     const translateY = -diatonicDelta * dragState.staffStep;
     const translate = `translate(0, ${translateY})`;
@@ -704,6 +718,19 @@ function onDragEnd() {
   window.removeEventListener('touchcancel', onDragEnd);
   if (dragState) {
     const delta = dragState.previewDelta || 0;
+    if (dragState.smuflNote) {
+      if (delta === 0) {
+        dragState.smuflNote.cancelDrag();
+      } else {
+        const semitoneTarget = dragState.startChrom + delta;
+        const midiTarget = 60 + semitoneTarget;
+        const sci = scientificFromMidiPreferFlats(midiTarget);
+        const targetAbc = scientificToAbc(sci);
+        const targetDiatonic = abcTokenToDiatonicIndex(targetAbc);
+        const diatonicDelta = targetDiatonic - dragState.baseDiatonic;
+        dragState.smuflNote.commitDrag({ diatonic: diatonicDelta, semitone: delta });
+      }
+    }
     // Clean visual artifacts
     if (dragState.svgGroup && dragState.pointerId != null && typeof dragState.svgGroup.releasePointerCapture === 'function') {
       try { dragState.svgGroup.releasePointerCapture(dragState.pointerId); } catch (releaseErr) { /* ignore */ }

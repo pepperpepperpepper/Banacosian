@@ -7,6 +7,8 @@ import VexFlow, {
   Accidental,
 } from './lib/vexflow-esm/entry/vexflow-debug.js';
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
 const vexflowContainer = document.getElementById('vexflow-container');
 const vexflowStatus = document.getElementById('vexflow-status');
 const fontSelect = document.getElementById('font-select');
@@ -58,6 +60,154 @@ const MUSIC_FONT_CHOICES = {
 
 let abcjsPromise = null;
 let resizeHandler = null;
+const HAS_POINTER_EVENTS = typeof window !== 'undefined' && 'PointerEvent' in window;
+const selectionState = {
+  noteEl: null,
+  note: null,
+  messageBase: '',
+  baseTransform: '',
+  headNodes: [],
+  drag: null,
+};
+
+const renderState = {
+  abc: null,
+  voices: null,
+  meter: null,
+  warnings: [],
+  initialized: false,
+};
+
+const LETTER_TO_SEMITONE = {
+  c: 0,
+  d: 2,
+  e: 4,
+  f: 5,
+  g: 7,
+  a: 9,
+  b: 11,
+};
+
+const SEMITONE_TO_FLAT = [
+  { letter: 'c', accidental: null },
+  { letter: 'd', accidental: 'b' },
+  { letter: 'd', accidental: null },
+  { letter: 'e', accidental: 'b' },
+  { letter: 'e', accidental: null },
+  { letter: 'f', accidental: null },
+  { letter: 'g', accidental: 'b' },
+  { letter: 'g', accidental: null },
+  { letter: 'a', accidental: 'b' },
+  { letter: 'a', accidental: null },
+  { letter: 'b', accidental: 'b' },
+  { letter: 'b', accidental: null },
+];
+
+const ACCIDENTAL_OFFSETS = {
+  '#': 1,
+  '##': 2,
+  '###': 3,
+  b: -1,
+  bb: -2,
+  bbb: -3,
+  n: 0,
+  null: 0,
+  undefined: 0,
+};
+
+const SVG_GRAPHICS_ELEMENT = typeof SVGGraphicsElement === 'undefined' ? null : SVGGraphicsElement;
+
+const selectableRegistry = {
+  items: [],
+  svg: null,
+  reset(svg) {
+    this.items = [];
+    this.svg = svg || null;
+  },
+  add(entry) {
+    if (!entry || !entry.noteEl) return null;
+    const index = this.items.length;
+    const noteEl = entry.noteEl;
+    noteEl.setAttribute('selectable', 'true');
+    noteEl.setAttribute('tabindex', '0');
+    noteEl.dataset.index = String(index);
+    noteEl.style.pointerEvents = 'all';
+    this.items.push({
+      index,
+      note: entry.note,
+      noteEl,
+      voiceIndex: entry.voiceIndex,
+      noteIndex: entry.noteIndex,
+      staffSpacing: entry.staffSpacing,
+      dim: null,
+    });
+    return this.items[index];
+  },
+  get(index) {
+    return (index >= 0 && index < this.items.length) ? this.items[index] : null;
+  },
+  clearDims() {
+    this.items.forEach((item) => { item.dim = null; });
+  },
+  indexFromTarget(target) {
+    let el = target;
+    while (el && el !== this.svg) {
+      if (el.dataset && el.dataset.index !== undefined) {
+        const idx = Number.parseInt(el.dataset.index, 10);
+        if (Number.isInteger(idx)) return idx;
+      }
+      el = el.parentNode;
+    }
+    return -1;
+  },
+  ensureDim(item) {
+    if (!item || item.dim) return item?.dim || null;
+    try {
+      const box = item.noteEl.getBBox();
+      item.dim = {
+        left: box.x,
+        top: box.y,
+        right: box.x + box.width,
+        bottom: box.y + box.height,
+      };
+    } catch (_err) {
+      item.dim = null;
+    }
+    return item.dim;
+  },
+  findClosest(x, y) {
+    let best = null;
+    let minDistance = Infinity;
+    for (let i = 0; i < this.items.length; i += 1) {
+      const item = this.items[i];
+      const dim = this.ensureDim(item);
+      if (!dim) continue;
+      const withinX = x >= dim.left && x <= dim.right;
+      const withinY = y >= dim.top && y <= dim.bottom;
+      if (withinX && withinY) {
+        best = item;
+        minDistance = 0;
+        break;
+      }
+      let distance = Infinity;
+      if (withinY) {
+        distance = Math.min(Math.abs(dim.left - x), Math.abs(dim.right - x));
+      } else if (withinX) {
+        distance = Math.min(Math.abs(dim.top - y), Math.abs(dim.bottom - y));
+      } else {
+        const dx = x < dim.left ? dim.left - x : x - dim.right;
+        const dy = y < dim.top ? dim.top - y : y - dim.bottom;
+        distance = Math.sqrt(dx * dx + dy * dy);
+      }
+      if (distance < minDistance) {
+        minDistance = distance;
+        best = item;
+      }
+    }
+    if (best && minDistance <= 12) return best;
+    return null;
+  },
+};
 
 function getStaffTheme() {
   if (typeof window === 'undefined' || !window.getComputedStyle) {
@@ -119,9 +269,30 @@ async function renderVexflowStaff() {
 
   vexflowStatus.textContent = 'Rendering with VexFlow…';
 
-  const abcString = (typeof window !== 'undefined' && window.__SMUFL_SAMPLE_ABC) || defaultAbc();
+  const defaultAbcString = (typeof window !== 'undefined' && window.__SMUFL_SAMPLE_ABC) || defaultAbc();
+  if (!renderState.abc) {
+    renderState.abc = defaultAbcString;
+  }
+
   const abcjs = await waitForAbcjs();
-  const { voices, meter, warnings } = parseAbcToVoices(abcjs, abcString);
+  let voices;
+  let meter;
+  let warnings;
+
+  if (!renderState.initialized) {
+    const parsed = parseAbcToVoices(abcjs, renderState.abc);
+    voices = parsed.voices;
+    meter = parsed.meter;
+    warnings = parsed.warnings;
+    renderState.voices = cloneVoices(voices);
+    renderState.meter = meter;
+    renderState.warnings = warnings;
+    renderState.initialized = true;
+  } else {
+    voices = cloneVoices(renderState.voices);
+    meter = renderState.meter;
+    warnings = renderState.warnings ? [...renderState.warnings] : [];
+  }
 
   if (voices.length === 0) {
     vexflowContainer.innerHTML = '';
@@ -133,6 +304,7 @@ async function renderVexflowStaff() {
   if (fontChoice?.warning) {
     warnings.push(fontChoice.warning);
   }
+  renderState.warnings = warnings.slice();
   if (Array.isArray(fontChoice?.stack) && fontChoice.stack.length > 0) {
     const stack = fontChoice.stack.filter(Boolean);
     try {
@@ -176,8 +348,13 @@ async function renderVexflowStaff() {
   stave.setDefaultLedgerLineStyle(ledgerStyle);
   stave.setContext(context).draw();
 
-  const vexflowVoices = voices.map((voice) => {
-    const tickables = voice.noteSpecs.map((spec) => createVexflowNote(spec, theme));
+  const vexflowVoices = voices.map((voice, voiceIndex) => {
+    const tickables = voice.noteSpecs.map((spec, noteIndex) => {
+      const note = createVexflowNote(spec, theme);
+      note.__voiceIndex = voiceIndex;
+      note.__noteIndex = noteIndex;
+      return note;
+    });
     const vfVoice = new Voice({
       num_beats: meter?.num || 4,
       beat_value: meter?.den || 4,
@@ -197,11 +374,14 @@ async function renderVexflowStaff() {
   const totalElements = voices.reduce((sum, voice) => sum + voice.noteSpecs.length, 0);
   const warningSuffix = warnings.length ? ` — ${warnings.length} warning${warnings.length === 1 ? '' : 's'} (see console)` : '';
   const fontSuffix = fontChoice?.label ? ` using ${fontChoice.label}` : '';
-  vexflowStatus.textContent = `VexFlow rendered ${totalElements} element${totalElements === 1 ? '' : 's'} across ${voices.length} voice${voices.length === 1 ? '' : 's'}${fontSuffix}.${warningSuffix}`;
+  const baseMessage = `VexFlow rendered ${totalElements} element${totalElements === 1 ? '' : 's'} across ${voices.length} voice${voices.length === 1 ? '' : 's'}${fontSuffix}.${warningSuffix}`;
+  selectionState.messageBase = baseMessage;
+  vexflowStatus.textContent = baseMessage;
 
   warnings.forEach((warning) => console.warn('[VexFlow Demo]', warning));
 
   applyVexflowTheme(vexflowContainer, theme);
+  registerVexflowInteractions(context, vexflowVoices, baseMessage);
 }
 
 function createVexflowNote(spec, theme) {
@@ -212,6 +392,7 @@ function createVexflowNote(spec, theme) {
     clef: spec.clef || 'treble',
   };
   const note = new StaveNote(noteStruct);
+  note.__smuflSpec = spec;
   if (theme) {
     const noteLedgerStyle = {};
     if (theme.ledger) {
@@ -226,7 +407,11 @@ function createVexflowNote(spec, theme) {
     }
   }
   if (!isRest) {
-    spec.accidentals.forEach((accidental, index) => {
+    const accidentals = Array.isArray(spec.accidentals) ? spec.accidentals : [];
+    if (!Array.isArray(spec.midis)) {
+      spec.midis = spec.keys.map((key, index) => keyToMidi(key, accidentals[index]));
+    }
+    accidentals.forEach((accidental, index) => {
       if (accidental) {
         note.addModifier(new Accidental(accidental), index);
       }
@@ -315,10 +500,12 @@ function convertElementToSpec(element, clef, warnings) {
     accidentals.push(accidental);
     if (warning) warnings.push(warning);
   });
+  const midis = keys.map((key, index) => keyToMidi(key, accidentals[index]));
   return {
     isRest: false,
     keys,
     accidentals,
+    midis,
     duration: durationInfo.code,
     dots: durationInfo.dots,
     clef,
@@ -510,5 +697,419 @@ function applyVexflowTheme(container, palette) {
   });
   if (svg.style) {
     svg.style.color = colors.stroke;
+  }
+}
+
+function cloneVoices(voices) {
+  return (voices || []).map((voice) => ({
+    staffIndex: voice.staffIndex,
+    voiceIndex: voice.voiceIndex,
+    clef: voice.clef,
+    noteSpecs: (voice.noteSpecs || []).map((spec) => ({
+      ...spec,
+      keys: Array.isArray(spec.keys) ? [...spec.keys] : [],
+      accidentals: Array.isArray(spec.accidentals) ? [...spec.accidentals] : [],
+      midis: Array.isArray(spec.midis) ? [...spec.midis] : undefined,
+    })),
+  }));
+}
+
+function keyToMidi(key, accidental) {
+  if (!key) return 60;
+  const [letterRaw, octaveRaw] = key.split('/');
+  const letter = (letterRaw || '').toLowerCase();
+  const octave = parseInt(octaveRaw, 10);
+  const base = LETTER_TO_SEMITONE[letter];
+  if (base == null || Number.isNaN(octave)) return 60;
+  const offset = ACCIDENTAL_OFFSETS[accidental] ?? 0;
+  return (octave + 1) * 12 + base + offset;
+}
+
+function midiToKeySpec(midi) {
+  const wrapped = ((midi % 12) + 12) % 12;
+  const octave = Math.floor(midi / 12) - 1;
+  const pref = SEMITONE_TO_FLAT[wrapped] || { letter: 'c', accidental: null };
+  const accidental = pref.accidental;
+  const key = `${pref.letter}/${octave}`;
+  return {
+    key,
+    accidental,
+    diatonicIndex: diatonicIndexForLetter(pref.letter, octave),
+  };
+}
+
+function diatonicIndexForLetter(letter, octave = 4) {
+  const order = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
+  const base = order.indexOf(letter?.toLowerCase());
+  if (base === -1) return 0;
+  return octave * 7 + base;
+}
+
+function registerVexflowInteractions(context, voices, baseMessage) {
+  if (!context || !context.svg) return;
+  const svg = context.svg;
+  clearSelectedNote(baseMessage);
+  selectableRegistry.reset(svg);
+
+  voices.forEach((voice, voiceIndex) => {
+    const tickables = voice.getTickables ? voice.getTickables() : [];
+    tickables.forEach((tickable, noteIndex) => {
+      if (!(tickable instanceof StaveNote)) return;
+      if (typeof tickable.isRest === 'function' && tickable.isRest()) return;
+      const noteEl = tickable.getAttrs?.().el;
+      if (!noteEl) return;
+      noteEl.classList.add('vf-note');
+      noteEl.dataset.voiceIndex = String(voiceIndex);
+      noteEl.dataset.noteIndex = String(noteIndex);
+      const staffSpacing = tickable.getStave?.()?.getSpacingBetweenLines?.() ?? 10;
+      selectableRegistry.add({
+        note: tickable,
+        noteEl,
+        voiceIndex,
+        noteIndex,
+        staffSpacing,
+      });
+    });
+  });
+
+  attachSvgInteractionHandlers(svg, baseMessage);
+}
+
+function collectNoteheadNodes(noteEl) {
+  if (!noteEl) return [];
+  const nodes = new Set();
+  const pushNodes = (list) => {
+    list.forEach((node) => {
+      if (SVG_GRAPHICS_ELEMENT && !(node instanceof SVG_GRAPHICS_ELEMENT)) return;
+      if (!node.getBBox) return;
+      nodes.add(node);
+    });
+  };
+  pushNodes(Array.from(noteEl.querySelectorAll('[class*="vf-notehead"]')));
+  pushNodes(Array.from(noteEl.querySelectorAll('[data-name="notehead"]')));
+  const unique = [];
+  nodes.forEach((node) => {
+    unique.push(node);
+  });
+  return unique;
+}
+
+function attachSvgInteractionHandlers(svg, baseMessage) {
+  if (!svg) return;
+  if (!svg.__vexflowInteraction) {
+    const handlers = {
+      baseMessage,
+    };
+    const downHandler = (event) => handleSvgPointerDown(event, svg, handlers);
+    handlers.down = downHandler;
+    if (HAS_POINTER_EVENTS) {
+      svg.addEventListener('pointerdown', downHandler);
+    } else {
+      svg.addEventListener('mousedown', downHandler);
+      svg.addEventListener('touchstart', downHandler, { passive: false });
+    }
+    svg.__vexflowInteraction = handlers;
+  } else {
+    svg.__vexflowInteraction.baseMessage = baseMessage;
+  }
+}
+
+function normalizePointerEvent(event) {
+  if (!event) return null;
+  if (event.touches && event.touches.length > 0) {
+    return event.touches[0];
+  }
+  if (event.changedTouches && event.changedTouches.length > 0) {
+    return event.changedTouches[0];
+  }
+  return event;
+}
+
+function convertToSvgCoords(pointerEvent, svg) {
+  if (!pointerEvent || !svg || typeof svg.createSVGPoint !== 'function') return null;
+  const point = svg.createSVGPoint();
+  const clientX = pointerEvent.clientX ?? pointerEvent.pageX;
+  const clientY = pointerEvent.clientY ?? pointerEvent.pageY;
+  if (clientX == null || clientY == null) return null;
+  point.x = clientX;
+  point.y = clientY;
+  const screenCTM = svg.getScreenCTM?.();
+  if (!screenCTM) return null;
+  const inverse = screenCTM.inverse?.();
+  if (!inverse) return null;
+  const transformed = point.matrixTransform(inverse);
+  return { x: transformed.x, y: transformed.y };
+}
+
+function handleSvgPointerDown(event, svg, handlers) {
+  if (!svg || !handlers) return;
+  const primary = normalizePointerEvent(event);
+  const directIndex = selectableRegistry.indexFromTarget(event.target);
+  let selectable = directIndex >= 0 ? selectableRegistry.get(directIndex) : null;
+  if (!selectable) {
+    const coords = convertToSvgCoords(primary, svg);
+    if (!coords) return;
+    selectable = selectableRegistry.findClosest(coords.x, coords.y);
+  }
+  if (!selectable) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const baseMessage = handlers.baseMessage;
+  selectVexflowNote({
+    note: selectable.note,
+    noteEl: selectable.noteEl,
+    baseMessage,
+  });
+  beginVexflowDrag(event, selectable.note, selectable.noteEl, svg, selectable.voiceIndex, selectable.noteIndex);
+}
+
+
+function clearSelectedNote(baseMessage) {
+  if (selectionState.drag) {
+    detachVexflowDragListeners();
+    selectionState.drag = null;
+  }
+  if (selectionState.headNodes.length > 0) {
+    selectionState.headNodes.forEach((node) => node.classList.remove('vf-notehead-selected'));
+  }
+  selectionState.headNodes = [];
+  if (selectionState.noteEl) {
+    selectionState.noteEl.classList.remove('vf-note-selected');
+    if (selectionState.baseTransform && selectionState.baseTransform !== '') {
+      selectionState.noteEl.setAttribute('transform', selectionState.baseTransform);
+    } else {
+      selectionState.noteEl.removeAttribute('transform');
+    }
+  }
+  selectionState.noteEl = null;
+  selectionState.note = null;
+  selectionState.baseTransform = '';
+  if (baseMessage !== undefined) {
+    selectionState.messageBase = baseMessage;
+    vexflowStatus.textContent = baseMessage;
+  }
+}
+
+function selectVexflowNote({ note, noteEl, baseMessage }) {
+  clearSelectedNote();
+  selectionState.note = note;
+  selectionState.noteEl = noteEl || null;
+  if (noteEl) {
+    noteEl.classList.add('vf-note-selected');
+  }
+  selectionState.baseTransform = noteEl?.getAttribute('transform') || '';
+  if (noteEl) {
+    const headNodes = collectNoteheadNodes(noteEl);
+    headNodes.forEach((node) => node.classList.add('vf-notehead-selected'));
+    selectionState.headNodes = headNodes;
+  }
+  if (baseMessage) {
+    selectionState.messageBase = baseMessage;
+  }
+  const base = selectionState.messageBase || '';
+  const description = describeSpec(note?.__smuflSpec);
+  vexflowStatus.textContent = description ? `${base} — Selected ${description}` : `${base} — Selected note`;
+}
+
+function describeSpec(spec) {
+  if (!spec) return '';
+  if (spec.isRest) return `rest (${spec.duration})`;
+  const key = Array.isArray(spec.keys) ? spec.keys[0] : spec.keys;
+  const accidental = Array.isArray(spec.accidentals) ? spec.accidentals[0] : null;
+  const midi = Array.isArray(spec.midis) ? spec.midis[0] : keyToMidi(key, accidental);
+  const derived = midiToKeySpec(midi);
+  const label = formatPitchLabel(derived);
+  const duration = spec.duration || '';
+  return duration ? `${label} (${duration})` : label;
+}
+
+function beginVexflowDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIndex) {
+  const spec = note?.__smuflSpec;
+  if (!noteEl || !spec) return;
+  const point = event.touches && event.touches[0] ? event.touches[0] : event;
+  if (!point || point.clientY == null) return;
+  const stave = note.getStave();
+  const staffSpacing = stave?.getSpacingBetweenLines() ?? 12;
+  const staffStep = staffSpacing / 2;
+  const pxPerSemitone = Math.max(2, staffStep * 0.6);
+  const accidentals = Array.isArray(spec.accidentals) ? spec.accidentals : [];
+  const baseMidi = Array.isArray(spec.midis) && spec.midis.length > 0
+    ? spec.midis[0]
+    : keyToMidi(spec.keys?.[0], accidentals[0]);
+  const [baseLetterRaw = 'c', baseOctaveRaw = '4'] = (spec.keys?.[0] || 'c/4').split('/');
+  const baseOctave = parseInt(baseOctaveRaw, 10);
+  const baseDiatonic = diatonicIndexForLetter(baseLetterRaw, Number.isNaN(baseOctave) ? 4 : baseOctave);
+  selectionState.drag = {
+    pointerId: event.pointerId ?? null,
+    lastY: point.clientY,
+    accum: 0,
+    pxPerSemitone,
+    baseMidi,
+    baseDiatonic,
+    staffStep,
+    note,
+    noteEl,
+    pointerTarget,
+    voiceIndex,
+    noteIndex,
+    baseTransform: selectionState.baseTransform,
+    previewDelta: 0,
+    baseMessage: selectionState.messageBase,
+  };
+  attachVexflowDragListeners();
+  if (pointerTarget && selectionState.drag.pointerId != null && pointerTarget.setPointerCapture) {
+    try { pointerTarget.setPointerCapture(selectionState.drag.pointerId); } catch (_err) { /* ignore */ }
+  }
+}
+
+function attachVexflowDragListeners() {
+  if (HAS_POINTER_EVENTS) {
+    window.addEventListener('pointermove', handleVexflowPointerMove, { passive: false });
+    window.addEventListener('pointerup', handleVexflowPointerUp, { passive: true });
+    window.addEventListener('pointercancel', handleVexflowPointerUp, { passive: true });
+  } else {
+    window.addEventListener('touchmove', handleVexflowPointerMove, { passive: false });
+    window.addEventListener('touchend', handleVexflowPointerUp, { passive: true });
+    window.addEventListener('touchcancel', handleVexflowPointerUp, { passive: true });
+    window.addEventListener('mousemove', handleVexflowPointerMove, { passive: false });
+    window.addEventListener('mouseup', handleVexflowPointerUp, { passive: true });
+  }
+}
+
+function detachVexflowDragListeners() {
+  if (HAS_POINTER_EVENTS) {
+    window.removeEventListener('pointermove', handleVexflowPointerMove);
+    window.removeEventListener('pointerup', handleVexflowPointerUp);
+    window.removeEventListener('pointercancel', handleVexflowPointerUp);
+  } else {
+    window.removeEventListener('touchmove', handleVexflowPointerMove);
+    window.removeEventListener('touchend', handleVexflowPointerUp);
+    window.removeEventListener('touchcancel', handleVexflowPointerUp);
+    window.removeEventListener('mousemove', handleVexflowPointerMove);
+    window.removeEventListener('mouseup', handleVexflowPointerUp);
+  }
+}
+
+function handleVexflowPointerMove(event) {
+  const drag = selectionState.drag;
+  if (!drag) return;
+  if (event.pointerId != null && drag.pointerId != null && event.pointerId !== drag.pointerId) return;
+  const point = event.touches && event.touches[0] ? event.touches[0] : event;
+  if (!point || point.clientY == null) return;
+  const dy = drag.lastY - point.clientY;
+  drag.lastY = point.clientY;
+  drag.accum += dy;
+  const preview = Math.round(drag.accum / drag.pxPerSemitone);
+  if (preview !== drag.previewDelta) {
+    drag.previewDelta = preview;
+    previewVexflowNote(drag, preview);
+  }
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+}
+
+function handleVexflowPointerUp(event) {
+  const drag = selectionState.drag;
+  if (!drag) return;
+  if (event.pointerId != null && drag.pointerId != null && event.pointerId !== drag.pointerId) return;
+  detachVexflowDragListeners();
+  if (drag.pointerTarget && drag.pointerId != null && typeof drag.pointerTarget.releasePointerCapture === 'function') {
+    try { drag.pointerTarget.releasePointerCapture(drag.pointerId); } catch (_err) { /* ignore */ }
+  }
+  const delta = drag.previewDelta || 0;
+  if (delta !== 0) {
+    commitVexflowNoteDelta(drag, delta);
+  } else if (drag.noteEl) {
+    if (drag.baseTransform && drag.baseTransform !== '') {
+      drag.noteEl.setAttribute('transform', drag.baseTransform);
+    } else {
+      drag.noteEl.removeAttribute('transform');
+    }
+    updateStatusPreview(drag, 0);
+  }
+  selectionState.drag = null;
+}
+
+function previewVexflowNote(drag, preview) {
+  const noteEl = drag.noteEl;
+  if (!noteEl) return;
+  if (preview === 0) {
+    if (drag.baseTransform && drag.baseTransform !== '') {
+      noteEl.setAttribute('transform', drag.baseTransform);
+    } else {
+      noteEl.removeAttribute('transform');
+    }
+    updateStatusPreview(drag, 0);
+    return;
+  }
+  const targetMidi = drag.baseMidi + preview;
+  const derived = midiToKeySpec(targetMidi);
+  const diatonicDelta = derived.diatonicIndex - drag.baseDiatonic;
+  const translateY = -(diatonicDelta * drag.staffStep);
+  const translate = `translate(0, ${translateY})`;
+  const combined = drag.baseTransform && drag.baseTransform !== '' ? `${translate} ${drag.baseTransform}` : translate;
+  noteEl.setAttribute('transform', combined);
+  drag.previewKey = derived;
+  updateStatusPreview(drag, preview, derived);
+}
+
+function updateStatusPreview(drag, preview, derived) {
+  const baseMessage = drag.baseMessage || selectionState.messageBase || '';
+  const prefix = baseMessage ? `${baseMessage} — ` : '';
+  const spec = selectionState.note?.__smuflSpec;
+  const baseDescription = describeSpec(spec);
+  if (preview === 0) {
+    const message = baseDescription ? `Selected ${baseDescription}` : 'Selected note';
+    vexflowStatus.textContent = `${prefix}${message}`;
+    return;
+  }
+  const target = derived || midiToKeySpec(drag.baseMidi + preview);
+  const targetLabel = formatPitchLabel(target);
+  const suffix = baseDescription ? `${baseDescription} → ${targetLabel}` : `note → ${targetLabel}`;
+  vexflowStatus.textContent = `${prefix}Selected ${suffix}`;
+}
+
+function commitVexflowNoteDelta(drag, delta) {
+  const voice = renderState.voices?.[drag.voiceIndex];
+  if (!voice) {
+    renderVexflowStaff().catch(handleRenderFailure);
+    return;
+  }
+  const spec = voice.noteSpecs?.[drag.noteIndex];
+  if (!spec || spec.isRest) {
+    renderVexflowStaff().catch(handleRenderFailure);
+    return;
+  }
+  const targetMidi = drag.baseMidi + delta;
+  const derived = midiToKeySpec(targetMidi);
+  const accidentalSymbol = derived.accidental ? derived.accidental : null;
+  spec.keys = [derived.key];
+  spec.accidentals = [accidentalSymbol];
+  spec.midis = [targetMidi];
+  selectionState.drag = null;
+  clearSelectedNote(selectionState.messageBase);
+  renderVexflowStaff().catch(handleRenderFailure);
+}
+
+function formatPitchLabel({ key, accidental }) {
+  if (!key) return '';
+  const [letterRaw, octaveRaw] = key.split('/');
+  const letter = (letterRaw || '').toUpperCase();
+  const octave = octaveRaw ?? '';
+  const glyph = accidentalToGlyph(accidental);
+  return `${letter}${glyph}${octave}`;
+}
+
+function accidentalToGlyph(accidental) {
+  switch (accidental) {
+    case 'b': return '♭';
+    case '#': return '♯';
+    case 'n': return '♮';
+    case 'bb': return '♭♭';
+    case '##': return '♯♯';
+    default: return '';
   }
 }

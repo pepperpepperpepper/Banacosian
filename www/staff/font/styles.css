@@ -189,6 +189,19 @@ button:hover,
   display: block;
 }
 
+.vexflow-container svg [selectable="true"] {
+  cursor: pointer;
+}
+
+.vexflow-container svg .vf-notehead-selected {
+  stroke: var(--color-accent) !important;
+  fill: var(--color-accent) !important;
+}
+
+.vexflow-container svg .vf-note-selected {
+  filter: drop-shadow(0 0 1px var(--color-accent));
+}
+
 .vexflow-container svg [class*="ledger"] {
   stroke: var(--staff-ledger-color) !important;
   fill: var(--staff-ledger-color) !important;
