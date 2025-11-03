@@ -117,6 +117,8 @@ const ACCIDENTAL_OFFSETS = {
 
 const SVG_GRAPHICS_ELEMENT = typeof SVGGraphicsElement === 'undefined' ? null : SVGGraphicsElement;
 
+console.log('[VexflowDemo] script loaded');
+
 const selectableRegistry = {
   items: [],
   svg: null,
@@ -132,6 +134,13 @@ const selectableRegistry = {
     noteEl.setAttribute('tabindex', '0');
     noteEl.dataset.index = String(index);
     noteEl.style.pointerEvents = 'all';
+    console.log('[VexflowSelectable] add', {
+      index,
+      voiceIndex: entry.voiceIndex,
+      noteIndex: entry.noteIndex,
+      id: noteEl.id,
+      className: noteEl.className?.baseVal || noteEl.className,
+    });
     this.items.push({
       index,
       note: entry.note,
@@ -164,13 +173,19 @@ const selectableRegistry = {
     if (!item || item.dim) return item?.dim || null;
     try {
       const box = item.noteEl.getBBox();
+      if (!box) {
+        console.log('[VexflowSelectable] getBBox null', item.index);
+        return null;
+      }
       item.dim = {
         left: box.x,
         top: box.y,
         right: box.x + box.width,
         bottom: box.y + box.height,
       };
+      console.log('[VexflowSelectable] bbox', item.index, item.dim);
     } catch (_err) {
+      console.log('[VexflowSelectable] getBBox error', item.index, _err);
       item.dim = null;
     }
     return item.dim;
@@ -205,6 +220,7 @@ const selectableRegistry = {
       }
     }
     if (best && minDistance <= 12) return best;
+    console.log('[VexflowSelectable] findClosest miss', { x, y, minDistance });
     return null;
   },
 };
@@ -371,6 +387,18 @@ async function renderVexflowStaff() {
 
   vexflowVoices.forEach((voice) => voice.draw(context, stave));
 
+  vexflowVoices.forEach((voice, voiceIndex) => {
+    const tickables = voice.getTickables ? voice.getTickables() : [];
+    tickables.forEach((tickable, noteIndex) => {
+      console.log('[VexflowDraw] attrs after draw', {
+        voiceIndex,
+        noteIndex,
+        attrs: tickable.getAttrs?.(),
+        rawAttrs: tickable.attrs,
+      });
+    });
+  });
+
   const totalElements = voices.reduce((sum, voice) => sum + voice.noteSpecs.length, 0);
   const warningSuffix = warnings.length ? ` — ${warnings.length} warning${warnings.length === 1 ? '' : 's'} (see console)` : '';
   const fontSuffix = fontChoice?.label ? ` using ${fontChoice.label}` : '';
@@ -390,6 +418,13 @@ function createVexflowNote(spec, theme) {
     keys: isRest ? ['b/4'] : spec.keys,
     duration: `${spec.duration}${isRest ? 'r' : ''}`,
     clef: spec.clef || 'treble',
+    // Align ledger line extent with themed ledger thickness. In VexFlow v4,
+    // StaveNote uses `strokePx` to extend ledger lines beyond the notehead on
+    // both sides (width = glyphWidth + strokePx*2). Use our themed ledger
+    // thickness so outside-the-staff ledger lines match others visually.
+    ...(theme && Number.isFinite(theme.ledgerWidth) && theme.ledgerWidth > 0
+      ? { strokePx: theme.ledgerWidth }
+      : {}),
   };
   const note = new StaveNote(noteStruct);
   note.__smuflSpec = spec;
@@ -756,8 +791,35 @@ function registerVexflowInteractions(context, voices, baseMessage) {
     tickables.forEach((tickable, noteIndex) => {
       if (!(tickable instanceof StaveNote)) return;
       if (typeof tickable.isRest === 'function' && tickable.isRest()) return;
-      const noteEl = tickable.getAttrs?.().el;
-      if (!noteEl) return;
+      // VexFlow v4: prefer Element#getSVGElement(); fall back to id lookup.
+      let noteEl = null;
+      try {
+        if (typeof tickable.getSVGElement === 'function') {
+          noteEl = tickable.getSVGElement();
+        }
+        if (!noteEl && typeof tickable.getAttributes === 'function') {
+          const attrs = tickable.getAttributes();
+          if (attrs?.id) {
+            noteEl = document.getElementById(`vf-${attrs.id}`);
+          }
+        }
+        // Legacy (v3) fallback — kept for safety when using older builds
+        if (!noteEl) {
+          noteEl = tickable.getAttrs?.()?.el || null;
+        }
+      } catch (_err) {
+        // Swallow and report below
+      }
+      if (!noteEl) {
+        console.log('[VexflowSelectable] missing noteEl', {
+          voiceIndex,
+          noteIndex,
+          attrs: tickable.getAttrs?.(),
+          rawAttrs: tickable.attrs,
+          keys: tickable.keys,
+        });
+        return;
+      }
       noteEl.classList.add('vf-note');
       noteEl.dataset.voiceIndex = String(voiceIndex);
       noteEl.dataset.noteIndex = String(noteIndex);
@@ -771,6 +833,8 @@ function registerVexflowInteractions(context, voices, baseMessage) {
       });
     });
   });
+
+  console.log('[VexflowSelectable] total', selectableRegistry.items.length);
 
   attachSvgInteractionHandlers(svg, baseMessage);
 }
@@ -843,14 +907,23 @@ function convertToSvgCoords(pointerEvent, svg) {
 
 function handleSvgPointerDown(event, svg, handlers) {
   if (!svg || !handlers) return;
+  console.log('[VexflowInteraction] pointerdown', {
+    type: event.type,
+    targetTag: event.target?.tagName,
+    targetClass: event.target?.className?.baseVal || event.target?.className,
+    pointerId: event.pointerId,
+  });
   const primary = normalizePointerEvent(event);
   const directIndex = selectableRegistry.indexFromTarget(event.target);
   let selectable = directIndex >= 0 ? selectableRegistry.get(directIndex) : null;
+  console.log('[VexflowInteraction] directIndex', directIndex);
   if (!selectable) {
     const coords = convertToSvgCoords(primary, svg);
-    if (!coords) return;
+    console.log('[VexflowInteraction] coords', coords);
+  if (!coords) return;
     selectable = selectableRegistry.findClosest(coords.x, coords.y);
   }
+  console.log('[VexflowInteraction] resolved', selectable?.index);
   if (!selectable) return;
 
   event.preventDefault();
@@ -896,6 +969,11 @@ function selectVexflowNote({ note, noteEl, baseMessage }) {
   clearSelectedNote();
   selectionState.note = note;
   selectionState.noteEl = noteEl || null;
+  console.log('[VexflowSelection] select', {
+    noteElTag: noteEl?.tagName,
+    classes: noteEl?.className?.baseVal || noteEl?.className,
+    baseMessage,
+  });
   if (noteEl) {
     noteEl.classList.add('vf-note-selected');
   }
@@ -930,6 +1008,12 @@ function beginVexflowDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
   if (!noteEl || !spec) return;
   const point = event.touches && event.touches[0] ? event.touches[0] : event;
   if (!point || point.clientY == null) return;
+  console.log('[VexflowDrag] begin', {
+    pointerId: event.pointerId,
+    clientY: point.clientY,
+    voiceIndex,
+    noteIndex,
+  });
   const stave = note.getStave();
   const staffSpacing = stave?.getSpacingBetweenLines() ?? 12;
   const staffStep = staffSpacing / 2;
@@ -1002,6 +1086,13 @@ function handleVexflowPointerMove(event) {
   drag.lastY = point.clientY;
   drag.accum += dy;
   const preview = Math.round(drag.accum / drag.pxPerSemitone);
+  console.log('[VexflowDrag] move', {
+    pointerId: event.pointerId,
+    clientY: point.clientY,
+    dy,
+    accum: drag.accum,
+    preview,
+  });
   if (preview !== drag.previewDelta) {
     drag.previewDelta = preview;
     previewVexflowNote(drag, preview);
@@ -1015,6 +1106,10 @@ function handleVexflowPointerUp(event) {
   const drag = selectionState.drag;
   if (!drag) return;
   if (event.pointerId != null && drag.pointerId != null && event.pointerId !== drag.pointerId) return;
+  console.log('[VexflowDrag] end', {
+    pointerId: event.pointerId,
+    previewDelta: drag.previewDelta,
+  });
   detachVexflowDragListeners();
   if (drag.pointerTarget && drag.pointerId != null && typeof drag.pointerTarget.releasePointerCapture === 'function') {
     try { drag.pointerTarget.releasePointerCapture(drag.pointerId); } catch (_err) { /* ignore */ }
