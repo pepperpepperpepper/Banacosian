@@ -119,42 +119,6 @@ const SVG_GRAPHICS_ELEMENT = typeof SVGGraphicsElement === 'undefined' ? null : 
 
 console.log('[VexflowDemo] script loaded');
 
-// Patch VexFlow ledger line rendering to enforce themed thickness and rounded caps.
-let __LEDGER_PATCHED__ = false;
-function ensureLedgerLineRendering(theme) {
-  if (__LEDGER_PATCHED__) return;
-  try {
-    const original = StaveNote.prototype.drawLedgerLines;
-    if (typeof original !== 'function') return;
-    StaveNote.prototype.drawLedgerLines = function patchedDrawLedgerLines() {
-      try {
-        // Ensure each note has a ledger style with the themed lineWidth.
-        if (theme && Number.isFinite(theme.ledgerWidth) && theme.ledgerWidth > 0) {
-          const cur = (typeof this.getLedgerLineStyle === 'function') ? (this.getLedgerLineStyle() || {}) : {};
-          if (cur.lineWidth !== theme.ledgerWidth) {
-            if (typeof this.setLedgerLineStyle === 'function') {
-              this.setLedgerLineStyle(Object.assign({}, cur, { lineWidth: theme.ledgerWidth }));
-            }
-          }
-        }
-        const ctx = this.checkContext();
-        ctx.save?.();
-        // Round caps look closer to ABCJS styling and avoid “spiky” ends.
-        if (typeof ctx.setLineCap === 'function') ctx.setLineCap('round');
-        // Delegate to original which applies strokeStyle/fillStyle/lineWidth as needed.
-        const result = original.call(this);
-        ctx.restore?.();
-        return result;
-      } catch (e) {
-        return original.call(this);
-      }
-    };
-    __LEDGER_PATCHED__ = true;
-  } catch (_err) {
-    // no-op
-  }
-}
-
 const selectableRegistry = {
   items: [],
   svg: null,
@@ -370,8 +334,6 @@ async function renderVexflowStaff() {
   }
 
   const theme = getStaffTheme();
-  // Ensure ledger lines draw with themed thickness and rounded caps.
-  ensureLedgerLineRendering(theme);
 
   const width = Math.max(480, vexflowContainer.clientWidth || vexflowContainer.parentElement?.clientWidth || 720);
   const height = 200;
