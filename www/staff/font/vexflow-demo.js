@@ -872,6 +872,10 @@ function attachSvgInteractionHandlers(svg, baseMessage) {
       svg.addEventListener('mousedown', downHandler);
       svg.addEventListener('touchstart', downHandler, { passive: false });
     }
+    // Wheel-to-semitone adjustment (active selection required)
+    const wheelHandler = (event) => handleVexflowWheel(event, svg);
+    handlers.wheel = wheelHandler;
+    svg.addEventListener('wheel', wheelHandler, { passive: false });
     svg.__vexflowInteraction = handlers;
   } else {
     svg.__vexflowInteraction.baseMessage = baseMessage;
@@ -936,6 +940,17 @@ function handleSvgPointerDown(event, svg, handlers) {
     baseMessage,
   });
   beginVexflowDrag(event, selectable.note, selectable.noteEl, svg, selectable.voiceIndex, selectable.noteIndex);
+}
+
+function handleVexflowWheel(event, svg) {
+  // Only respond to wheel when a note is currently selected.
+  if (!selectionState.note) return;
+  // Wheel up raises, wheel down lowers (match ABCJS behavior).
+  const delta = event.deltaY < 0 ? +1 : -1;
+  if (delta !== 0) {
+    if (event.cancelable) event.preventDefault();
+    commitVexflowWheelDelta(delta);
+  }
 }
 
 
@@ -1185,6 +1200,30 @@ function commitVexflowNoteDelta(drag, delta) {
   spec.accidentals = [accidentalSymbol];
   spec.midis = [targetMidi];
   selectionState.drag = null;
+  clearSelectedNote(selectionState.messageBase);
+  renderVexflowStaff().catch(handleRenderFailure);
+}
+
+// Commit a semitone delta for the currently selected note (wheel support).
+function commitVexflowWheelDelta(delta) {
+  const note = selectionState.note;
+  if (!note) return;
+  const voiceIndex = note.__voiceIndex;
+  const noteIndex = note.__noteIndex;
+  const voice = renderState.voices?.[voiceIndex];
+  if (!voice) return;
+  const spec = voice.noteSpecs?.[noteIndex];
+  if (!spec || spec.isRest) return;
+  const accidentals = Array.isArray(spec.accidentals) ? spec.accidentals : [];
+  const baseMidi = Array.isArray(spec.midis) && spec.midis.length > 0
+    ? spec.midis[0]
+    : keyToMidi(spec.keys?.[0], accidentals[0]);
+  const targetMidi = baseMidi + delta;
+  const derived = midiToKeySpec(targetMidi);
+  const accidentalSymbol = derived.accidental ? derived.accidental : null;
+  spec.keys = [derived.key];
+  spec.accidentals = [accidentalSymbol];
+  spec.midis = [targetMidi];
   clearSelectedNote(selectionState.messageBase);
   renderVexflowStaff().catch(handleRenderFailure);
 }

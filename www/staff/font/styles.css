@@ -187,6 +187,13 @@ button:hover,
   width: 100%;
   height: auto;
   display: block;
+  /* Prevent browser panning/zooming during note drag (mobile + touch) */
+  touch-action: none;
+  /* Prevent text selection while dragging (desktop + touch) */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Avoid tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .vexflow-container svg [selectable="true"] {
