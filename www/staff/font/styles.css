@@ -15,13 +15,7 @@
   --color-button-bg-hover: rgba(255, 255, 255, 0.18);
   --color-button-border: rgba(255, 255, 255, 0.25);
 
-  /* Staff / notation palette */
-  --staff-stroke-color: #f5f5f5;
-  --staff-fill-color: #f5f5f5;
-  --staff-ledger-color: var(--staff-stroke-color);
-  --staff-selection-color: #1a2fd6;
-  --staff-highlight-color: #894eff;
-  --staff-ledger-thickness: 6;
+  /* Staff / notation palette overrides now live in /staff/theme/tokens.css */
 }
 
 @font-face {
@@ -201,23 +195,15 @@ button:hover,
 }
 
 .vexflow-container svg .vf-notehead-selected {
-  stroke: var(--color-accent) !important;
-  fill: var(--color-accent) !important;
+  stroke: var(--notation-accent) !important;
+  fill: var(--notation-accent) !important;
 }
 
 .vexflow-container svg .vf-note-selected {
   filter: drop-shadow(0 0 1px var(--color-accent));
 }
 
-.vexflow-container svg [class*="ledger"] {
-  stroke: var(--staff-ledger-color) !important;
-  fill: var(--staff-ledger-color) !important;
-  stroke-width: calc(var(--staff-ledger-thickness) * 1px) !important;
-  stroke-opacity: 1 !important;
-  fill-opacity: 1 !important;
-  stroke-linecap: round !important;
-  stroke-dasharray: none !important;
-}
+/* Ledger theming is applied via JS helper (applyVexflowSvgTheme). */
 
 .error-log {
   margin-top: 16px;

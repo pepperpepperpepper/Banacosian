@@ -22,6 +22,9 @@ const state = {
   abcjsPromise: null,
 };
 
+import { readTokens } from '/staff/theme/readTokens.js';
+import { applyAbcjsSvgTheme } from '/staff/theme/applySvgTheme.js';
+
 const THEME_VAR_MAP = {
   stroke: '--staff-stroke-color',
   fill: '--staff-fill-color',
@@ -112,61 +115,9 @@ function triggerVexflowRefresh() {
   }
 }
 
-function getStaffTheme() {
-  if (typeof window === 'undefined' || !window.getComputedStyle) {
-    return {
-      stroke: '#f5f5f5',
-      fill: '#f5f5f5',
-      ledger: '#f5f5f5',
-      ledgerWidth: 6,
-    };
-  }
-  const rootStyle = getComputedStyle(document.documentElement);
-  const read = (varName, fallback) => {
-    const value = rootStyle.getPropertyValue(varName);
-    return value ? value.trim() || fallback : fallback;
-  };
-  const stroke = read('--staff-stroke-color', '#f5f5f5');
-  const fill = read('--staff-fill-color', stroke);
-  const ledger = read('--staff-ledger-color', stroke);
-  const ledgerWidthRaw = read('--staff-ledger-thickness', '6');
-  const ledgerWidth = Number.parseFloat(ledgerWidthRaw) || 6;
-  return { stroke, fill, ledger, ledgerWidth };
-}
+function getStaffTheme() { return readTokens(); }
 
-function applyThemeToSvg(svg, palette) {
-  if (!svg) return;
-  const colors = palette || getStaffTheme();
-  const ledgerNodes = svg.querySelectorAll('[class*="ledger"], [data-name*="ledger"]');
-  ledgerNodes.forEach((node) => {
-    node.setAttribute('stroke', colors.ledger);
-    node.setAttribute('stroke-opacity', '1');
-    node.setAttribute('stroke-linecap', 'round');
-    if (colors.ledgerWidth) {
-      node.setAttribute('stroke-width', String(colors.ledgerWidth));
-    }
-    if (node.style) {
-      node.style.stroke = colors.ledger;
-      node.style.strokeOpacity = '1';
-      node.style.strokeWidth = `${colors.ledgerWidth}px`;
-      node.style.strokeLinecap = 'round';
-    }
-  });
-  svg.querySelectorAll('[stroke]').forEach((node) => {
-    const stroke = node.getAttribute('stroke');
-    if (!stroke || /^#0{3,6}$/i.test(stroke) || stroke.toLowerCase() === 'black') {
-      node.setAttribute('stroke', colors.stroke);
-    }
-  });
-  svg.querySelectorAll('[fill]').forEach((node) => {
-    const fill = node.getAttribute('fill');
-    if (!fill || /^#0{3,6}$/i.test(fill) || fill.toLowerCase() === 'black') {
-      if (fill !== 'none') {
-        node.setAttribute('fill', colors.fill);
-      }
-    }
-  });
-}
+function applyThemeToSvg(svg, palette) { applyAbcjsSvgTheme(svg, palette); }
 
 function logError(message, detail) {
   if (!errorLogEl) return;

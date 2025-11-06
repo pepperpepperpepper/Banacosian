@@ -1,4 +1,5 @@
 import { createSmuflRenderer } from './font/smufl-shim.js';
+import { readTokens } from '/staff/theme/readTokens.js';
 
 const staffContainer = document.getElementById('staff-container');
 const keySelect = document.getElementById('key-select');
@@ -432,6 +433,7 @@ async function renderSelection(key, opts = {}) {
     }
 
     staffContainer.innerHTML = '';
+    const tokens = readTokens();
     const svg = ABCJS.renderAbc(
       staffContainer,
       snippet,
@@ -441,8 +443,8 @@ async function renderSelection(key, opts = {}) {
         staffwidth: window.innerWidth < 640 ? undefined : 720,
         dragging: false,
         selectTypes: ['note'],
-        selectionColor: '#2648ff',
-        dragColor: '#1a2fd6',
+        selectionColor: tokens.accent || tokens.selection,
+        dragColor: tokens.selection || tokens.accent,
         // clickListener not used for chromatic drag
       },
     );
@@ -590,8 +592,12 @@ function ensureNoteOverlay(svg) {
   const ns = 'http://www.w3.org/2000/svg';
   const group = document.createElementNS(ns, 'g');
   group.setAttribute('data-name', 'drag-note');
-  group.setAttribute('fill', '#1a2fd6');
-  group.setAttribute('stroke', '#1a2fd6');
+  const tokens = readTokens();
+  const overlayColor = tokens.selection || tokens.accent;
+  if (overlayColor) {
+    group.setAttribute('fill', overlayColor);
+    group.setAttribute('stroke', overlayColor);
+  }
   group.setAttribute('stroke-width', '0');
   group.style.pointerEvents = 'none';
   group.style.display = 'none';

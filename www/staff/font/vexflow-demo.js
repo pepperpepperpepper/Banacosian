@@ -6,6 +6,8 @@ import VexFlow, {
   Formatter,
   Accidental,
 } from './lib/vexflow-esm/entry/vexflow-debug.js';
+import { readTokens } from '/staff/theme/readTokens.js';
+import { applyVexflowSvgTheme } from '/staff/theme/applySvgTheme.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -86,6 +88,18 @@ const LETTER_TO_SEMITONE = {
   g: 7,
   a: 9,
   b: 11,
+};
+
+// Major key signature maps (letter -> offset from natural: -1 flat, +1 sharp)
+// Matches the subset used in the ABCJS demo so behavior is consistent.
+const KEY_SIGS = {
+  C: {},
+  G: { F: +1 },
+  D: { F: +1, C: +1 },
+  A: { F: +1, C: +1, G: +1 },
+  F: { B: -1 },
+  Bb: { B: -1, E: -1 },
+  Eb: { B: -1, E: -1, A: -1 },
 };
 
 const SEMITONE_TO_FLAT = [
@@ -225,27 +239,7 @@ const selectableRegistry = {
   },
 };
 
-function getStaffTheme() {
-  if (typeof window === 'undefined' || !window.getComputedStyle) {
-    return {
-      stroke: '#f5f5f5',
-      fill: '#f5f5f5',
-      ledger: '#f5f5f5',
-      ledgerWidth: 6,
-    };
-  }
-  const rootStyle = getComputedStyle(document.documentElement);
-  const read = (varName, fallback) => {
-    const value = rootStyle.getPropertyValue(varName);
-    return value ? value.trim() || fallback : fallback;
-  };
-  const stroke = read('--staff-stroke-color', '#f5f5f5');
-  const fill = read('--staff-fill-color', stroke);
-  const ledger = read('--staff-ledger-color', stroke);
-  const ledgerWidthRaw = read('--staff-ledger-thickness', '6');
-  const ledgerWidth = Number.parseFloat(ledgerWidthRaw) || 6;
-  return { stroke, fill, ledger, ledgerWidth };
-}
+function getStaffTheme() { return readTokens(); }
 
 if (vexflowContainer && vexflowStatus) {
   initializeVexflowDemo();
@@ -289,6 +283,9 @@ async function renderVexflowStaff() {
   if (!renderState.abc) {
     renderState.abc = defaultAbcString;
   }
+  // Extract key signature once per render (used for stave and accidental display)
+  const keySig = extractKeySignatureFromAbc(renderState.abc);
+  renderState.keySig = keySig;
 
   const abcjs = await waitForAbcjs();
   let voices;
@@ -344,24 +341,31 @@ async function renderVexflowStaff() {
   renderer.resize(width, height);
   const context = renderer.getContext();
   context.setBackgroundFillStyle('transparent');
-  context.setFillStyle(theme.fill);
-  context.setStrokeStyle(theme.stroke);
+  if (theme.fill) context.setFillStyle(theme.fill);
+  if (theme.stroke) context.setStrokeStyle(theme.stroke);
 
   const stave = new Stave(24, 36, width - 48);
   const primaryClef = voices[0]?.clef || 'treble';
   stave.addClef(primaryClef);
+  // Add key signature to match ABC staff (affects reader expectations and accidental display logic)
+  if (keySig) {
+    try { stave.addKeySignature(keySig); } catch (_err) { /* ignore */ }
+  }
   const timeLabel = meter.symbol || formatMeter(meter);
   if (timeLabel) {
     stave.addTimeSignature(timeLabel);
   }
-  const ledgerStyle = {
-    strokeStyle: theme.ledger,
-    fillStyle: theme.ledger,
-  };
+  const ledgerStyle = {};
+  if (theme.ledger) {
+    ledgerStyle.strokeStyle = theme.ledger;
+    ledgerStyle.fillStyle = theme.ledger;
+  }
   if (Number.isFinite(theme.ledgerWidth) && theme.ledgerWidth > 0) {
     ledgerStyle.lineWidth = theme.ledgerWidth;
   }
-  stave.setDefaultLedgerLineStyle(ledgerStyle);
+  if (Object.keys(ledgerStyle).length > 0) {
+    stave.setDefaultLedgerLineStyle(ledgerStyle);
+  }
   stave.setContext(context).draw();
 
   const vexflowVoices = voices.map((voice, voiceIndex) => {
@@ -690,49 +694,7 @@ function applyVexflowTheme(container, palette) {
   const svg = container.querySelector('svg');
   if (!svg) return;
   const colors = palette || getStaffTheme();
-  const ledgerLines = svg.querySelectorAll('[class*="ledgerline"]');
-  ledgerLines.forEach((node) => {
-    if (!node) return;
-    node.setAttribute('stroke', colors.ledger);
-    node.setAttribute('stroke-opacity', '1');
-    if (colors.ledgerWidth) {
-      node.setAttribute('stroke-width', String(colors.ledgerWidth));
-      node.setAttribute('stroke-linecap', 'round');
-      if (node.style) {
-        node.style.strokeWidth = `${colors.ledgerWidth}px`;
-        node.style.strokeLinecap = 'round';
-      }
-    }
-    if (node.getAttribute('fill') && node.getAttribute('fill') !== 'none') {
-      node.setAttribute('fill', colors.ledger);
-      node.setAttribute('fill-opacity', '1');
-    }
-    if (node.style) {
-      node.style.stroke = colors.ledger;
-      node.style.strokeOpacity = '1';
-      if (node.style.fill && node.style.fill !== 'none') {
-        node.style.fill = colors.ledger;
-        node.style.fillOpacity = '1';
-      }
-    }
-  });
-  svg.querySelectorAll('[stroke]').forEach((node) => {
-    const stroke = node.getAttribute('stroke');
-    if (!stroke || /^#0{3,6}$/i.test(stroke) || stroke.toLowerCase() === 'black') {
-      node.setAttribute('stroke', colors.stroke);
-    }
-  });
-  svg.querySelectorAll('[fill]').forEach((node) => {
-    const fill = node.getAttribute('fill');
-    if (!fill || /^#0{3,6}$/i.test(fill) || fill.toLowerCase() === 'black') {
-      if (fill !== 'none') {
-        node.setAttribute('fill', colors.fill);
-      }
-    }
-  });
-  if (svg.style) {
-    svg.style.color = colors.stroke;
-  }
+  applyVexflowSvgTheme(svg, colors);
 }
 
 function cloneVoices(voices) {
@@ -1056,7 +1018,15 @@ function beginVexflowDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
     baseTransform: selectionState.baseTransform,
     previewDelta: 0,
     baseMessage: selectionState.messageBase,
+    theme: getStaffTheme(),
+    clef: (spec.clef || note.clef || 'treble'),
+    svgRoot: (pointerTarget && pointerTarget.ownerSVGElement) ? pointerTarget.ownerSVGElement : pointerTarget,
+    hiddenTextNodes: null,
+    previewAccEl: null,
+    ledgerNodes: null,
   };
+  // Immediately hide any existing accidental so preview overlays don't double up.
+  try { ensureOriginalAccidentalsHidden(selectionState.drag); } catch (_e) { /* ignore */ }
   attachVexflowDragListeners();
   if (pointerTarget && selectionState.drag.pointerId != null && pointerTarget.setPointerCapture) {
     try { pointerTarget.setPointerCapture(selectionState.drag.pointerId); } catch (_err) { /* ignore */ }
@@ -1079,123 +1049,361 @@ function attachVexflowDragListeners() {
 
 function detachVexflowDragListeners() {
   if (HAS_POINTER_EVENTS) {
-    window.removeEventListener('pointermove', handleVexflowPointerMove);
-    window.removeEventListener('pointerup', handleVexflowPointerUp);
-    window.removeEventListener('pointercancel', handleVexflowPointerUp);
+    window.removeEventListener('pointermove', handleVexflowPointerMove, { passive: false });
+    window.removeEventListener('pointerup', handleVexflowPointerUp, { passive: true });
+    window.removeEventListener('pointercancel', handleVexflowPointerUp, { passive: true });
   } else {
-    window.removeEventListener('touchmove', handleVexflowPointerMove);
-    window.removeEventListener('touchend', handleVexflowPointerUp);
-    window.removeEventListener('touchcancel', handleVexflowPointerUp);
-    window.removeEventListener('mousemove', handleVexflowPointerMove);
-    window.removeEventListener('mouseup', handleVexflowPointerUp);
+    window.removeEventListener('touchmove', handleVexflowPointerMove, { passive: false });
+    window.removeEventListener('touchend', handleVexflowPointerUp, { passive: true });
+    window.removeEventListener('touchcancel', handleVexflowPointerUp, { passive: true });
+    window.removeEventListener('mousemove', handleVexflowPointerMove, { passive: false });
+    window.removeEventListener('mouseup', handleVexflowPointerUp, { passive: true });
   }
 }
 
+// --- Key / accidental formatting helpers ---
+function formatPitchLabel({ key, accidental }) {
+  if (!key) return '';
+  const [letterRaw, octaveRaw] = key.split('/');
+  const letter = (letterRaw || '').toUpperCase();
+  const octave = octaveRaw ?? '';
+  const glyph = accidentalToGlyph(accidental);
+  return `${letter}${glyph}${octave}`;
+}
+
+function accidentalToGlyph(accidental) {
+  switch (accidental) {
+    case 'b': return '♭';
+    case '#': return '♯';
+    case 'n': return '♮';
+    case 'bb': return '♭♭';
+    case '##': return '♯♯';
+    default: return '';
+  }
+}
+
+// Extract a simple canonical key signature token from ABC text (e.g., C, G, Bb, Eb).
+function extractKeySignatureFromAbc(abc) {
+  if (!abc || typeof abc !== 'string') return 'C';
+  const re = /(^|\n)K:([^\n]*)/g;
+  let match = null;
+  let key = 'C';
+  while ((match = re.exec(abc)) !== null) {
+    const value = (match[2] || '').trim();
+    if (value) key = value.split(/\s+/)[0];
+  }
+  const m = /^([A-Ga-g])(bb|b|##|#)?$/.exec(key);
+  const root = (m && m[1]) ? m[1] : 'C';
+  const acc = (m && m[2]) ? m[2] : '';
+  const canonical = root.replace(/^[a-g]/, (c) => c.toUpperCase()) + acc;
+  return KEY_SIGS[canonical] ? canonical : 'C';
+}
+
+// Decide which accidental symbol to show for a derived pitch, given a key signature.
+function decideAccidentalForKey(derived, keySig) {
+  if (!derived || !derived.key) return derived?.accidental || null;
+  const [letterRaw] = derived.key.split('/');
+  const letter = (letterRaw || 'c').toUpperCase();
+  const baseMap = KEY_SIGS[keySig || 'C'] || {};
+  const baseOffset = baseMap[letter] || 0; // -1 flat, +1 sharp, 0 natural
+  const derivedOffset = ACCIDENTAL_OFFSETS[derived.accidental] ?? 0;
+  if (derivedOffset === baseOffset) {
+    // Matches the key signature: no courtesy accidental
+    return null;
+  }
+  // If deviating to natural from a key-signature-altered pitch, show a courtesy natural.
+  if (derivedOffset === 0 && baseOffset !== 0) return 'n';
+  // Otherwise show the explicit accidental for the target pitch
+  return derived.accidental || null;
+}
+
+// --- Preview accidental overlay & original-accidental hiding ---
+function ensureOriginalAccidentalsHidden(drag) {
+  if (!drag || drag.hiddenTextNodes || !drag.noteEl) return;
+  const svgRoot = drag.svgRoot || drag.noteEl.ownerSVGElement;
+  if (!svgRoot) return;
+
+  const toHide = new Set();
+
+  // 1) Fast path: known accidental classes (when present in some builds)
+  drag.noteEl
+    .querySelectorAll('[class*="accidental"], [data-name="accidental"], g.vf-accidental, path.vf-accidental, g.vf-accidental text, g[class*="accidental"] text, [data-name="accidental"] text, text.vf-accidental')
+    .forEach((el) => {
+      try { if (el.getBBox) toHide.add(el); } catch (_) { /* ignore */ }
+    });
+
+  // 2) Content-based detection (no geometry):
+  //    Hide any text within a notehead group that uses SMuFL accidental codepoints
+  //    (roughly U+E260–U+E4FF), or Unicode ♯/♭/♮/#/b/n. Do NOT hide augmentation dots (U+E1E7).
+  const isAccidentalText = (text) => {
+    if (!text) return false;
+    for (const ch of text) {
+      const cp = ch.codePointAt(0);
+      if (!cp) continue;
+      if (cp === 0xe1e7) return false; // augmentation dot — keep
+      if (cp >= 0xe260 && cp <= 0xe4ff) return true;
+      if (ch === '♯' || ch === '♭' || ch === '♮' || ch === '#' || ch === 'b' || ch === 'n') return true;
+    }
+    return false;
+  };
+  drag.noteEl.querySelectorAll('g[class*="notehead"] text').forEach((txt) => {
+    try {
+      const content = txt.textContent || '';
+      if (isAccidentalText(content)) toHide.add(txt);
+    } catch (_) { /* ignore */ }
+  });
+
+  // 3) Fallback: plain text accidentals directly under the stavenote group
+  //    (seen in some builds). This will not affect noteheads or flags.
+  drag.noteEl.querySelectorAll(':scope > text').forEach((txt) => {
+    try {
+      const content = txt.textContent || '';
+      if (isAccidentalText(content)) toHide.add(txt);
+    } catch (_) { /* ignore */ }
+  });
+
+  if (toHide.size === 0) return;
+  drag.hiddenTextNodes = [];
+  toHide.forEach((node) => {
+    const prev = node.style.display || '';
+    node.style.display = 'none';
+    drag.hiddenTextNodes.push({ node, prevDisplay: prev });
+  });
+}
+
+function restoreOriginalAccidentals(drag) {
+  if (!drag || !drag.hiddenTextNodes) return;
+  drag.hiddenTextNodes.forEach(({ node, prevDisplay }) => {
+    if (node) node.style.display = prevDisplay;
+  });
+  drag.hiddenTextNodes = null;
+}
+
+function toAbsBBox(el, svgRoot, localBBox) {
+  if (!el || !svgRoot || !localBBox) return null;
+  try {
+    const elCTM = el.getScreenCTM?.();
+    const rootCTM = svgRoot.getScreenCTM?.();
+    if (!elCTM || !rootCTM || !rootCTM.inverse) return null;
+    const toRoot = elCTM.multiply(rootCTM.inverse());
+    const p = svgRoot.createSVGPoint();
+    const transformPoint = (x, y) => { p.x = x; p.y = y; const r = p.matrixTransform(toRoot); return { x: r.x, y: r.y }; };
+    const p1 = transformPoint(localBBox.x, localBBox.y);
+    const p2 = transformPoint(localBBox.x + localBBox.width, localBBox.y);
+    const p3 = transformPoint(localBBox.x, localBBox.y + localBBox.height);
+    const p4 = transformPoint(localBBox.x + localBBox.width, localBBox.y + localBBox.height);
+    const minX = Math.min(p1.x, p2.x, p3.x, p4.x);
+    const maxX = Math.max(p1.x, p2.x, p3.x, p4.x);
+    const minY = Math.min(p1.y, p2.y, p3.y, p4.y);
+    const maxY = Math.max(p1.y, p2.y, p3.y, p4.y);
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  } catch (_e) {
+    return null;
+  }
+}
+
+// --- Ledger line preview visibility ---
+function staffRangeForClef(clef) {
+  switch ((clef || 'treble').toLowerCase()) {
+    case 'bass':
+      return { bottom: { letter: 'g', octave: 2 }, top: { letter: 'a', octave: 3 } };
+    case 'alto':
+      return { bottom: { letter: 'f', octave: 3 }, top: { letter: 'g', octave: 4 } };
+    case 'tenor':
+      return { bottom: { letter: 'd', octave: 3 }, top: { letter: 'e', octave: 4 } };
+    // default treble
+    default:
+      return { bottom: { letter: 'e', octave: 4 }, top: { letter: 'f', octave: 5 } };
+  }
+}
+
+function previewNeedsLedger(diatonicIndex, clef) {
+  const { bottom, top } = staffRangeForClef(clef);
+  const b = diatonicIndexForLetter(bottom.letter, bottom.octave);
+  const t = diatonicIndexForLetter(top.letter, top.octave);
+  if (diatonicIndex < b) return (diatonicIndex % 2) === (b % 2);
+  if (diatonicIndex > t) return (diatonicIndex % 2) === (t % 2);
+  return false;
+}
+
+function collectLedgerLineNodes(noteEl) {
+  if (!noteEl) return [];
+  const nodes = [];
+  // Heuristic: ledger lines are horizontal stroke paths drawn before noteheads
+  // inside the stavenote group. Pick <path> children that look like one straight
+  // horizontal segment (M x y L x2 y).
+  const children = Array.from(noteEl.querySelectorAll(':scope > path'));
+  const horizPathRe = /M\s*([\-\d\.]+)[ ,]([\-\d\.]+)\s*L\s*([\-\d\.]+)[ ,]([\-\d\.]+)/i;
+  children.forEach((p) => {
+    const d = p.getAttribute('d') || '';
+    const m = horizPathRe.exec(d);
+    if (!m) return;
+    const y1 = parseFloat(m[2]);
+    const y2 = parseFloat(m[4]);
+    if (!Number.isFinite(y1) || !Number.isFinite(y2)) return;
+    if (Math.abs(y1 - y2) < 0.001) {
+      nodes.push(p);
+    }
+  });
+  return nodes;
+}
+
+function ensureLedgerNodesCached(drag) {
+  if (!drag || drag.ledgerNodes) return;
+  const noteEl = drag.noteEl;
+  if (!noteEl) return;
+  const nodes = collectLedgerLineNodes(noteEl);
+  if (nodes.length > 0) {
+    drag.ledgerNodes = nodes.map((node) => ({ node, prevDisplay: node.style.display || '' }));
+  } else {
+    drag.ledgerNodes = [];
+  }
+}
+
+function setLedgerVisibility(drag, visible) {
+  if (!drag) return;
+  ensureLedgerNodesCached(drag);
+  if (!drag.ledgerNodes) return;
+  drag.ledgerNodes.forEach((entry) => {
+    const { node, prevDisplay } = entry;
+    if (!node) return;
+    if (visible) {
+      node.style.display = prevDisplay;
+    } else {
+      node.style.display = 'none';
+    }
+  });
+}
+
+function restoreLedgerVisibility(drag) {
+  if (!drag || !drag.ledgerNodes) return;
+  drag.ledgerNodes.forEach((entry) => {
+    const { node, prevDisplay } = entry;
+    if (node) node.style.display = prevDisplay;
+  });
+  drag.ledgerNodes = null;
+}
+
+function getHeadBBoxAbs(noteEl, svgRoot) {
+  const heads = collectNoteheadNodes(noteEl) || [];
+  let union = null;
+  heads.forEach((h) => {
+    let b = null; try { b = h.getBBox(); } catch (_) { b = null; }
+    if (!b) return;
+    const abs = toAbsBBox(h, svgRoot, b);
+    if (!abs) return;
+    if (!union) union = abs; else {
+      const ux = Math.min(union.x, abs.x);
+      const uy = Math.min(union.y, abs.y);
+      const ur = Math.max(union.x + union.width, abs.x + abs.width);
+      const ub = Math.max(union.y + union.height, abs.y + abs.height);
+      union = { x: ux, y: uy, width: ur - ux, height: ub - uy };
+    }
+  });
+  return union;
+}
+
+// Render a temporary accidental using VexFlow so font/color match.
+function drawVexflowPreviewAccidental(drag, symbol) {
+  if (!drag) return;
+  // Remove previous preview first
+  removeVexflowPreviewAccidental(drag);
+  if (!symbol) return;
+  const note = drag.note;
+  const ctx = note?.getContext?.();
+  if (!note || !ctx || typeof Accidental !== 'function') return;
+  let translateY = 0;
+  if (drag.previewKey && Number.isFinite(drag.previewKey.diatonicIndex)) {
+    translateY = -(drag.previewKey.diatonicIndex - drag.baseDiatonic) * drag.staffStep;
+  }
+  const group = ctx.openGroup?.('preview-accidental') || null;
+  try {
+    const acc = new Accidental(symbol);
+    acc.setNote(note);
+    acc.setIndex(0);
+    acc.setContext(ctx);
+    if (Number.isFinite(translateY)) acc.setYShift(translateY);
+    acc.drawWithStyle?.();
+  } catch (_e) { /* ignore */ }
+  if (ctx.closeGroup) ctx.closeGroup();
+  drag.previewAccGroup = group;
+}
+
+function removeVexflowPreviewAccidental(drag) {
+  if (!drag || !drag.previewAccGroup) return;
+  const g = drag.previewAccGroup;
+  if (g && g.parentNode) g.parentNode.removeChild(g);
+  drag.previewAccGroup = null;
+}
+
+// --- Drag handlers ---
 function handleVexflowPointerMove(event) {
   const drag = selectionState.drag;
   if (!drag) return;
-  if (event.pointerId != null && drag.pointerId != null && event.pointerId !== drag.pointerId) return;
-  const point = event.touches && event.touches[0] ? event.touches[0] : event;
-  if (!point || point.clientY == null) return;
-  const dy = drag.lastY - point.clientY;
-  drag.lastY = point.clientY;
+  const primary = normalizePointerEvent(event);
+  if (event?.cancelable) event.preventDefault();
+  if (!primary || primary.clientY == null) return;
+  const dy = drag.lastY - primary.clientY; // up is negative Y on screen => positive semitone delta
+  drag.lastY = primary.clientY;
   drag.accum += dy;
-  const preview = Math.round(drag.accum / drag.pxPerSemitone);
-  console.log('[VexflowDrag] move', {
-    pointerId: event.pointerId,
-    clientY: point.clientY,
-    dy,
-    accum: drag.accum,
-    preview,
-  });
-  if (preview !== drag.previewDelta) {
-    drag.previewDelta = preview;
-    previewVexflowNote(drag, preview);
+  const step = drag.pxPerSemitone;
+  let semitones = 0;
+  while (Math.abs(drag.accum) >= step) {
+    semitones += (drag.accum > 0) ? 1 : -1;
+    drag.accum -= (drag.accum > 0) ? step : -step;
   }
-  if (event.cancelable) {
-    event.preventDefault();
-  }
+  if (semitones !== 0) drag.previewDelta += semitones;
+  const previewMidi = drag.baseMidi + drag.previewDelta;
+  const previewKey = midiToKeySpec(previewMidi);
+  drag.previewKey = previewKey;
+
+  // Move the notehead visually with a transform (diatonic grid), and preview accidental.
+  const diffSteps = previewKey.diatonicIndex - drag.baseDiatonic;
+  const translateY = -(diffSteps * drag.staffStep);
+  try {
+    const base = drag.baseTransform && drag.baseTransform !== '' ? `${drag.baseTransform} ` : '';
+    drag.noteEl.setAttribute('transform', `${base}translate(0, ${translateY.toFixed(2)})`);
+  } catch (_e) { /* ignore */ }
+
+  ensureOriginalAccidentalsHidden(drag);
+  // Show or hide ledger lines based on whether preview position is outside the staff.
+  try {
+    const needLedger = previewNeedsLedger(previewKey.diatonicIndex, drag.clef);
+    setLedgerVisibility(drag, needLedger);
+  } catch (_e) { /* ignore */ }
+  const symbol = decideAccidentalForKey(previewKey, renderState.keySig);
+  drawVexflowPreviewAccidental(drag, symbol);
+  const label = formatPitchLabel(previewKey);
+  const base = drag.baseMessage || '';
+  vexflowStatus.textContent = `${base} — Dragging to ${label}`;
 }
 
 function handleVexflowPointerUp(event) {
   const drag = selectionState.drag;
   if (!drag) return;
-  if (event.pointerId != null && drag.pointerId != null && event.pointerId !== drag.pointerId) return;
-  console.log('[VexflowDrag] end', {
-    pointerId: event.pointerId,
-    previewDelta: drag.previewDelta,
-  });
+  try {
+    if (drag.pointerTarget && drag.pointerId != null && drag.pointerTarget.releasePointerCapture) {
+      drag.pointerTarget.releasePointerCapture(drag.pointerId);
+    }
+  } catch (_e) { /* ignore */ }
   detachVexflowDragListeners();
-  if (drag.pointerTarget && drag.pointerId != null && typeof drag.pointerTarget.releasePointerCapture === 'function') {
-    try { drag.pointerTarget.releasePointerCapture(drag.pointerId); } catch (_err) { /* ignore */ }
-  }
+  // Clean up preview and restore original accidental visibility
+  try { removeVexflowPreviewAccidental(drag); } catch (_e) { /* ignore */ }
+  try { restoreOriginalAccidentals(drag); } catch (_e) { /* ignore */ }
+  try { restoreLedgerVisibility(drag); } catch (_e) { /* ignore */ }
   const delta = drag.previewDelta || 0;
-  if (delta !== 0) {
-    commitVexflowNoteDelta(drag, delta);
-  } else if (drag.noteEl) {
-    if (drag.baseTransform && drag.baseTransform !== '') {
-      drag.noteEl.setAttribute('transform', drag.baseTransform);
-    } else {
-      drag.noteEl.removeAttribute('transform');
-    }
-    updateStatusPreview(drag, 0);
-  }
-  selectionState.drag = null;
+  commitVexflowNoteDelta(drag, delta);
 }
 
-function previewVexflowNote(drag, preview) {
-  const noteEl = drag.noteEl;
-  if (!noteEl) return;
-  if (preview === 0) {
-    if (drag.baseTransform && drag.baseTransform !== '') {
-      noteEl.setAttribute('transform', drag.baseTransform);
-    } else {
-      noteEl.removeAttribute('transform');
-    }
-    updateStatusPreview(drag, 0);
-    return;
-  }
-  const targetMidi = drag.baseMidi + preview;
-  const derived = midiToKeySpec(targetMidi);
-  const diatonicDelta = derived.diatonicIndex - drag.baseDiatonic;
-  const translateY = -(diatonicDelta * drag.staffStep);
-  const translate = `translate(0, ${translateY})`;
-  const combined = drag.baseTransform && drag.baseTransform !== '' ? `${translate} ${drag.baseTransform}` : translate;
-  noteEl.setAttribute('transform', combined);
-  drag.previewKey = derived;
-  updateStatusPreview(drag, preview, derived);
-}
-
-function updateStatusPreview(drag, preview, derived) {
-  const baseMessage = drag.baseMessage || selectionState.messageBase || '';
-  const prefix = baseMessage ? `${baseMessage} — ` : '';
-  const spec = selectionState.note?.__smuflSpec;
-  const baseDescription = describeSpec(spec);
-  if (preview === 0) {
-    const message = baseDescription ? `Selected ${baseDescription}` : 'Selected note';
-    vexflowStatus.textContent = `${prefix}${message}`;
-    return;
-  }
-  const target = derived || midiToKeySpec(drag.baseMidi + preview);
-  const targetLabel = formatPitchLabel(target);
-  const suffix = baseDescription ? `${baseDescription} → ${targetLabel}` : `note → ${targetLabel}`;
-  vexflowStatus.textContent = `${prefix}Selected ${suffix}`;
-}
-
+// --- Commit helpers ---
 function commitVexflowNoteDelta(drag, delta) {
   const voice = renderState.voices?.[drag.voiceIndex];
-  if (!voice) {
-    renderVexflowStaff().catch(handleRenderFailure);
-    return;
-  }
+  if (!voice) { renderVexflowStaff().catch(handleRenderFailure); return; }
   const spec = voice.noteSpecs?.[drag.noteIndex];
-  if (!spec || spec.isRest) {
-    renderVexflowStaff().catch(handleRenderFailure);
-    return;
-  }
-  const targetMidi = drag.baseMidi + delta;
+  if (!spec || spec.isRest) { renderVexflowStaff().catch(handleRenderFailure); return; }
+  const targetMidi = drag.baseMidi + (delta || 0);
   const derived = midiToKeySpec(targetMidi);
-  const accidentalSymbol = derived.accidental ? derived.accidental : null;
+  const accidentalSymbol = decideAccidentalForKey(derived, renderState.keySig);
   spec.keys = [derived.key];
   spec.accidentals = [accidentalSymbol];
   spec.midis = [targetMidi];
@@ -1220,30 +1428,10 @@ function commitVexflowWheelDelta(delta) {
     : keyToMidi(spec.keys?.[0], accidentals[0]);
   const targetMidi = baseMidi + delta;
   const derived = midiToKeySpec(targetMidi);
-  const accidentalSymbol = derived.accidental ? derived.accidental : null;
+  const accidentalSymbol = decideAccidentalForKey(derived, renderState.keySig);
   spec.keys = [derived.key];
   spec.accidentals = [accidentalSymbol];
   spec.midis = [targetMidi];
   clearSelectedNote(selectionState.messageBase);
   renderVexflowStaff().catch(handleRenderFailure);
-}
-
-function formatPitchLabel({ key, accidental }) {
-  if (!key) return '';
-  const [letterRaw, octaveRaw] = key.split('/');
-  const letter = (letterRaw || '').toUpperCase();
-  const octave = octaveRaw ?? '';
-  const glyph = accidentalToGlyph(accidental);
-  return `${letter}${glyph}${octave}`;
-}
-
-function accidentalToGlyph(accidental) {
-  switch (accidental) {
-    case 'b': return '♭';
-    case '#': return '♯';
-    case 'n': return '♮';
-    case 'bb': return '♭♭';
-    case '##': return '♯♯';
-    default: return '';
-  }
 }
