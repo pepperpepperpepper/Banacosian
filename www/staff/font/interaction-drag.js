@@ -6,6 +6,7 @@ import {
   midiToKeySpec,
   getPrimaryMidi,
   applySpecPitchUpdate,
+  parseKeyString,
 } from './music-helpers.js';
 import {
   selectionState,
@@ -227,7 +228,13 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
   const staffStep = staffSpacing / 2;
   const pxPerSemitone = Math.max(2, staffStep * 0.6);
   const baseMidi = getPrimaryMidi(spec);
-  const baseKey = midiToKeySpec(baseMidi);
+  const keyString = Array.isArray(spec.keys) ? spec.keys[0] : null;
+  const baseKeyFromSpec = parseKeyString(keyString);
+  const midiKey = midiToKeySpec(baseMidi);
+  const baseKey = baseKeyFromSpec || midiKey;
+  const baseDiatonic = Number.isFinite(baseKeyFromSpec?.diatonicIndex)
+    ? baseKeyFromSpec.diatonicIndex
+    : midiKey.diatonicIndex;
   selectionState.drag = {
     note,
     noteEl,
@@ -237,7 +244,7 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
     bbox,
     baseMidi,
     baseKey,
-    baseDiatonic: baseKey.diatonicIndex,
+    baseDiatonic,
     previewDelta: 0,
     accum: 0,
     lastY: primary.clientY ?? 0,
@@ -277,7 +284,10 @@ function handlePointerMove(event) {
   }
   if (semitones !== 0) drag.previewDelta += semitones;
   const previewMidi = drag.baseMidi + drag.previewDelta;
-  const previewKey = midiToKeySpec(previewMidi);
+  let previewKey = midiToKeySpec(previewMidi);
+  if ((drag.previewDelta === 0 || !Number.isFinite(previewKey?.diatonicIndex)) && drag.baseKey) {
+    previewKey = drag.baseKey;
+  }
   drag.previewKey = previewKey;
 
   const diffSteps = previewKey.diatonicIndex - drag.baseDiatonic;

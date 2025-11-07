@@ -175,6 +175,28 @@ export function diatonicIndexForLetter(letter, octave = 4) {
   return octave * 7 + baseIndex;
 }
 
+const KEY_STRING_RE = /^([A-Ga-g])([#bn]{0,3})?\/(-?\d+)$/;
+
+export function parseKeyString(key) {
+  if (typeof key !== 'string') return null;
+  const match = KEY_STRING_RE.exec(key.trim());
+  if (!match) return null;
+  const letterRaw = match[1] || 'c';
+  const accidentalRaw = match[2] || '';
+  const octave = Number.parseInt(match[3], 10);
+  if (!Number.isFinite(octave)) return null;
+  const letter = letterRaw.toLowerCase();
+  const accidental = accidentalRaw.length > 0 ? accidentalRaw : null;
+  const diatonicIndex = diatonicIndexForLetter(letter, octave);
+  return {
+    key,
+    letter,
+    accidental,
+    octave,
+    diatonicIndex,
+  };
+}
+
 export function getPrimaryMidi(spec, fallback = 60) {
   if (!spec) return fallback;
   const existing = Array.isArray(spec.midis) ? spec.midis[0] : null;
