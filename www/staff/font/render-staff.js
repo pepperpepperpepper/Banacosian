@@ -83,6 +83,9 @@ function createVexflowNote(spec, theme) {
   };
   const note = new StaveNote(noteStruct);
   note.__smuflSpec = spec;
+  if (!isRest && typeof note.autoStem === 'function') {
+    note.autoStem();
+  }
   if (theme) {
     const ledgerStyle = buildLedgerStyle(theme);
     if (ledgerStyle) {

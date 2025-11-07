@@ -24,6 +24,38 @@ export function collectNoteheadNodes(noteEl) {
   return headNodes;
 }
 
+export function collectStemNodes(noteEl) {
+  if (!noteEl) return [];
+  const nodes = [];
+  const seen = new Set();
+  noteEl.querySelectorAll('path, line, g').forEach((node) => {
+    if (!node) return;
+    const tag = node.tagName?.toLowerCase?.() || '';
+    if (tag !== 'path' && tag !== 'line' && tag !== 'g') return;
+    const className = node.className?.baseVal || node.className || '';
+    const dataName = node.dataset?.name || '';
+    if (/\bstem\b/i.test(className) || /\bstem\b/i.test(dataName)) {
+      if (tag === 'g') {
+        node.querySelectorAll?.('path, line').forEach((child) => {
+          if (!child) return;
+          const childClass = child.className?.baseVal || child.className || '';
+          const childData = child.dataset?.name || '';
+          if ((/\bstem\b/i.test(childClass) || /\bstem\b/i.test(childData)) && !seen.has(child)) {
+            seen.add(child);
+            nodes.push(child);
+          }
+        });
+      } else {
+        if (!seen.has(node)) {
+          seen.add(node);
+          nodes.push(node);
+        }
+      }
+    }
+  });
+  return nodes;
+}
+
 export function normalizePointerEvent(event) {
   if (!event) return null;
   if (event.touches && event.touches.length > 0) {
