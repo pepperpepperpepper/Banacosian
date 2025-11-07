@@ -1,4 +1,4 @@
-import { createSmuflRenderer } from './font/smufl-shim.js';
+import { createSmuflRenderer } from './font/vendor/smufl-shim.js';
 import { readTokens } from '/staff/theme/readTokens.js';
 
 const staffContainer = document.getElementById('staff-container');
