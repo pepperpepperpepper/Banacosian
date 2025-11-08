@@ -130,7 +130,9 @@ function buildPreviewNote(drag, previewKey, accidentalSymbol) {
   while (accidentals.length < keys.length) {
     accidentals.push(null);
   }
-  const nextAccidental = accidentalSymbol ?? accidentals[0] ?? null;
+  const nextAccidental = (accidentalSymbol !== undefined)
+    ? accidentalSymbol
+    : (accidentals[0] ?? null);
   accidentals[0] = nextAccidental;
   accidentals.forEach((acc, idx) => {
     if (acc) {
