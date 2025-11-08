@@ -44,6 +44,20 @@ const interactions = createInteractionController({
 
 console.log('[VexflowDemo] script loaded');
 
+window.addEventListener('pointerdown', (event) => {
+  console.log('[VexflowDemo] window pointerdown', {
+    target: event.target?.tagName,
+    className: event.target?.className?.baseVal || event.target?.className,
+  });
+}, true);
+
+window.addEventListener('mousedown', (event) => {
+  console.log('[VexflowDemo] window mousedown', {
+    target: event.target?.tagName,
+    className: event.target?.className?.baseVal || event.target?.className,
+  });
+}, true);
+
 if (vexflowContainer && vexflowStatus) {
   initializeVexflowDemo();
 } else if (vexflowStatus) {
@@ -87,7 +101,7 @@ async function renderVexflowStaff() {
     renderState,
     selectionState,
     registerInteractions: ({ context, voices, baseMessage, scale }) => {
-      interactions.register(context, voices, baseMessage, scale);
+      interactions.register(context, voices, baseMessage, scale, vexflowContainer);
     },
   });
 }

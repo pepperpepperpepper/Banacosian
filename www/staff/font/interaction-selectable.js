@@ -48,7 +48,7 @@ export const selectableRegistry = {
     }
     return -1;
   },
-  findClosest(x, y) {
+  findClosestDetails(x, y) {
     let best = null;
     let bestDist = Infinity;
     for (const item of this.items) {
@@ -63,6 +63,11 @@ export const selectableRegistry = {
         bestDist = dist;
       }
     }
-    return best;
+    if (!best) return null;
+    return { item: best, distance: bestDist };
+  },
+  findClosest(x, y) {
+    const result = this.findClosestDetails(x, y);
+    return result ? result.item : null;
   },
 };

@@ -1,3 +1,5 @@
+import { Tables } from './vendor/lib/vexflow-esm/src/tables.js';
+
 export const DURATION_DENOMS = [1, 2, 4, 8, 16, 32, 64];
 export const DURATION_CODES = {
   1: 'w',
@@ -35,6 +37,21 @@ export const LETTER_TO_SEMITONE = {
   b: 11,
 };
 
+const LOG_PRECISION = 3;
+
+function logStructured(label, data) {
+  const replacer = (key, value) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return Number(value.toFixed(LOG_PRECISION));
+    }
+    return value;
+  };
+  try {
+    console.log(`${label}: ${JSON.stringify(data, replacer)}`);
+  } catch (error) {
+    console.log(label, data);
+  }
+}
 // Major key signature maps (letter -> offset from natural: -1 flat, +1 sharp)
 // Matches the subset used in the ABCJS demo so behavior is consistent.
 export const KEY_SIGS = {
@@ -285,4 +302,85 @@ export function formatMeter(meter) {
   if (meter.symbol) return meter.symbol;
   if (meter.num && meter.den) return `${meter.num}/${meter.den}`;
   return null;
+}
+
+export function findClosestPitchForY(targetY, clef = 'treble', options = {}) {
+  if (!Number.isFinite(targetY)) return null;
+  const {
+    stave,
+    metrics,
+    midiMin = 36,
+    midiMax = 96,
+    preferNatural = true,
+  } = options;
+  logStructured('[MusicHelpers] findClosestPitchForY request', {
+    targetY,
+    clef,
+    hasStave: Boolean(stave),
+    metrics: metrics ? {
+      topY: metrics.topY,
+      bottomY: metrics.bottomY,
+      spacing: metrics.spacing,
+      scale: metrics.scale,
+    } : null,
+    midiMin,
+    midiMax,
+  });
+  let best = null;
+  for (let midi = midiMin; midi <= midiMax; midi += 1) {
+    const candidateSpec = midiToKeySpec(midi);
+    const key = `${(candidateSpec.letter || 'c').toUpperCase()}/${candidateSpec.octave}`;
+    let props;
+    try {
+      props = Tables.keyProperties(key, clef);
+    } catch (_err) {
+      continue;
+    }
+    let candidateY = null;
+    let mappedLine = null;
+    if (props && Number.isFinite(props.line)) {
+      mappedLine = 5 - props.line;
+    }
+    if (stave && typeof stave.getYForLine === 'function' && Number.isFinite(mappedLine)) {
+      candidateY = stave.getYForLine(mappedLine);
+    } else if (metrics && Number.isFinite(metrics.topY) && Number.isFinite(metrics.spacing) && Number.isFinite(mappedLine)) {
+      candidateY = metrics.topY + (mappedLine * metrics.spacing);
+    }
+    if (!Number.isFinite(candidateY)) continue;
+    const diff = Math.abs(candidateY - targetY);
+    const chooseByAccidental = () => {
+      if (!preferNatural || !best) return true;
+      const currentAcc = candidateSpec.accidental || null;
+      const bestAcc = best.spec?.accidental || null;
+      if (bestAcc && !currentAcc) return true;
+      if (!bestAcc && currentAcc) return false;
+      return false;
+    };
+    if (!best || diff < best.diff || (Math.abs(diff - best.diff) <= 1e-6 && chooseByAccidental())) {
+      best = {
+        midi,
+        spec: candidateSpec,
+        props,
+        diff,
+        y: candidateY,
+        line: mappedLine,
+      };
+      if (diff === 0) break;
+    }
+  }
+  logStructured('[MusicHelpers] findClosestPitchForY result', {
+    targetY,
+    clef,
+    best: best ? {
+      midi: best.midi,
+      key: best.spec?.key,
+      accidental: best.spec?.accidental ?? null,
+      octave: best.spec?.octave,
+      mappedLine: best.line,
+      propsLine: best.props?.line ?? null,
+      diff: best.diff,
+      candidateY: best.y,
+    } : null,
+  });
+  return best;
 }

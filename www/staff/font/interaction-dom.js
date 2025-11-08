@@ -1,5 +1,20 @@
 export const HAS_POINTER_EVENTS = typeof window !== 'undefined' && 'PointerEvent' in window;
 const SVG_GRAPHICS_ELEMENT = typeof SVGGraphicsElement === 'undefined' ? null : SVGGraphicsElement;
+const LOG_PRECISION = 3;
+
+function logStructured(label, data) {
+  const replacer = (key, value) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return Number(value.toFixed(LOG_PRECISION));
+    }
+    return value;
+  };
+  try {
+    console.log(`${label}: ${JSON.stringify(data, replacer)}`);
+  } catch (error) {
+    console.log(label, data);
+  }
+}
 
 export function collectNoteheadNodes(noteEl) {
   if (!noteEl?.hasChildNodes?.()) return [];
@@ -102,14 +117,60 @@ export function convertToSvgCoords(pointerEvent, svg) {
   const clientX = pointerEvent.clientX ?? pointerEvent.pageX;
   const clientY = pointerEvent.clientY ?? pointerEvent.pageY;
   if (clientX == null || clientY == null) return null;
+  const targetTag = pointerEvent.target?.tagName || pointerEvent.srcElement?.tagName || null;
+  const svgRect = typeof svg.getBoundingClientRect === 'function'
+    ? svg.getBoundingClientRect()
+    : null;
+  const scale = Number.isFinite(svg.__vexflowScale) && svg.__vexflowScale > 0
+    ? svg.__vexflowScale
+    : 1;
+  logStructured('[VexflowDom] convertToSvgCoords input', {
+    clientX,
+    clientY,
+    pointerType: pointerEvent.pointerType || pointerEvent.type,
+    targetTag,
+    svgRect: svgRect && {
+      x: svgRect.x,
+      y: svgRect.y,
+      width: svgRect.width,
+      height: svgRect.height,
+    },
+    viewBox: svg.getAttribute?.('viewBox') || null,
+    appliedScale: scale,
+  });
   point.x = clientX;
   point.y = clientY;
   const screenCTM = svg.getScreenCTM?.();
-  if (!screenCTM) return null;
+  if (!screenCTM) {
+    console.warn('[VexflowDom] convertToSvgCoords missing screenCTM');
+    return null;
+  }
   const inverse = screenCTM.inverse?.();
-  if (!inverse) return null;
+  if (!inverse) {
+    console.warn('[VexflowDom] convertToSvgCoords missing inverse matrix');
+    return null;
+  }
   const transformed = point.matrixTransform(inverse);
-  return { x: transformed.x, y: transformed.y };
+  const coords = {
+    x: transformed.x,
+    y: transformed.y,
+    scaledX: transformed.x * scale,
+    scaledY: transformed.y * scale,
+    scale,
+  };
+  logStructured('[VexflowDom] convertToSvgCoords output', {
+    coords: {
+      x: coords.x,
+      y: coords.y,
+      scaledX: coords.scaledX,
+      scaledY: coords.scaledY,
+      scale: coords.scale,
+    },
+    unscaled: { x: coords.x, y: coords.y },
+    scaled: { x: coords.scaledX, y: coords.scaledY },
+    scale,
+  });
+  return coords;
 }
 
 export function collectLedgerLineNodes(noteEl) {
