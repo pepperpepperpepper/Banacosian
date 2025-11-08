@@ -1,38 +1,22 @@
 import VexFlow, {
   Renderer,
   Stave,
-  StaveNote,
   Voice,
   Formatter,
-  Accidental,
 } from './vendor/lib/vexflow-esm/entry/vexflow-debug.js';
 import { readTokens } from '/staff/theme/readTokens.js';
 import { applyVexflowSvgTheme } from '/staff/theme/applySvgTheme.js';
+import { logStructured } from './utils/log.js';
 import { parseAbcToVoices } from './score-parser.js';
 import {
   extractKeySignatureFromAbc,
-  keyToMidi,
 } from './music-helpers.js';
 import { INITIAL_NOTE_COUNT } from './staff-config.js';
+import { buildLedgerStyle, createVexflowNote } from './render/note-factory.js';
 
 let abcjsPromise = null;
 
 const DEFAULT_STAFF_SCALE = 1.8;
-const LOG_PRECISION = 3;
-
-function logStructured(label, data) {
-  const replacer = (key, value) => {
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return Number(value.toFixed(LOG_PRECISION));
-    }
-    return value;
-  };
-  try {
-    console.log(`${label}: ${JSON.stringify(data, replacer)}`);
-  } catch (error) {
-    console.log(label, data);
-  }
-}
 
 function getStaffTheme() {
   return readTokens();
@@ -101,57 +85,6 @@ function cloneVoices(voices) {
       midis: Array.isArray(spec.midis) ? [...spec.midis] : undefined,
     })),
   }));
-}
-
-function buildLedgerStyle(theme) {
-  if (!theme) return null;
-  const ledgerStyle = {};
-  if (theme.ledger) {
-    ledgerStyle.strokeStyle = theme.ledger;
-    ledgerStyle.fillStyle = theme.ledger;
-  }
-  if (Number.isFinite(theme.ledgerWidth) && theme.ledgerWidth > 0) {
-    ledgerStyle.lineWidth = theme.ledgerWidth;
-  }
-  return Object.keys(ledgerStyle).length > 0 ? ledgerStyle : null;
-}
-
-function createVexflowNote(spec, theme) {
-  const isRest = spec.isRest === true;
-  const noteStruct = {
-    keys: isRest ? ['b/4'] : spec.keys,
-    duration: `${spec.duration}${isRest ? 'r' : ''}`,
-    clef: spec.clef || 'treble',
-    ...(theme && Number.isFinite(theme.ledgerWidth) && theme.ledgerWidth > 0
-      ? { strokePx: theme.ledgerWidth }
-      : {}),
-  };
-  const note = new StaveNote(noteStruct);
-  note.__smuflSpec = spec;
-  if (!isRest && typeof note.autoStem === 'function') {
-    note.autoStem();
-  }
-  if (theme) {
-    const ledgerStyle = buildLedgerStyle(theme);
-    if (ledgerStyle) {
-      note.setLedgerLineStyle(ledgerStyle);
-    }
-  }
-  if (!isRest) {
-    const accidentals = Array.isArray(spec.accidentals) ? spec.accidentals : [];
-    if (!Array.isArray(spec.midis)) {
-      spec.midis = spec.keys.map((key, index) => keyToMidi(key, accidentals[index]));
-    }
-    accidentals.forEach((accidental, index) => {
-      if (accidental) {
-        note.addModifier(new Accidental(accidental), index);
-      }
-    });
-  }
-  for (let i = 0; i < (spec.dots || 0); i += 1) {
-    note.addDotToAll();
-  }
-  return note;
 }
 
 async function waitForAbcjs() {

@@ -1,20 +1,7 @@
+import { logStructured } from './utils/log.js';
+
 export const HAS_POINTER_EVENTS = typeof window !== 'undefined' && 'PointerEvent' in window;
 const SVG_GRAPHICS_ELEMENT = typeof SVGGraphicsElement === 'undefined' ? null : SVGGraphicsElement;
-const LOG_PRECISION = 3;
-
-function logStructured(label, data) {
-  const replacer = (key, value) => {
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return Number(value.toFixed(LOG_PRECISION));
-    }
-    return value;
-  };
-  try {
-    console.log(`${label}: ${JSON.stringify(data, replacer)}`);
-  } catch (error) {
-    console.log(label, data);
-  }
-}
 
 export function collectNoteheadNodes(noteEl) {
   if (!noteEl?.hasChildNodes?.()) return [];

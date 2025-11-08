@@ -1,4 +1,5 @@
 import { Tables } from './vendor/lib/vexflow-esm/src/tables.js';
+import { logStructured } from './utils/log.js';
 
 export const DURATION_DENOMS = [1, 2, 4, 8, 16, 32, 64];
 export const DURATION_CODES = {
@@ -37,21 +38,6 @@ export const LETTER_TO_SEMITONE = {
   b: 11,
 };
 
-const LOG_PRECISION = 3;
-
-function logStructured(label, data) {
-  const replacer = (key, value) => {
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return Number(value.toFixed(LOG_PRECISION));
-    }
-    return value;
-  };
-  try {
-    console.log(`${label}: ${JSON.stringify(data, replacer)}`);
-  } catch (error) {
-    console.log(label, data);
-  }
-}
 // Major key signature maps (letter -> offset from natural: -1 flat, +1 sharp)
 // Matches the subset used in the ABCJS demo so behavior is consistent.
 export const KEY_SIGS = {

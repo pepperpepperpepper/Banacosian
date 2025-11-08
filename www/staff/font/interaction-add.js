@@ -14,23 +14,9 @@ import {
 } from './interaction-state.js';
 import { selectableRegistry } from './interaction-selectable.js';
 import { clearSelection } from './interaction-selection.js';
+import { logStructured } from './utils/log.js';
 
 const MAX_TOTAL_NOTES = INITIAL_NOTE_COUNT + MAX_ADDITIONAL_NOTES;
-const LOG_PRECISION = 3;
-
-function logStructured(label, data) {
-  const replacer = (key, value) => {
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return Number(value.toFixed(LOG_PRECISION));
-    }
-    return value;
-  };
-  try {
-    console.log(`${label}: ${JSON.stringify(data, replacer)}`);
-  } catch (error) {
-    console.log(label, data);
-  }
-}
 
 function computeLineFromCoords(coords, renderState) {
   if (!coords || !renderState) return null;
