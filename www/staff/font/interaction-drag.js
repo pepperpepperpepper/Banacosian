@@ -24,6 +24,7 @@ import {
   clearSelection,
   registerCancelDrag,
 } from './interaction-selection.js';
+import { readTokens } from '/staff/theme/readTokens.js';
 
 const ACTIVE_LISTENERS = {
   move: null,
@@ -35,6 +36,19 @@ const ACTIVE_LISTENERS = {
   mouseMove: null,
   mouseUp: null,
 };
+
+const DEFAULT_ACTIVATION_COLOR = '#1a2fd6';
+
+function resolveActivationColor() {
+  try {
+    const tokens = typeof readTokens === 'function' ? readTokens() : {};
+    if (tokens?.selection && tokens.selection.trim() !== '') return tokens.selection.trim();
+    if (tokens?.accent && tokens.accent.trim() !== '') return tokens.accent.trim();
+  } catch (_error) {
+    /* ignore token read failures and fall back to default */
+  }
+  return DEFAULT_ACTIVATION_COLOR;
+}
 
 function attachDragListeners() {
   if (selectionState.drag?.listenersAttached) return;
@@ -152,6 +166,21 @@ function buildPreviewNote(drag, previewKey, accidentalSymbol) {
   if (style) {
     note.setStyle(style);
   }
+  const activationColor = drag.activationColor;
+  if (activationColor) {
+    const highlight = { fillStyle: activationColor, strokeStyle: activationColor };
+    let applied = false;
+    if (typeof note.setKeyStyle === 'function') {
+      for (let i = 0; i < keys.length; i += 1) {
+        note.setKeyStyle(i, highlight);
+      }
+      applied = true;
+    }
+    if (!applied && typeof note.setStyle === 'function') {
+      const nextStyle = { ...(style || {}), ...highlight };
+      note.setStyle(nextStyle);
+    }
+  }
   const xShift = typeof drag.note.getXShift === 'function' ? drag.note.getXShift() : 0;
   if (Number.isFinite(xShift)) {
     note.setXShift(xShift);
@@ -224,8 +253,9 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
   const baseDiatonic = Number.isFinite(baseKeyFromSpec?.diatonicIndex)
     ? baseKeyFromSpec.diatonicIndex
     : midiKey.diatonicIndex;
-  const specClone = cloneSpec(spec);
   const originalVisibility = noteEl.style.visibility || '';
+  const specClone = cloneSpec(spec);
+  const activationColor = resolveActivationColor();
 
   selectionState.drag = {
     note,
@@ -251,6 +281,7 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
     listenersAttached: false,
     specClone,
     hiddenNoteVisibility: originalVisibility,
+    activationColor,
   };
   if (noteEl && !(specClone?.isRest)) {
     noteEl.style.visibility = 'hidden';

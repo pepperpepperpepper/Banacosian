@@ -195,8 +195,8 @@ button:hover,
 }
 
 .vexflow-container svg .vf-notehead-selected {
-  stroke: var(--notation-accent) !important;
-  fill: var(--notation-accent) !important;
+  stroke: var(--notation-selection, var(--notation-accent)) !important;
+  fill: var(--notation-selection, var(--notation-accent)) !important;
 }
 
 .vexflow-container svg .vf-note-selected {
