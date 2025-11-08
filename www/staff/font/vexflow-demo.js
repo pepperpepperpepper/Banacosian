@@ -86,8 +86,8 @@ async function renderVexflowStaff() {
     statusEmptyText: STATUS_EMPTY,
     renderState,
     selectionState,
-    registerInteractions: ({ context, voices, baseMessage }) => {
-      interactions.register(context, voices, baseMessage);
+    registerInteractions: ({ context, voices, baseMessage, scale }) => {
+      interactions.register(context, voices, baseMessage, scale);
     },
   });
 }

@@ -18,7 +18,8 @@ import {
   applyWheelDelta,
 } from './interaction-drag.js';
 
-function registerVexflowInteractions(context, voices, baseMessage) {
+function registerVexflowInteractions(context, voices, baseMessage, options = {}) {
+  const scale = Number.isFinite(options.scale) && options.scale > 0 ? options.scale : 1;
   if (!context || typeof context.getSVG === 'function') {
     // Support VexFlow v4 Renderer contexts (getSVG())
   }
@@ -50,7 +51,8 @@ function registerVexflowInteractions(context, voices, baseMessage) {
         noteEl = null;
       }
       if (!noteEl) return;
-      const staffSpacing = tickable.getStave?.()?.getSpacingBetweenLines?.() ?? 12;
+      const baseSpacing = tickable.getStave?.()?.getSpacingBetweenLines?.() ?? 12;
+      const staffSpacing = baseSpacing * scale;
       selectableRegistry.add({
         note: tickable,
         noteEl,
@@ -81,6 +83,7 @@ function registerVexflowInteractions(context, voices, baseMessage) {
   });
 
   attachSvgInteractionHandlers(svg, baseMessage);
+  svg.__vexflowScale = scale;
 }
 
 function attachSvgInteractionHandlers(svg, baseMessage) {
@@ -164,7 +167,7 @@ export function createInteractionController({
     handleRenderFailure,
   });
   return {
-    register: registerVexflowInteractions,
+    register: (context, voices, baseMessage, scale) => registerVexflowInteractions(context, voices, baseMessage, { scale }),
     clearSelection: () => clearSelection(selectionState.messageBase),
   };
 }

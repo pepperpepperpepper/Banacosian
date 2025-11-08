@@ -17,6 +17,8 @@ import {
 
 let abcjsPromise = null;
 
+const DEFAULT_STAFF_SCALE = 1.8;
+
 function getStaffTheme() {
   return readTokens();
 }
@@ -198,19 +200,40 @@ export async function renderVexflowStaff({
   }
 
   const theme = getStaffTheme();
-  const width = Math.max(480, container.clientWidth || container.parentElement?.clientWidth || 720);
-  const height = 200;
+  const staffScaleOverride = Number.isFinite(renderState.staffScale) && renderState.staffScale > 0
+    ? renderState.staffScale
+    : null;
+  const globalScaleOverride = (typeof window !== 'undefined' && Number.isFinite(window.__VEXFLOW_STAFF_SCALE))
+    ? window.__VEXFLOW_STAFF_SCALE
+    : null;
+  const staffScale = staffScaleOverride || globalScaleOverride || DEFAULT_STAFF_SCALE;
+  renderState.staffScale = staffScale;
+
+  const measuredWidth = container.clientWidth ? (container.clientWidth / staffScale) : 0;
+  const parentWidth = container.parentElement?.clientWidth || 0;
+  const widthCandidate = measuredWidth || parentWidth || 720;
+  const baseWidth = Math.max(480, widthCandidate);
+  const baseHeight = 200;
+  const scaledWidth = Math.round(baseWidth * staffScale);
+  const scaledHeight = Math.round(baseHeight * staffScale);
 
   container.innerHTML = '';
 
   const renderer = new Renderer(container, Renderer.Backends.SVG);
-  renderer.resize(width, height);
+  renderer.resize(scaledWidth, scaledHeight);
   const context = renderer.getContext();
+  if (typeof context.scale === 'function') {
+    context.scale(staffScale, staffScale);
+  }
   context.setBackgroundFillStyle('transparent');
   if (theme.fill) context.setFillStyle(theme.fill);
   if (theme.stroke) context.setStrokeStyle(theme.stroke);
 
-  const stave = new Stave(24, 36, width - 48);
+  if (context.svg) {
+    context.svg.setAttribute('viewBox', `0 0 ${baseWidth} ${baseHeight}`);
+  }
+
+  const stave = new Stave(24, 36, baseWidth - 48);
   const primaryClef = voices[0]?.clef || 'treble';
   stave.addClef(primaryClef);
   if (keySig) {
@@ -245,7 +268,7 @@ export async function renderVexflowStaff({
 
   const formatter = new Formatter({ align_rests: true });
   formatter.joinVoices(vexflowVoices);
-  formatter.format(vexflowVoices, width - 96);
+  formatter.format(vexflowVoices, baseWidth - 96);
 
   vexflowVoices.forEach((voice) => voice.draw(context, stave));
 
@@ -273,7 +296,12 @@ export async function renderVexflowStaff({
   applyVexflowTheme(container, theme);
 
   if (typeof registerInteractions === 'function') {
-    registerInteractions({ context, voices: vexflowVoices, baseMessage });
+    registerInteractions({
+      context,
+      voices: vexflowVoices,
+      baseMessage,
+      scale: staffScale,
+    });
   }
 
   return {

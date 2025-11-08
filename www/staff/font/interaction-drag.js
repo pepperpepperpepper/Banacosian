@@ -205,7 +205,15 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
 
   const bbox = toAbsBBox(noteEl, svg, noteEl.getBBox?.());
   const stave = typeof note.getStave === 'function' ? note.getStave() : null;
-  const staffSpacing = stave?.getSpacingBetweenLines?.() ?? 12;
+  const renderStateScale = Number.isFinite(renderState?.staffScale) && renderState.staffScale > 0
+    ? renderState.staffScale
+    : null;
+  const svgScale = Number.isFinite(svg?.__vexflowScale) && svg.__vexflowScale > 0
+    ? svg.__vexflowScale
+    : null;
+  const staffScale = renderStateScale || svgScale || 1;
+  const baseSpacing = stave?.getSpacingBetweenLines?.() ?? 12;
+  const staffSpacing = baseSpacing * staffScale;
   const staffStep = staffSpacing / 2;
   const pxPerSemitone = Math.max(2, staffStep * 0.6);
   const baseMidi = getPrimaryMidi(spec);
