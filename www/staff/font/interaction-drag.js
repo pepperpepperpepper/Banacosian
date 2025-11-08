@@ -1,5 +1,5 @@
-import { Accidental } from './vendor/lib/vexflow-esm/entry/vexflow-debug.js';
-import { Tables } from './vendor/lib/vexflow-esm/src/tables.js';
+import { Accidental, StaveNote } from './vendor/lib/vexflow-esm/entry/vexflow-debug.js';
+import { TickContext } from './vendor/lib/vexflow-esm/src/tickcontext.js';
 import {
   decideAccidentalForKey,
   diatonicIndexForLetter,
@@ -17,9 +17,6 @@ import {
 } from './interaction-state.js';
 import {
   HAS_POINTER_EVENTS,
-  collectLedgerLineNodes,
-  collectNoteheadNodes,
-  collectStemNodes,
   normalizePointerEvent,
   toAbsBBox,
 } from './interaction-dom.js';
@@ -85,332 +82,114 @@ function detachDragListeners() {
   }
 }
 
-function staffRangeForClef(clef) {
-  switch ((clef || 'treble').toLowerCase()) {
-    case 'bass':
-      return { bottom: { letter: 'g', octave: 2 }, top: { letter: 'a', octave: 3 } };
-    case 'alto':
-      return { bottom: { letter: 'f', octave: 3 }, top: { letter: 'g', octave: 4 } };
-    case 'tenor':
-      return { bottom: { letter: 'd', octave: 3 }, top: { letter: 'e', octave: 4 } };
-    default:
-      return { bottom: { letter: 'e', octave: 4 }, top: { letter: 'f', octave: 5 } };
-  }
-}
-
-function previewNeedsLedger(diatonicIndex, clef) {
-  const { bottom, top } = staffRangeForClef(clef);
-  const b = diatonicIndexForLetter(bottom.letter, bottom.octave);
-  const t = diatonicIndexForLetter(top.letter, top.octave);
-  if (diatonicIndex < b) return (diatonicIndex % 2) === (b % 2);
-  if (diatonicIndex > t) return (diatonicIndex % 2) === (t % 2);
-  return false;
-}
-
-function ensureLedgerNodesCached(drag) {
-  if (!drag || drag.ledgerNodes) return;
-  const noteEl = drag.noteEl;
-  if (!noteEl) return;
-  const nodes = collectLedgerLineNodes(noteEl);
-  if (nodes.length > 0) {
-    drag.ledgerNodes = nodes.map((node) => ({ node, prevDisplay: node.style.display || '' }));
-  } else {
-    drag.ledgerNodes = [];
-  }
-}
-
-function setLedgerVisibility(drag, visible) {
-  if (!drag) return;
-  ensureLedgerNodesCached(drag);
-  if (!drag.ledgerNodes) return;
-  drag.ledgerNodes.forEach((entry) => {
-    const { node, prevDisplay } = entry;
-    if (!node) return;
-    if (visible) {
-      node.style.display = prevDisplay;
-    } else {
-      node.style.display = 'none';
-    }
-  });
-}
-
-function restoreLedgerVisibility(drag) {
-  if (!drag || !drag.ledgerNodes) return;
-  drag.ledgerNodes.forEach((entry) => {
-    const { node, prevDisplay } = entry;
-    if (node) node.style.display = prevDisplay;
-  });
-  drag.ledgerNodes = null;
-}
-
-const STEM_PATH_RE = /M\s*([-\d.]+)[ ,]([-\d.]+)\s*L\s*([-\d.]+)[ ,]([-\d.]+)/i;
-
-function computeHeadMetrics(noteEl) {
-  const headNodes = collectNoteheadNodes(noteEl);
-  if (!headNodes || headNodes.length === 0) return null;
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let centerSumY = 0;
-  let count = 0;
-  headNodes.forEach((node) => {
-    if (!node) return;
-    try {
-      const bbox = node.getBBox();
-      if (!bbox) return;
-      const left = bbox.x;
-      const right = bbox.x + bbox.width;
-      minX = Math.min(minX, left);
-      maxX = Math.max(maxX, right);
-      centerSumY += bbox.y + bbox.height / 2;
-      count += 1;
-    } catch (_err) { /* ignore */ }
-  });
-  if (count === 0 || !Number.isFinite(minX) || !Number.isFinite(maxX)) return null;
+function cloneSpec(spec) {
+  if (!spec) return null;
   return {
-    minX,
-    maxX,
-    centerY: centerSumY / count,
+    keys: Array.isArray(spec.keys) ? [...spec.keys] : [],
+    accidentals: Array.isArray(spec.accidentals) ? [...spec.accidentals] : undefined,
+    duration: spec.duration,
+    isRest: spec.isRest === true,
+    clef: spec.clef,
+    dots: spec.dots,
+    strokePx: spec.strokePx,
   };
 }
 
-function parseStemGeometry(node) {
-  if (!node) return null;
-  const tag = node.tagName?.toLowerCase?.() || '';
-  if (tag === 'path') {
-    const d = node.getAttribute('d') || '';
-    const match = STEM_PATH_RE.exec(d);
-    if (!match) return null;
-    const x1 = parseFloat(match[1]);
-    const y1 = parseFloat(match[2]);
-    const x2 = parseFloat(match[3]);
-    const y2 = parseFloat(match[4]);
-    if (![x1, y1, x2, y2].every(Number.isFinite)) return null;
-    return {
-      type: 'path',
-      baseX: x1,
-      baseY: y1,
-      tipX: x2,
-      tipY: y2,
-      length: Math.max(0, Math.hypot(x2 - x1, y2 - y1)),
-      orientation: y2 < y1 ? 1 : -1,
-      original: { d },
-    };
+function clearPreviewGroup(drag) {
+  if (!drag?.previewGroup) return;
+  const { previewGroup } = drag;
+  if (previewGroup.parentNode) {
+    previewGroup.parentNode.removeChild(previewGroup);
   }
-  if (tag === 'line') {
-    const x1 = parseFloat(node.getAttribute('x1'));
-    const y1 = parseFloat(node.getAttribute('y1'));
-    const x2 = parseFloat(node.getAttribute('x2'));
-    const y2 = parseFloat(node.getAttribute('y2'));
-    if (![x1, y1, x2, y2].every(Number.isFinite)) return null;
-    return {
-      type: 'line',
-      baseX: x1,
-      baseY: y1,
-      tipX: x2,
-      tipY: y2,
-      length: Math.max(0, Math.hypot(x2 - x1, y2 - y1)),
-      orientation: y2 < y1 ? 1 : -1,
-      original: { x1, y1, x2, y2 },
-    };
-  }
-  return null;
+  drag.previewGroup = null;
+  drag.previewNote = null;
 }
 
-function ensureStemNodesCached(drag) {
-  if (!drag || drag.stemCache) return;
-  const nodes = collectStemNodes(drag.noteEl);
-  if (!nodes || nodes.length === 0) {
-    drag.stemCache = [];
-    return;
+function buildPreviewNote(drag, previewKey, accidentalSymbol) {
+  if (!drag?.specClone || drag.specClone.isRest) return null;
+  const base = drag.specClone;
+  const keys = [...base.keys];
+  if (keys.length === 0) {
+    keys.push(previewKey?.key || 'c/4');
   }
-  const baseMetrics = computeHeadMetrics(drag.noteEl);
-  drag.headMetrics = baseMetrics || null;
-  const cache = [];
-  nodes.forEach((node) => {
-    const geom = parseStemGeometry(node);
-    if (!geom || !geom.length || geom.length <= 0) return;
-    let offsetLeft = 0;
-    let offsetRight = 0;
-    if (baseMetrics) {
-      if (geom.orientation === -1) {
-        offsetLeft = geom.baseX - baseMetrics.minX;
-      } else if (geom.orientation === 1) {
-        offsetRight = geom.baseX - baseMetrics.maxX;
-      }
-    }
-    const entry = {
-      node,
-      type: geom.type,
-      original: geom.original,
-      length: geom.length,
-      baseYOffset: baseMetrics ? geom.baseY - baseMetrics.centerY : 0,
-      offsetLeft,
-      offsetRight,
-      orientation: geom.orientation,
-    };
-    cache.push(entry);
-  });
-  drag.stemCache = cache;
-  let baseDir = null;
-  if (drag.note?.getStemDirection) {
-    try {
-      baseDir = drag.note.getStemDirection();
-    } catch (_err) {
-      baseDir = null;
-    }
+  if (previewKey?.key) {
+    keys[0] = previewKey.key;
   }
-  drag.initialStemDir = Number.isFinite(baseDir) ? baseDir : (cache[0]?.orientation ?? null);
-  drag.currentStemDir = drag.initialStemDir;
-}
-
-function calculateStemDirectionForKey(previewKey, clef) {
-  if (!previewKey || !previewKey.key) return null;
-  const letter = previewKey.letter || 'c';
-  const accidental = previewKey.accidental || '';
-  const octave = Number.isFinite(previewKey.octave) ? previewKey.octave : 4;
-  const key = `${letter}${accidental}/${octave}`;
-  try {
-    const props = Tables.keyProperties(key, clef || 'treble');
-    if (!props) return null;
-    return props.line < 3 ? 1 : -1;
-  } catch (_err) {
-    return null;
-  }
-}
-
-function applyStemDirectionPreview(entry, direction, metrics) {
-  if (!entry || !entry.node || !metrics || !direction) return;
-  const baseYOffset = Number.isFinite(entry.baseYOffset) ? entry.baseYOffset : 0;
-  const offsetLeft = Number.isFinite(entry.offsetLeft) ? entry.offsetLeft : 0;
-  const offsetRight = Number.isFinite(entry.offsetRight) ? entry.offsetRight : 0;
-  const length = Number.isFinite(entry.length) ? entry.length : 0;
-  if (length <= 0) return;
-  const anchorX = direction === 1
-    ? metrics.maxX + offsetRight
-    : metrics.minX + offsetLeft;
-  const baseY = metrics.centerY + baseYOffset;
-  const tipY = baseY + (direction === 1 ? -length : length);
-  const xStr = anchorX.toFixed(2);
-  const baseStr = baseY.toFixed(2);
-  const tipStr = tipY.toFixed(2);
-  if (entry.type === 'path') {
-    entry.node.setAttribute('d', `M ${xStr} ${baseStr} L ${xStr} ${tipStr}`);
-  } else if (entry.type === 'line') {
-    entry.node.setAttribute('x1', xStr);
-    entry.node.setAttribute('x2', xStr);
-    entry.node.setAttribute('y1', baseStr);
-    entry.node.setAttribute('y2', tipStr);
-  }
-}
-
-function updatePreviewStemDirection(drag, previewKey) {
-  if (!drag) return;
-  ensureStemNodesCached(drag);
-  if (!drag.stemCache || drag.stemCache.length === 0) return;
-  const desired = calculateStemDirectionForKey(previewKey, drag.clef);
-  if (!desired || desired === drag.currentStemDir) return;
-  const baseMetrics = drag.headMetrics;
-  if (!baseMetrics) return;
-  const translateY = drag.previewTranslateY ?? 0;
-  const metrics = {
-    minX: baseMetrics.minX,
-    maxX: baseMetrics.maxX,
-    centerY: baseMetrics.centerY + translateY,
+  const struct = {
+    keys,
+    duration: `${base.duration || 'q'}`,
+    clef: base.clef || drag.clef || 'treble',
   };
-  drag.stemCache.forEach((entry) => applyStemDirectionPreview(entry, desired, metrics));
-  drag.currentStemDir = desired;
-}
-
-function restoreOriginalStems(drag) {
-  if (!drag || !drag.stemCache) return;
-  drag.stemCache.forEach((entry) => {
-    if (!entry?.node || !entry.original) return;
-    if (entry.type === 'path') {
-      entry.node.setAttribute('d', entry.original.d);
-    } else if (entry.type === 'line') {
-      entry.node.setAttribute('x1', `${entry.original.x1}`);
-      entry.node.setAttribute('x2', `${entry.original.x2}`);
-      entry.node.setAttribute('y1', `${entry.original.y1}`);
-      entry.node.setAttribute('y2', `${entry.original.y2}`);
+  if (base.strokePx) {
+    struct.strokePx = base.strokePx;
+  }
+  const note = new StaveNote(struct);
+  const accidentals = Array.isArray(base.accidentals)
+    ? [...base.accidentals]
+    : new Array(keys.length).fill(null);
+  while (accidentals.length < keys.length) {
+    accidentals.push(null);
+  }
+  const nextAccidental = accidentalSymbol ?? accidentals[0] ?? null;
+  accidentals[0] = nextAccidental;
+  accidentals.forEach((acc, idx) => {
+    if (acc) {
+      note.addModifier(new Accidental(acc), idx);
     }
   });
-  drag.stemCache = null;
-  drag.headMetrics = null;
-  drag.initialStemDir = null;
-  drag.currentStemDir = null;
+  const dotCount = Number.isFinite(base.dots) ? base.dots : 0;
+  for (let i = 0; i < dotCount; i += 1) {
+    note.addDotToAll();
+  }
+  note.autoStem?.();
+  const ledgerStyle = drag.note.getLedgerLineStyle?.();
+  if (ledgerStyle) {
+    note.setLedgerLineStyle(ledgerStyle);
+  }
+  const style = drag.note.getStyle?.();
+  if (style) {
+    note.setStyle(style);
+  }
+  const xShift = typeof drag.note.getXShift === 'function' ? drag.note.getXShift() : 0;
+  if (Number.isFinite(xShift)) {
+    note.setXShift(xShift);
+  }
+  return note;
 }
 
-function ensureOriginalAccidentalsHidden(drag) {
-  if (!drag || drag.hiddenTextNodes || !drag.noteEl) return;
-  const toHide = new Set();
-  drag.noteEl
-    .querySelectorAll('[class*="accidental"], [data-name="accidental"], g.vf-accidental, path.vf-accidental, g.vf-accidental text, g[class*="accidental"] text, [data-name="accidental"] text, text.vf-accidental')
-    .forEach((el) => {
-      try { if (el.getBBox) toHide.add(el); } catch (_) { /* ignore */ }
-    });
-
-  const isAccidentalText = (text) => {
-    if (!text) return false;
-    for (const ch of text) {
-      const cp = ch.codePointAt(0);
-      if (!cp) continue;
-      if (cp === 0xe1e7) return false;
-      if (cp >= 0xe260 && cp <= 0xe4ff) return true;
-      if (ch === '♯' || ch === '♭' || ch === '♮' || ch === '#' || ch === 'b' || ch === 'n') return true;
-    }
-    return false;
-  };
-
-  drag.noteEl.querySelectorAll('text').forEach((textEl) => {
-    const text = textEl.textContent || '';
-    if (isAccidentalText(text)) {
-      toHide.add(textEl);
-    }
-  });
-
-  drag.hiddenTextNodes = Array.from(toHide).map((node) => {
-    const prevDisplay = node.style.display || '';
-    node.style.display = 'none';
-    return { node, prevDisplay };
-  });
-}
-
-function restoreOriginalAccidentals(drag) {
-  if (!drag || !drag.hiddenTextNodes) return;
-  drag.hiddenTextNodes.forEach((entry) => {
-    const { node, prevDisplay } = entry;
-    if (node) node.style.display = prevDisplay;
-  });
-  drag.hiddenTextNodes = null;
-}
-
-function drawVexflowPreviewAccidental(drag, symbol) {
-  if (!drag || !drag.note) return;
+function drawPreviewGroup(drag, previewKey, accidentalSymbol) {
+  if (!drag?.note) return;
   const ctx = drag.note.checkContext?.();
-  if (!ctx || !drag.note.getModifierContext) return;
-  removeVexflowPreviewAccidental(drag);
-  const note = drag.note;
-  const translateY = drag.previewTranslateY ?? 0;
-  if (!symbol) return;
-  if (!ctx.openGroup) return;
-  const group = ctx.openGroup('preview-accidental');
-  try {
-    const acc = new Accidental(symbol);
-    acc.setNote(note);
-    acc.setIndex(0);
-    acc.setContext(ctx);
-    if (Number.isFinite(translateY)) acc.setYShift(translateY);
-    acc.drawWithStyle?.();
-  } catch (_e) { /* ignore */ }
-  if (ctx.closeGroup) ctx.closeGroup();
-  drag.previewAccGroup = group;
-}
+  const stave = drag.note.getStave?.();
+  const originalTick = drag.note.getTickContext?.();
+  if (!ctx || !stave || !originalTick) return;
 
-function removeVexflowPreviewAccidental(drag) {
-  if (!drag || !drag.previewAccGroup) return;
-  const g = drag.previewAccGroup;
-  if (g && g.parentNode) g.parentNode.removeChild(g);
-  drag.previewAccGroup = null;
+  const previewNote = buildPreviewNote(drag, previewKey, accidentalSymbol);
+  if (!previewNote) return;
+
+  previewNote.setContext(ctx);
+  previewNote.setStave(stave);
+
+  const tickContext = new TickContext();
+  if (typeof originalTick.getX === 'function') tickContext.setX(originalTick.getX());
+  if (typeof originalTick.getXBase === 'function') tickContext.setXBase(originalTick.getXBase());
+  if (typeof originalTick.getXOffset === 'function') tickContext.setXOffset(originalTick.getXOffset());
+  tickContext.addTickable(previewNote);
+  tickContext.preFormat();
+
+  clearPreviewGroup(drag);
+
+  const group = ctx.openGroup?.('drag-preview');
+  try {
+    previewNote.draw();
+  } catch (err) {
+    console.error('[VexflowDrag] preview draw failed', err);
+  } finally {
+    ctx.closeGroup?.();
+  }
+
+  drag.previewGroup = group || null;
+  drag.previewNote = previewNote;
 }
 
 export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIndex) {
@@ -435,6 +214,9 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
   const baseDiatonic = Number.isFinite(baseKeyFromSpec?.diatonicIndex)
     ? baseKeyFromSpec.diatonicIndex
     : midiKey.diatonicIndex;
+  const specClone = cloneSpec(spec);
+  const originalVisibility = noteEl.style.visibility || '';
+
   selectionState.drag = {
     note,
     noteEl,
@@ -457,10 +239,20 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
     pxPerSemitone,
     baseTransform: selectionState.baseTransform,
     listenersAttached: false,
+    specClone,
+    hiddenNoteVisibility: originalVisibility,
   };
-  ensureLedgerNodesCached(selectionState.drag);
-  ensureOriginalAccidentalsHidden(selectionState.drag);
-  ensureStemNodesCached(selectionState.drag);
+  if (noteEl && !(specClone?.isRest)) {
+    noteEl.style.visibility = 'hidden';
+  }
+  if (specClone && !specClone.isRest) {
+    const initialSymbol = Array.isArray(specClone.accidentals) ? specClone.accidentals[0] : null;
+    try {
+      drawPreviewGroup(selectionState.drag, selectionState.drag.baseKey, initialSymbol);
+    } catch (err) {
+      console.error('[VexflowDrag] initial preview failed', err);
+    }
+  }
   attachDragListeners();
   if (pointerTarget && selectionState.drag.pointerId != null && pointerTarget.setPointerCapture) {
     try { pointerTarget.setPointerCapture(selectionState.drag.pointerId); } catch (_err) { /* ignore */ }
@@ -490,24 +282,13 @@ function handlePointerMove(event) {
     previewKey = drag.baseKey;
   }
   drag.previewKey = previewKey;
-
-  const diffSteps = previewKey.diatonicIndex - drag.baseDiatonic;
-  const translateY = -(diffSteps * drag.staffStep);
-  drag.previewTranslateY = translateY;
-  try {
-    const base = drag.baseTransform && drag.baseTransform !== '' ? `${drag.baseTransform} ` : '';
-    drag.noteEl.setAttribute('transform', `${base}translate(0, ${translateY.toFixed(2)})`);
-  } catch (_e) { /* ignore */ }
-
-  ensureOriginalAccidentalsHidden(drag);
-  try {
-    const needLedger = previewNeedsLedger(previewKey.diatonicIndex, drag.clef);
-    setLedgerVisibility(drag, needLedger);
-  } catch (_e) { /* ignore */ }
-  try { updatePreviewStemDirection(drag, previewKey); } catch (_e) { /* ignore */ }
   const renderState = getRenderState();
   const symbol = decideAccidentalForKey(previewKey, renderState?.keySig);
-  drawVexflowPreviewAccidental(drag, symbol);
+  try {
+    drawPreviewGroup(drag, previewKey, symbol);
+  } catch (err) {
+    console.error('[VexflowDrag] preview update failed', err);
+  }
   const label = formatPitchLabel(previewKey);
   const base = drag.baseMessage || '';
   setStatusText(`${base} — Dragging to ${label}`);
@@ -520,16 +301,9 @@ function handlePointerUp(event) {
     try { drag.pointerTarget.releasePointerCapture(drag.pointerId); } catch (_e) { /* ignore */ }
   }
   detachDragListeners();
-  try { removeVexflowPreviewAccidental(drag); } catch (_e) { /* ignore */ }
-  try { restoreOriginalAccidentals(drag); } catch (_e) { /* ignore */ }
-  try { restoreOriginalStems(drag); } catch (_e) { /* ignore */ }
-  try { restoreLedgerVisibility(drag); } catch (_e) { /* ignore */ }
+  clearPreviewGroup(drag);
   if (drag.noteEl) {
-    if (drag.baseTransform && drag.baseTransform !== '') {
-      drag.noteEl.setAttribute('transform', drag.baseTransform);
-    } else {
-      drag.noteEl.removeAttribute('transform');
-    }
+    drag.noteEl.style.visibility = drag.hiddenNoteVisibility ?? '';
   }
   const delta = drag.previewDelta || 0;
   selectionState.drag = null;
@@ -568,19 +342,12 @@ export function applyWheelDelta(delta) {
 export function cancelActiveDrag(drag = selectionState.drag) {
   if (!drag) return;
   detachDragListeners();
-  try { removeVexflowPreviewAccidental(drag); } catch (_e) { /* ignore */ }
-  try { restoreOriginalAccidentals(drag); } catch (_e) { /* ignore */ }
-  try { restoreOriginalStems(drag); } catch (_e) { /* ignore */ }
-  try { restoreLedgerVisibility(drag); } catch (_e) { /* ignore */ }
+  clearPreviewGroup(drag);
   if (drag.pointerTarget && drag.pointerId != null && drag.pointerTarget.releasePointerCapture) {
     try { drag.pointerTarget.releasePointerCapture(drag.pointerId); } catch (_e) { /* ignore */ }
   }
   if (drag.noteEl) {
-    if (drag.baseTransform && drag.baseTransform !== '') {
-      drag.noteEl.setAttribute('transform', drag.baseTransform);
-    } else {
-      drag.noteEl.removeAttribute('transform');
-    }
+    drag.noteEl.style.visibility = drag.hiddenNoteVisibility ?? '';
   }
   if (selectionState.drag === drag) {
     selectionState.drag = null;

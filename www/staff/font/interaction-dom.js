@@ -4,21 +4,38 @@ const SVG_GRAPHICS_ELEMENT = typeof SVGGraphicsElement === 'undefined' ? null : 
 export function collectNoteheadNodes(noteEl) {
   if (!noteEl?.hasChildNodes?.()) return [];
   const headNodes = [];
+  const seen = new Set();
+  const pushNode = (node) => {
+    if (!node || seen.has(node)) return;
+    seen.add(node);
+    headNodes.push(node);
+  };
   noteEl.childNodes.forEach((node) => {
     if (!node) return;
     if (SVG_GRAPHICS_ELEMENT && !(node instanceof SVG_GRAPHICS_ELEMENT)) return;
     const tag = node.tagName?.toLowerCase?.() || '';
     const className = node.className?.baseVal || node.className || '';
-    if (tag === 'path' && /\bnotehead\b/.test(className)) {
-      headNodes.push(node);
+    const dataName = node.dataset?.name || '';
+    const isNoteheadish = /\bnotehead\b/i.test(className) || /\bnotehead\b/i.test(dataName);
+    if (tag === 'path' && isNoteheadish) {
+      pushNode(node);
+      return;
     }
     if (tag === 'g') {
-      node.querySelectorAll?.('[class*="notehead"]').forEach((child) => headNodes.push(child));
+      if (isNoteheadish) {
+        pushNode(node);
+        node.querySelectorAll?.('path, text, use').forEach((child) => pushNode(child));
+      } else {
+        node.querySelectorAll?.('[class*="notehead"], [data-name*="notehead"]').forEach((child) => pushNode(child));
+      }
     }
     if (tag === 'text') {
-      if (className.includes('vf-notehead') || (node.dataset?.name === 'notehead')) {
-        headNodes.push(node);
+      if (className.includes('vf-notehead') || dataName === 'notehead' || isNoteheadish) {
+        pushNode(node);
       }
+    }
+    if (tag === 'use' && isNoteheadish) {
+      pushNode(node);
     }
   });
   return headNodes;
@@ -36,20 +53,32 @@ export function collectStemNodes(noteEl) {
     const dataName = node.dataset?.name || '';
     if (/\bstem\b/i.test(className) || /\bstem\b/i.test(dataName)) {
       if (tag === 'g') {
-        node.querySelectorAll?.('path, line').forEach((child) => {
+        const childList = node.querySelectorAll?.('path, line') || [];
+        childList.forEach((child) => {
           if (!child) return;
-          const childClass = child.className?.baseVal || child.className || '';
-          const childData = child.dataset?.name || '';
-          if ((/\bstem\b/i.test(childClass) || /\bstem\b/i.test(childData)) && !seen.has(child)) {
+          if (!seen.has(child)) {
             seen.add(child);
             nodes.push(child);
           }
         });
+        if (childList.length === 0 && !seen.has(node)) {
+          seen.add(node);
+          nodes.push(node);
+        }
       } else {
         if (!seen.has(node)) {
           seen.add(node);
           nodes.push(node);
         }
+      }
+    } else if (tag === 'path' || tag === 'line') {
+      // Some renders place stem segments under groups without explicit classes.
+      const parent = node.parentNode;
+      const parentClass = parent?.className?.baseVal || parent?.className || '';
+      const parentData = parent?.dataset?.name || '';
+      if ((/\bstem\b/i.test(parentClass) || /\bstem\b/i.test(parentData)) && !seen.has(node)) {
+        seen.add(node);
+        nodes.push(node);
       }
     }
   });
