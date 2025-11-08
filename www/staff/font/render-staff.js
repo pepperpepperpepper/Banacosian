@@ -13,8 +13,8 @@ import {
 } from './music-helpers.js';
 import { INITIAL_NOTE_COUNT } from './staff-config.js';
 import { buildLedgerStyle, createVexflowNote } from './render/note-factory.js';
-
-let abcjsPromise = null;
+import { waitForAbcjs } from './utils/abcjs-loader.js';
+import { cloneNoteSpec } from './utils/spec.js';
 
 const DEFAULT_STAFF_SCALE = 1.8;
 
@@ -78,36 +78,8 @@ function cloneVoices(voices) {
     staffIndex: voice.staffIndex,
     voiceIndex: voice.voiceIndex,
     clef: voice.clef,
-    noteSpecs: (voice.noteSpecs || []).map((spec) => ({
-      ...spec,
-      keys: Array.isArray(spec.keys) ? [...spec.keys] : [],
-      accidentals: Array.isArray(spec.accidentals) ? [...spec.accidentals] : [],
-      midis: Array.isArray(spec.midis) ? [...spec.midis] : undefined,
-    })),
+    noteSpecs: (voice.noteSpecs || []).map((spec) => cloneNoteSpec(spec)),
   }));
-}
-
-async function waitForAbcjs() {
-  if (abcjsPromise) return abcjsPromise;
-  abcjsPromise = new Promise((resolve, reject) => {
-    if (window.ABCJS?.parseOnly) {
-      resolve(window.ABCJS);
-      return;
-    }
-    let attempts = 0;
-    const maxAttempts = 40;
-    const timer = window.setInterval(() => {
-      attempts += 1;
-      if (window.ABCJS?.parseOnly) {
-        window.clearInterval(timer);
-        resolve(window.ABCJS);
-      } else if (attempts >= maxAttempts) {
-        window.clearInterval(timer);
-        reject(new Error('ABCJS failed to load.'));
-      }
-    }, 100);
-  });
-  return abcjsPromise;
 }
 
 export async function renderVexflowStaff({
@@ -134,7 +106,7 @@ export async function renderVexflowStaff({
   const keySig = extractKeySignatureFromAbc(renderState.abc);
   renderState.keySig = keySig;
 
-  const abcjs = await waitForAbcjs();
+  const abcjs = await waitForAbcjs({ requireMethod: 'parseOnly' });
   let voices;
   let meter;
   let warnings;

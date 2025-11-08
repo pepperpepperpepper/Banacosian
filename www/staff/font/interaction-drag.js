@@ -1,8 +1,5 @@
-import { Accidental, StaveNote } from './vendor/lib/vexflow-esm/entry/vexflow-debug.js';
-import { TickContext } from './vendor/lib/vexflow-esm/src/tickcontext.js';
 import {
   decideAccidentalForKey,
-  diatonicIndexForLetter,
   formatPitchLabel,
   midiToKeySpec,
   getPrimaryMidi,
@@ -16,7 +13,6 @@ import {
   setStatusText,
 } from './interaction-state.js';
 import {
-  HAS_POINTER_EVENTS,
   normalizePointerEvent,
   toAbsBBox,
 } from './interaction-dom.js';
@@ -25,17 +21,15 @@ import {
   registerCancelDrag,
 } from './interaction-selection.js';
 import { readTokens } from '/staff/theme/readTokens.js';
-
-const ACTIVE_LISTENERS = {
-  move: null,
-  up: null,
-  cancel: null,
-  touchMove: null,
-  touchEnd: null,
-  touchCancel: null,
-  mouseMove: null,
-  mouseUp: null,
-};
+import {
+  attachDragListeners,
+  detachDragListeners,
+} from './drag/listeners.js';
+import {
+  clearPreviewGroup,
+  drawPreviewGroup,
+} from './drag/preview.js';
+import { cloneNoteSpec } from './utils/spec.js';
 
 const DEFAULT_ACTIVATION_COLOR = '#1a2fd6';
 
@@ -48,179 +42,6 @@ function resolveActivationColor() {
     /* ignore token read failures and fall back to default */
   }
   return DEFAULT_ACTIVATION_COLOR;
-}
-
-function attachDragListeners() {
-  if (selectionState.drag?.listenersAttached) return;
-  if (HAS_POINTER_EVENTS) {
-    ACTIVE_LISTENERS.move = (event) => handlePointerMove(event);
-    ACTIVE_LISTENERS.up = (event) => handlePointerUp(event);
-    ACTIVE_LISTENERS.cancel = (event) => handlePointerUp(event);
-    window.addEventListener('pointermove', ACTIVE_LISTENERS.move, { passive: false });
-    window.addEventListener('pointerup', ACTIVE_LISTENERS.up, { passive: true });
-    window.addEventListener('pointercancel', ACTIVE_LISTENERS.cancel, { passive: true });
-  } else {
-    ACTIVE_LISTENERS.touchMove = (event) => handlePointerMove(event);
-    ACTIVE_LISTENERS.touchEnd = (event) => handlePointerUp(event);
-    ACTIVE_LISTENERS.touchCancel = (event) => handlePointerUp(event);
-    ACTIVE_LISTENERS.mouseMove = (event) => handlePointerMove(event);
-    ACTIVE_LISTENERS.mouseUp = (event) => handlePointerUp(event);
-    window.addEventListener('touchmove', ACTIVE_LISTENERS.touchMove, { passive: false });
-    window.addEventListener('touchend', ACTIVE_LISTENERS.touchEnd, { passive: true });
-    window.addEventListener('touchcancel', ACTIVE_LISTENERS.touchCancel, { passive: true });
-    window.addEventListener('mousemove', ACTIVE_LISTENERS.mouseMove, { passive: false });
-    window.addEventListener('mouseup', ACTIVE_LISTENERS.mouseUp, { passive: true });
-  }
-  if (selectionState.drag) {
-    selectionState.drag.listenersAttached = true;
-  }
-}
-
-function detachDragListeners() {
-  if (HAS_POINTER_EVENTS) {
-    if (ACTIVE_LISTENERS.move) window.removeEventListener('pointermove', ACTIVE_LISTENERS.move, { passive: false });
-    if (ACTIVE_LISTENERS.up) window.removeEventListener('pointerup', ACTIVE_LISTENERS.up, { passive: true });
-    if (ACTIVE_LISTENERS.cancel) window.removeEventListener('pointercancel', ACTIVE_LISTENERS.cancel, { passive: true });
-  } else {
-    if (ACTIVE_LISTENERS.touchMove) window.removeEventListener('touchmove', ACTIVE_LISTENERS.touchMove, { passive: false });
-    if (ACTIVE_LISTENERS.touchEnd) window.removeEventListener('touchend', ACTIVE_LISTENERS.touchEnd, { passive: true });
-    if (ACTIVE_LISTENERS.touchCancel) window.removeEventListener('touchcancel', ACTIVE_LISTENERS.touchCancel, { passive: true });
-    if (ACTIVE_LISTENERS.mouseMove) window.removeEventListener('mousemove', ACTIVE_LISTENERS.mouseMove, { passive: false });
-    if (ACTIVE_LISTENERS.mouseUp) window.removeEventListener('mouseup', ACTIVE_LISTENERS.mouseUp, { passive: true });
-  }
-  Object.keys(ACTIVE_LISTENERS).forEach((key) => {
-    ACTIVE_LISTENERS[key] = null;
-  });
-  if (selectionState.drag) {
-    selectionState.drag.listenersAttached = false;
-  }
-}
-
-function cloneSpec(spec) {
-  if (!spec) return null;
-  return {
-    keys: Array.isArray(spec.keys) ? [...spec.keys] : [],
-    accidentals: Array.isArray(spec.accidentals) ? [...spec.accidentals] : undefined,
-    duration: spec.duration,
-    isRest: spec.isRest === true,
-    clef: spec.clef,
-    dots: spec.dots,
-    strokePx: spec.strokePx,
-  };
-}
-
-function clearPreviewGroup(drag) {
-  if (!drag?.previewGroup) return;
-  const { previewGroup } = drag;
-  if (previewGroup.parentNode) {
-    previewGroup.parentNode.removeChild(previewGroup);
-  }
-  drag.previewGroup = null;
-  drag.previewNote = null;
-}
-
-function buildPreviewNote(drag, previewKey, accidentalSymbol) {
-  if (!drag?.specClone || drag.specClone.isRest) return null;
-  const base = drag.specClone;
-  const keys = [...base.keys];
-  if (keys.length === 0) {
-    keys.push(previewKey?.key || 'c/4');
-  }
-  if (previewKey?.key) {
-    keys[0] = previewKey.key;
-  }
-  const struct = {
-    keys,
-    duration: `${base.duration || 'q'}`,
-    clef: base.clef || drag.clef || 'treble',
-  };
-  if (base.strokePx) {
-    struct.strokePx = base.strokePx;
-  }
-  const note = new StaveNote(struct);
-  const accidentals = Array.isArray(base.accidentals)
-    ? [...base.accidentals]
-    : new Array(keys.length).fill(null);
-  while (accidentals.length < keys.length) {
-    accidentals.push(null);
-  }
-  const nextAccidental = (accidentalSymbol !== undefined)
-    ? accidentalSymbol
-    : (accidentals[0] ?? null);
-  accidentals[0] = nextAccidental;
-  accidentals.forEach((acc, idx) => {
-    if (acc) {
-      note.addModifier(new Accidental(acc), idx);
-    }
-  });
-  const dotCount = Number.isFinite(base.dots) ? base.dots : 0;
-  for (let i = 0; i < dotCount; i += 1) {
-    note.addDotToAll();
-  }
-  note.autoStem?.();
-  const ledgerStyle = drag.note.getLedgerLineStyle?.();
-  if (ledgerStyle) {
-    note.setLedgerLineStyle(ledgerStyle);
-  }
-  const style = drag.note.getStyle?.();
-  if (style) {
-    note.setStyle(style);
-  }
-  const activationColor = drag.activationColor;
-  if (activationColor) {
-    const highlight = { fillStyle: activationColor, strokeStyle: activationColor };
-    let applied = false;
-    if (typeof note.setKeyStyle === 'function') {
-      for (let i = 0; i < keys.length; i += 1) {
-        note.setKeyStyle(i, highlight);
-      }
-      applied = true;
-    }
-    if (!applied && typeof note.setStyle === 'function') {
-      const nextStyle = { ...(style || {}), ...highlight };
-      note.setStyle(nextStyle);
-    }
-  }
-  const xShift = typeof drag.note.getXShift === 'function' ? drag.note.getXShift() : 0;
-  if (Number.isFinite(xShift)) {
-    note.setXShift(xShift);
-  }
-  return note;
-}
-
-function drawPreviewGroup(drag, previewKey, accidentalSymbol) {
-  if (!drag?.note) return;
-  const ctx = drag.note.checkContext?.();
-  const stave = drag.note.getStave?.();
-  const originalTick = drag.note.getTickContext?.();
-  if (!ctx || !stave || !originalTick) return;
-
-  const previewNote = buildPreviewNote(drag, previewKey, accidentalSymbol);
-  if (!previewNote) return;
-
-  previewNote.setContext(ctx);
-  previewNote.setStave(stave);
-
-  const tickContext = new TickContext();
-  if (typeof originalTick.getX === 'function') tickContext.setX(originalTick.getX());
-  if (typeof originalTick.getXBase === 'function') tickContext.setXBase(originalTick.getXBase());
-  if (typeof originalTick.getXOffset === 'function') tickContext.setXOffset(originalTick.getXOffset());
-  tickContext.addTickable(previewNote);
-  tickContext.preFormat();
-
-  clearPreviewGroup(drag);
-
-  const group = ctx.openGroup?.('drag-preview');
-  try {
-    previewNote.draw();
-  } catch (err) {
-    console.error('[VexflowDrag] preview draw failed', err);
-  } finally {
-    ctx.closeGroup?.();
-  }
-
-  drag.previewGroup = group || null;
-  drag.previewNote = previewNote;
 }
 
 export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIndex) {
@@ -254,7 +75,7 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
     ? baseKeyFromSpec.diatonicIndex
     : midiKey.diatonicIndex;
   const originalVisibility = noteEl.style.visibility || '';
-  const specClone = cloneSpec(spec);
+  const specClone = cloneNoteSpec(spec, { includeMidis: false });
   const activationColor = resolveActivationColor();
 
   selectionState.drag = {
@@ -294,7 +115,10 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
       console.error('[VexflowDrag] initial preview failed', err);
     }
   }
-  attachDragListeners();
+  attachDragListeners({
+    onMove: handlePointerMove,
+    onUp: handlePointerUp,
+  });
   if (pointerTarget && selectionState.drag.pointerId != null && pointerTarget.setPointerCapture) {
     try { pointerTarget.setPointerCapture(selectionState.drag.pointerId); } catch (_err) { /* ignore */ }
   }

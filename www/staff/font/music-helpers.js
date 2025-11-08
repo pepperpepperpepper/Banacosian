@@ -1,5 +1,6 @@
 import { Tables } from './vendor/lib/vexflow-esm/src/tables.js';
 import { logStructured } from './utils/log.js';
+import { cloneNoteComponents } from './utils/spec.js';
 
 export const DURATION_DENOMS = [1, 2, 4, 8, 16, 32, 64];
 export const DURATION_CODES = {
@@ -271,15 +272,13 @@ export function applySpecPitchUpdate(spec, midi, keySig, index = 0) {
   if (!spec || !Number.isFinite(midi)) return null;
   const derived = midiToKeySpec(midi);
   const accidentalSymbol = decideAccidentalForKey(derived, keySig);
-  const keys = Array.isArray(spec.keys) ? [...spec.keys] : [];
-  const accidentals = Array.isArray(spec.accidentals) ? [...spec.accidentals] : [];
-  const midis = Array.isArray(spec.midis) ? [...spec.midis] : [];
+  const { keys, accidentals, midis } = cloneNoteComponents(spec);
   keys[index] = derived.key;
   accidentals[index] = accidentalSymbol;
-  midis[index] = midi;
+  if (midis) midis[index] = midi;
   spec.keys = keys;
   spec.accidentals = accidentals;
-  spec.midis = midis;
+  if (midis) spec.midis = midis;
   return { derived, accidental: accidentalSymbol };
 }
 

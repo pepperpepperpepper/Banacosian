@@ -1,6 +1,6 @@
 import { selectionState, setStatusText } from './interaction-state.js';
 import { collectNoteheadNodes } from './interaction-dom.js';
-import { accidentalToGlyph } from './music-helpers.js';
+import { formatPitchLabel } from './music-helpers.js';
 
 let cancelDragFn = null;
 
@@ -64,13 +64,10 @@ function describeSpec(spec) {
   const keys = Array.isArray(spec.keys) ? spec.keys : [];
   if (keys.length === 0) return 'note';
   const accidentals = Array.isArray(spec.accidentals) ? spec.accidentals : [];
-  const parts = keys.map((key, index) => {
-    const [letterRaw, octaveRaw] = key.split('/');
-    const letter = (letterRaw || '').toUpperCase();
-    const octave = octaveRaw ?? '';
-    const accidental = accidentalToGlyph(accidentals[index]);
-    return `${letter}${accidental}${octave}`;
-  });
+  const parts = keys.map((key, index) => formatPitchLabel({
+    key,
+    accidental: accidentals[index] ?? null,
+  })).filter(Boolean);
   if (parts.length === 1) return parts[0];
   return `${parts[parts.length - 1]} (chord)`;
 }

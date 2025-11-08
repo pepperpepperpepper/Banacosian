@@ -7,6 +7,10 @@ C D E F | G A B c |
 ^C _D =E ^F |
 _G ^A _B =c |]`;
 
+import { readTokens } from '/staff/theme/readTokens.js';
+import { applyAbcjsSvgTheme } from '/staff/theme/applySvgTheme.js';
+import { waitForAbcjs } from './utils/abcjs-loader.js';
+
 if (typeof window !== 'undefined') {
   window.__SMUFL_SAMPLE_ABC = SAMPLE_ABC;
 }
@@ -17,13 +21,6 @@ const defaultBtn = document.getElementById('render-default');
 const refreshBtn = document.getElementById('render-smufl');
 const fontSelect = document.getElementById('font-select');
 const errorLogEl = document.getElementById('error-log');
-
-const state = {
-  abcjsPromise: null,
-};
-
-import { readTokens } from '/staff/theme/readTokens.js';
-import { applyAbcjsSvgTheme } from '/staff/theme/applySvgTheme.js';
 
 const THEME_VAR_MAP = {
   stroke: '--staff-stroke-color',
@@ -141,36 +138,13 @@ function clearErrorLog() {
   errorLogEl.classList.remove('active');
 }
 
-async function waitForABCJS() {
-  if (state.abcjsPromise) return state.abcjsPromise;
-  state.abcjsPromise = new Promise((resolve, reject) => {
-    if (window.ABCJS?.renderAbc) {
-      resolve(window.ABCJS);
-      return;
-    }
-    let attempts = 0;
-    const maxAttempts = 40;
-    const timer = window.setInterval(() => {
-      attempts += 1;
-      if (window.ABCJS?.renderAbc) {
-        window.clearInterval(timer);
-        resolve(window.ABCJS);
-      } else if (attempts >= maxAttempts) {
-        window.clearInterval(timer);
-        reject(new Error('ABCJS failed to load.'));
-      }
-    }, 100);
-  });
-  return state.abcjsPromise;
-}
-
 async function renderAbc() {
   clearErrorLog();
   if (!statusEl) return;
   statusEl.textContent = 'Rendering…';
 
   try {
-    const ABCJS = await waitForABCJS();
+    const ABCJS = await waitForAbcjs({ requireMethod: 'renderAbc' });
     if (!staffContainer) return;
     staffContainer.innerHTML = '';
     ABCJS.renderAbc(staffContainer, SAMPLE_ABC, {

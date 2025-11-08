@@ -53,10 +53,10 @@ export const selectableRegistry = {
     let bestDist = Infinity;
     for (const item of this.items) {
       if (!item || !item.noteEl) continue;
-      const bbox = item.dim || item.noteEl.getBBox?.();
-      if (!bbox) continue;
-      const dx = (bbox.x + bbox.width / 2) - x;
-      const dy = (bbox.y + bbox.height / 2) - y;
+      const center = this.getItemCenter(item);
+      if (!center) continue;
+      const dx = center.x - x;
+      const dy = center.y - y;
       const dist = Math.sqrt((dx * dx) + (dy * dy));
       if (dist < bestDist) {
         best = item;
@@ -69,5 +69,14 @@ export const selectableRegistry = {
   findClosest(x, y) {
     const result = this.findClosestDetails(x, y);
     return result ? result.item : null;
+  },
+  getItemCenter(item) {
+    if (!item || !item.noteEl) return null;
+    const bbox = item.dim || item.noteEl.getBBox?.();
+    if (!bbox) return null;
+    return {
+      x: bbox.x + (bbox.width / 2),
+      y: bbox.y + (bbox.height / 2),
+    };
   },
 };

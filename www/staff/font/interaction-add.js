@@ -60,10 +60,9 @@ function determineInsertIndex(voiceIndex, coordsX) {
     .sort((a, b) => a.noteIndex - b.noteIndex);
   if (!Number.isFinite(coordsX)) return candidates.length;
   for (const item of candidates) {
-    const bbox = item.dim || item.noteEl?.getBBox?.();
-    if (!bbox) continue;
-    const centerX = bbox.x + bbox.width / 2;
-    if (coordsX <= centerX) {
+    const center = selectableRegistry.getItemCenter(item);
+    if (!center) continue;
+    if (coordsX <= center.x) {
       return item.noteIndex;
     }
   }
