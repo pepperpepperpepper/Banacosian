@@ -1,0 +1,71 @@
+.status-area {
+  background: var(--app-card-surface);
+  padding: 20px;
+  border-radius: var(--app-border-radius-md);
+  margin: 20px 0;
+  display: none;
+}
+
+.status-area.visible {
+  display: block;
+}
+
+.feedback {
+  font-size: 1.2em;
+  font-weight: bold;
+  min-height: 30px;
+  margin-bottom: 15px;
+}
+
+.feedback.correct {
+  color: var(--app-success);
+}
+
+.feedback.incorrect {
+  color: var(--app-danger);
+}
+
+.sequence-display {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+}
+
+.sequence-note {
+  background: var(--app-interactive-surface);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  min-width: 40px;
+}
+
+.sequence-note.playing {
+  background: var(--app-success);
+  animation: pulse 0.5s ease;
+}
+
+.sequence-note.user {
+  background: var(--app-info);
+}
+
+.sequence-note.correct {
+  background: var(--app-success);
+}
+
+.sequence-note.incorrect {
+  background: var(--app-danger);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

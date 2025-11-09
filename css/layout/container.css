@@ -1,0 +1,70 @@
+.container {
+  background: var(--app-card-surface);
+  backdrop-filter: var(--app-blur-strong);
+  border-radius: var(--app-border-radius-lg);
+  padding: var(--app-content-padding);
+  text-align: center;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-card-border);
+  max-width: var(--app-max-width);
+  width: min(100%, var(--app-max-width));
+}
+
+.timer-display {
+  background: var(--app-card-surface);
+  padding: 15px 20px;
+  border-radius: var(--app-border-radius-md);
+  margin: 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--app-gap-md);
+}
+
+.timer {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: var(--app-success);
+}
+
+.round-progress {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.round-accuracy {
+  font-size: 1.1em;
+  color: var(--app-success-muted);
+}
+
+.game-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-gap-md);
+  justify-content: center;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.main-action-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--app-gap-md);
+}
+
+.settings-row {
+  display: flex;
+  gap: var(--app-gap-md);
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--app-border-radius-lg);
+}
+
+.settings-row[hidden] {
+  display: none;
+}

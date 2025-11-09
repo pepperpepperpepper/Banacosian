@@ -14,23 +14,23 @@
         
         <div class="game-controls">
             <div class="main-action-row">
-                <button class="control-btn" id="newSequenceBtn">Start</button>
-                <button class="control-btn" id="playSequenceBtn" disabled>Replay</button>
-                <button class="control-btn" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
+                <button class="control-btn ui-pill" id="newSequenceBtn">Start</button>
+                <button class="control-btn ui-pill" id="playSequenceBtn" disabled>Replay</button>
+                <button class="control-btn ui-pill" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
             </div>
             <div class="settings-row" id="settingsPanel" hidden>
-                <select id="difficulty">
+                <select id="difficulty" class="select-pill ui-pill">
                     <option value="2">2 notes</option>
                     <option value="3" selected>3 notes</option>
                     <option value="4">4 notes</option>
                     <option value="5">5 notes</option>
                 </select>
-                <select id="tonicSelect" aria-label="Select tonic"></select>
-                <select id="scaleType">
+                <select id="tonicSelect" class="select-pill ui-pill" aria-label="Select tonic"></select>
+                <select id="scaleType" class="select-pill ui-pill">
                     <option value="diatonic" selected>Diatonic</option>
                     <option value="chromatic">Chromatic</option>
                 </select>
-                <select id="mode">
+                <select id="mode" class="select-pill ui-pill">
                     <option value="ionian" selected>Ionian</option>
                     <option value="dorian">Dorian</option>
                     <option value="phrygian">Phrygian</option>
@@ -43,7 +43,7 @@
                     <option value="whole-half">Whole-Half</option>
                     <option value="whole-tone">Whole Tone</option>
                 </select>
-                <select id="timbreSelect" aria-label="Select timbre"></select>
+                <select id="timbreSelect" class="select-pill ui-pill" aria-label="Select timbre"></select>
             </div>
         </div>
 
@@ -126,21 +126,21 @@
         </div>
         <div class="data-controls">
             <div class="data-row">
-                <button class="control-btn" id="showHistoryBtn">📊 View History</button>
-                <button class="control-btn" id="saveDataBtn">💾 Save to Drive</button>
+                <button class="control-btn ui-pill" id="showHistoryBtn">📊 View History</button>
+                <button class="control-btn ui-pill" id="saveDataBtn">💾 Save to Drive</button>
             </div>
             <div class="data-row">
-                <button class="control-btn" id="loadDataBtn">📂 Load from Drive</button>
+                <button class="control-btn ui-pill" id="loadDataBtn">📂 Load from Drive</button>
             </div>
         </div>
 
-        <div id="historyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;">
-            <div style="background: rgba(103, 126, 234, 0.95); margin: 50px auto; padding: 30px; border-radius: 20px; max-width: 800px; width: 90%; backdrop-filter: blur(10px);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="color: white; margin: 0;">📊 Session History</h2>
-                    <button id="closeHistoryBtn" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 15px; border-radius: 10px; cursor: pointer;">✕ Close</button>
+        <div id="historyModal" class="modal">
+            <div class="modal__dialog">
+                <div class="modal__header">
+                    <h2 class="modal__title">📊 Session History</h2>
+                    <button id="closeHistoryBtn" class="ui-pill modal__close" type="button">✕ Close</button>
                 </div>
-                <div id="historyContent" style="color: white;"></div>
+                <div id="historyContent" class="modal__content"></div>
             </div>
         </div>
 

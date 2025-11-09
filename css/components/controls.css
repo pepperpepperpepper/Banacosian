@@ -1,0 +1,78 @@
+.ui-pill {
+  background: var(--app-interactive-surface);
+  border: var(--ui-border-width, 2px) solid var(--ui-border-color, var(--app-interactive-border));
+  color: var(--ui-text-color, var(--app-text-primary));
+  padding: var(--ui-padding-block, 12px) var(--ui-padding-inline, 20px);
+  font-size: var(--ui-font-size, 1em);
+  border-radius: var(--ui-border-radius, 25px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: var(--app-blur-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+}
+
+.ui-pill:hover:not(:disabled) {
+  background: var(--app-interactive-surface-hover);
+  border-color: var(--ui-border-hover, var(--app-interactive-border-hover));
+  transform: translateY(-2px);
+}
+
+.ui-pill:disabled {
+  opacity: var(--app-interactive-disabled-opacity);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.control-btn {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+#settingsToggle[aria-expanded="true"] {
+  background: var(--app-interactive-surface-hover);
+  border-color: var(--app-interactive-border-hover);
+}
+
+.select-pill {
+  appearance: none;
+  --ui-border-width: 2px;
+  --ui-border-radius: 25px;
+  --ui-font-size: 1em;
+  --ui-padding-block: 12px;
+  --ui-padding-inline: 15px;
+  display: inline-block;
+}
+
+.select-pill option {
+  background: #333;
+  color: var(--app-text-primary);
+}
+
+.difficulty-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 15px;
+  border-radius: var(--app-border-radius-md);
+}
+
+.difficulty-selector label {
+  font-size: 0.9em;
+}
+
+.difficulty-selector .select-pill {
+  --ui-border-width: 1px;
+  --ui-border-radius: 5px;
+  --ui-font-size: 0.9em;
+  --ui-padding-block: 5px;
+  --ui-padding-inline: 10px;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.difficulty-selector .select-pill option {
+  background: #333;
+}

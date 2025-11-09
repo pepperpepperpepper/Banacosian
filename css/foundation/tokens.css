@@ -1,0 +1,66 @@
+@import url("../../www/staff/theme/tokens.css");
+
+:root {
+  /* Typography */
+  --app-font-family: "Chicago", "Chicago FLF", "Monaco", "Menlo", monospace;
+  --app-heading-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+
+  /* Layout */
+  --app-max-width: 1200px;
+  --app-content-padding: 30px;
+  --app-border-radius-lg: 20px;
+  --app-border-radius-md: 15px;
+  --app-border-radius-sm: 10px;
+  --app-gap-lg: 20px;
+  --app-gap-md: 15px;
+  --app-gap-sm: 10px;
+
+  /* Surfaces */
+  --app-body-bg: #404040;
+  --app-card-surface: rgba(255, 255, 255, 0.1);
+  --app-card-border: rgba(255, 255, 255, 0.2);
+  --app-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --app-blur-strong: blur(10px);
+
+  /* Typography colors */
+  --app-text-primary: #ffffff;
+  --app-text-muted: rgba(255, 255, 255, 0.72);
+  --app-text-note: rgba(30, 41, 59, 0.9);
+  --app-text-note-invert: rgba(226, 232, 240, 0.92);
+
+  /* Interactive tokens */
+  --app-interactive-surface: rgba(255, 255, 255, 0.2);
+  --app-interactive-surface-hover: rgba(255, 255, 255, 0.3);
+  --app-interactive-border: rgba(255, 255, 255, 0.3);
+  --app-interactive-border-hover: rgba(255, 255, 255, 0.5);
+  --app-interactive-disabled-opacity: 0.5;
+
+  /* Status colors */
+  --app-success: #4caf50;
+  --app-danger: #f44336;
+  --app-info: #2196f3;
+  --app-warning: #ff9800;
+  --app-success-muted: #81c784;
+
+  /* Piano styling */
+  --piano-white-gradient: linear-gradient(180deg, #f7f8fb 0%, #dfe4f5 98%);
+  --piano-white-disabled: linear-gradient(180deg, #f4f6fb 0%, #d9deea 98%);
+  --piano-black-gradient: linear-gradient(180deg, #222b3f 0%, #0f1627 96%);
+  --piano-black-disabled: linear-gradient(180deg, #1e2432 0%, #0a101b 96%);
+  --piano-glow: 0 12px 20px rgba(7, 11, 20, 0.55);
+  --piano-press-shadow: 0 8px 16px rgba(12, 18, 30, 0.45);
+
+  /* Animations */
+  --animation-duration-short: 0.3s;
+  --animation-duration-medium: 0.5s;
+
+  /* Staff legacy tokens */
+  --staff-note-size: 18px;
+  --staff-note-thickness: 14px;
+  --staff-ledger-width: 30px;
+
+  /* Modal */
+  --modal-backdrop: rgba(0, 0, 0, 0.8);
+  --modal-surface: rgba(103, 126, 234, 0.95);
+  --modal-radius: 20px;
+}
