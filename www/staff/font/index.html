@@ -31,31 +31,31 @@
 
     <section class="controls">
       <label for="font-select" class="font-label">VexFlow Font</label>
-      <select id="font-select" class="font-select" aria-label="VexFlow SMuFL font">
+      <select id="font-select" class="font-select select-pill ui-pill" aria-label="VexFlow SMuFL font">
         <option value="bravura">Bravura (reference)</option>
         <option value="petaluma">Petaluma (handwritten)</option>
         <option value="leland">Leland</option>
       </select>
       <label for="key-select" class="font-label">Key Signature</label>
-      <select id="key-select" class="font-select" aria-label="Key signature">
+      <select id="key-select" class="font-select select-pill ui-pill" aria-label="Key signature">
       </select>
-      <button id="render-default" class="primary">Render ABCJS Staff</button>
-      <button id="render-smufl">Refresh</button>
+      <button id="render-default" class="ui-pill primary">Render ABCJS Staff</button>
+      <button id="render-smufl" class="ui-pill">Refresh</button>
     </section>
 
-    <section class="staff-demo">
+    <section class="staff-demo ui-card">
       <h2>VexFlow Prototype</h2>
-      <div id="vexflow-container" class="vexflow-container" aria-live="polite"></div>
+      <div id="vexflow-container" class="vexflow-container interaction-draggable" aria-live="polite"></div>
       <p id="vexflow-status" class="status"></p>
     </section>
 
-    <section class="staff-demo">
-      <div id="staff-container" aria-live="polite"></div>
+    <section class="staff-demo ui-card">
+      <div id="staff-container" class="interaction-draggable" aria-live="polite"></div>
       <p id="status" class="status"></p>
       <div id="error-log" class="error-log" aria-live="polite" aria-atomic="false"></div>
     </section>
 
-    <section class="notes">
+    <section class="notes ui-card">
       <h2>Under the Hood</h2>
       <ul>
         <li>Loads the Bravura font (SMuFL reference implementation) directly in the browser.</li>

@@ -161,78 +161,57 @@
   }
 }
 
-.note.C4 {
+.note.C4,
+.note.C\#4 {
   top: 92px;
 }
-.note.D4 {
+.note.D4,
+.note.D\#4 {
   top: 85px;
 }
 .note.E4 {
   top: 78px;
 }
-.note.F4 {
+.note.F4,
+.note.F\#4 {
   top: 71px;
 }
-.note.G4 {
+.note.G4,
+.note.G\#4 {
   top: 64px;
 }
-.note.A4 {
+.note.A4,
+.note.A\#4 {
   top: 57px;
 }
 .note.B4 {
   top: 50px;
 }
-.note.C5 {
+.note.C5,
+.note.C\#5 {
   top: 43px;
 }
-.note.D5 {
+.note.D5,
+.note.D\#5 {
   top: 36px;
 }
-.note.E5 {
+.note.E5,
+.note.F\#5 {
   top: 29px;
 }
 .note.F5 {
   top: 22px;
 }
-.note.G5 {
+.note.G5,
+.note.G\#5 {
   top: 15px;
 }
-.note.A5 {
+.note.A5,
+.note.A\#5 {
   top: 8px;
 }
 .note.B5 {
   top: 1px;
-}
-
-.note.C\#4 {
-  top: 92px;
-}
-.note.D\#4 {
-  top: 85px;
-}
-.note.F\#4 {
-  top: 71px;
-}
-.note.G\#4 {
-  top: 64px;
-}
-.note.A\#4 {
-  top: 57px;
-}
-.note.C\#5 {
-  top: 43px;
-}
-.note.D\#5 {
-  top: 36px;
-}
-.note.F\#5 {
-  top: 29px;
-}
-.note.G\#5 {
-  top: 15px;
-}
-.note.A\#5 {
-  top: 8px;
 }
 
 .accidental {

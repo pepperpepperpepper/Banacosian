@@ -6,4 +6,6 @@
 @import url("./components/piano.css");
 @import url("./components/modal.css");
 @import url("./components/staff-legacy.css");
+@import url("./utilities/interaction.css");
+@import url("./responsive/piano.css");
 @import url("./responsive.css");

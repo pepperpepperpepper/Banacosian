@@ -1,0 +1,10 @@
+.interaction-draggable {
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.interaction-draggable,
+.interaction-draggable * {
+  -webkit-user-select: none;
+  user-select: none;
+}

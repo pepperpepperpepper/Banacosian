@@ -1,11 +1,14 @@
+.ui-card {
+  background: var(--card-surface, var(--app-card-surface));
+  backdrop-filter: var(--card-backdrop, var(--app-blur-strong));
+  border-radius: var(--card-radius, var(--app-border-radius-lg));
+  border: 1px solid var(--card-border, var(--app-card-border));
+  box-shadow: var(--card-shadow, var(--app-card-shadow));
+}
+
 .container {
-  background: var(--app-card-surface);
-  backdrop-filter: var(--app-blur-strong);
-  border-radius: var(--app-border-radius-lg);
   padding: var(--app-content-padding);
   text-align: center;
-  box-shadow: var(--app-card-shadow);
-  border: 1px solid var(--app-card-border);
   max-width: var(--app-max-width);
   width: min(100%, var(--app-max-width));
 }

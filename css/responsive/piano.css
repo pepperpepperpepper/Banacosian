@@ -1,0 +1,17 @@
+@media (max-width: 640px) {
+  .piano-keys {
+    --white-key-height: 140px;
+    height: clamp(120px, 38vw, 180px);
+    border-radius: 0;
+  }
+
+  .white-key {
+    height: var(--white-key-height);
+    padding-bottom: 6px;
+  }
+
+  .black-key {
+    height: calc(var(--white-key-height) * 0.6);
+    padding-bottom: 4px;
+  }
+}
