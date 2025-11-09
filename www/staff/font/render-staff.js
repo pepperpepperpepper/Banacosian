@@ -10,6 +10,7 @@ import { logStructured } from './utils/log.js';
 import { parseAbcToVoices } from './score-parser.js';
 import {
   extractKeySignatureFromAbc,
+  canonicalizeKeySignature,
 } from './music-helpers.js';
 import { INITIAL_NOTE_COUNT } from './staff-config.js';
 import { buildLedgerStyle, createVexflowNote } from './render/note-factory.js';
@@ -18,16 +19,28 @@ import { cloneNoteSpec } from './utils/spec.js';
 
 const DEFAULT_STAFF_SCALE = 1.8;
 
+function replaceKeySignatureInAbc(abc, keySig) {
+  const canonical = canonicalizeKeySignature(keySig);
+  if (!abc || typeof abc !== 'string' || !canonical) return abc;
+  const keyLineRegex = /(^|\n)K:[^\n]*/;
+  if (keyLineRegex.test(abc)) {
+    return abc.replace(keyLineRegex, (match, prefix) => `${prefix || ''}K:${canonical}`);
+  }
+  const separator = abc.endsWith('\n') ? '' : '\n';
+  return `${abc}${separator}K:${canonical}\n`;
+}
+
 function getStaffTheme() {
   return readTokens();
 }
 
-function defaultAbc() {
+function defaultAbc(keySig = 'C') {
+  const canonical = canonicalizeKeySignature(keySig) || 'C';
   return `X:1
 T:VexFlow Default
 M:4/4
 L:1/4
-K:C
+K:${canonical}
 C D |]`;
 }
 
@@ -96,14 +109,19 @@ export async function renderVexflowStaff({
 
   statusEl.textContent = 'Rendering with VexFlow…';
 
-  const defaultAbcString = defaultAbc();
+  const requestedKeySig = canonicalizeKeySignature(renderState.keySig) || null;
+  const defaultAbcString = defaultAbc(requestedKeySig || 'C');
   if (!renderState.initialized) {
     renderState.abc = defaultAbcString;
   } else if (!renderState.abc) {
     renderState.abc = defaultAbcString;
   }
 
-  const keySig = extractKeySignatureFromAbc(renderState.abc);
+  let keySig = extractKeySignatureFromAbc(renderState.abc);
+  if (requestedKeySig && requestedKeySig !== keySig) {
+    renderState.abc = replaceKeySignatureInAbc(renderState.abc, requestedKeySig);
+    keySig = requestedKeySig;
+  }
   renderState.keySig = keySig;
 
   const abcjs = await waitForAbcjs({ requireMethod: 'parseOnly' });
@@ -286,7 +304,8 @@ export async function renderVexflowStaff({
   const totalElements = voices.reduce((sum, voice) => sum + voice.noteSpecs.length, 0);
   const warningSuffix = warnings.length ? ` — ${warnings.length} warning${warnings.length === 1 ? '' : 's'} (see console)` : '';
   const fontSuffix = fontChoice?.label ? ` using ${fontChoice.label}` : '';
-  const baseMessage = `VexFlow rendered ${totalElements} element${totalElements === 1 ? '' : 's'} across ${voices.length} voice${voices.length === 1 ? '' : 's'}${fontSuffix}.${warningSuffix}`;
+  const keySuffix = keySig ? ` Key: ${keySig}.` : '';
+  const baseMessage = `VexFlow rendered ${totalElements} element${totalElements === 1 ? '' : 's'} across ${voices.length} voice${voices.length === 1 ? '' : 's'}${fontSuffix}.${warningSuffix}${keySuffix}`;
 
   if (selectionState) selectionState.messageBase = baseMessage;
   if (statusEl) statusEl.textContent = baseMessage;

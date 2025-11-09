@@ -1,5 +1,6 @@
 import { createSmuflRenderer } from './font/vendor/smufl-shim.js';
 import { readTokens } from '/staff/theme/readTokens.js';
+import { getKeySignatureAlteration } from '/js/modules/KeySignatures.js';
 
 const staffContainer = document.getElementById('staff-container');
 const keySelect = document.getElementById('key-select');
@@ -216,21 +217,9 @@ function computeGlobalMMFromLineMeasure(abc, lineIdx, measureIdx) {
 
 const DIATONIC = ['C','D','E','F','G','A','B'];
 
-// Key signature accidental maps for major keys used in the demo
-// Values: +1 sharp, -1 flat for that LETTER (natural letter, no octave)
-const KEY_SIGS = {
-  'C': {},
-  'G': { F: +1 },
-  'D': { F: +1, C: +1 },
-  'A': { F: +1, C: +1, G: +1 },
-  'F': { B: -1 },
-  'Bb': { B: -1, E: -1 },
-  'Eb': { B: -1, E: -1, A: -1 },
-};
-
+// Key signature accidentals resolve via shared helper (returns +1/-1 offsets per letter)
 function getKeyAccidental(letter, key) {
-  const map = KEY_SIGS[key] || {};
-  return map[letter.toUpperCase()] || 0;
+  return getKeySignatureAlteration(letter, key);
 }
 function transposeAbcTokenDiatonic(tokenText, step) {
   // Very simple: ignore accidentals, preserve duration, move letter + octave marks diatonically

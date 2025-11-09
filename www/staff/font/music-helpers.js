@@ -1,6 +1,11 @@
 import { Tables } from './vendor/lib/vexflow-esm/src/tables.js';
 import { logStructured } from './utils/log.js';
 import { cloneNoteComponents } from './utils/spec.js';
+import {
+  canonicalizeKeySignature,
+  getKeySignatureAlteration,
+} from '/js/modules/KeySignatures.js';
+export { canonicalizeKeySignature } from '/js/modules/KeySignatures.js';
 
 export const DURATION_DENOMS = [1, 2, 4, 8, 16, 32, 64];
 export const DURATION_CODES = {
@@ -41,16 +46,6 @@ export const LETTER_TO_SEMITONE = {
 
 // Major key signature maps (letter -> offset from natural: -1 flat, +1 sharp)
 // Matches the subset used in the ABCJS demo so behavior is consistent.
-export const KEY_SIGS = {
-  C: {},
-  G: { F: +1 },
-  D: { F: +1, C: +1 },
-  A: { F: +1, C: +1, G: +1 },
-  F: { B: -1 },
-  Bb: { B: -1, E: -1 },
-  Eb: { B: -1, E: -1, A: -1 },
-};
-
 export const SEMITONE_TO_FLAT = [
   { letter: 'c', accidental: null },
   { letter: 'd', accidental: 'b' },
@@ -243,11 +238,8 @@ export function extractKeySignatureFromAbc(abc) {
     const value = (match[2] || '').trim();
     if (value) key = value.split(/\s+/)[0];
   }
-  const m = /^([A-Ga-g])(bb|b|##|#)?$/.exec(key);
-  const root = (m && m[1]) ? m[1] : 'C';
-  const acc = (m && m[2]) ? m[2] : '';
-  const canonical = root.replace(/^[a-g]/, (c) => c.toUpperCase()) + acc;
-  return KEY_SIGS[canonical] ? canonical : 'C';
+  const canonical = canonicalizeKeySignature(key);
+  return canonical || 'C';
 }
 
 // Decide which accidental symbol to show for a derived pitch, given a key signature.
@@ -255,8 +247,7 @@ export function decideAccidentalForKey(derived, keySig) {
   if (!derived || !derived.key) return derived?.accidental || null;
   const [letterRaw] = derived.key.split('/');
   const letter = (letterRaw || 'c').toUpperCase();
-  const baseMap = KEY_SIGS[keySig || 'C'] || {};
-  const baseOffset = baseMap[letter] || 0; // -1 flat, +1 sharp, 0 natural
+  const baseOffset = getKeySignatureAlteration(letter, keySig || 'C'); // -1 flat, +1 sharp, 0 natural
   const derivedOffset = ACCIDENTAL_OFFSETS[derived.accidental] ?? 0;
   if (derivedOffset === baseOffset) {
     // Matches the key signature: no courtesy accidental

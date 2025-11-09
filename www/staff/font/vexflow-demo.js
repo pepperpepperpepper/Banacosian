@@ -1,9 +1,18 @@
 import { renderVexflowStaff as renderStaff } from './render-staff.js';
 import { selectionState, createInteractionController } from './interaction-controller.js';
+import {
+  SUPPORTED_KEY_SIGNATURES,
+  canonicalizeKeySignature,
+} from '/js/modules/KeySignatures.js';
+import {
+  applySpecPitchUpdate,
+  keyToMidi,
+} from './music-helpers.js';
 
 const vexflowContainer = document.getElementById('vexflow-container');
 const vexflowStatus = document.getElementById('vexflow-status');
 const fontSelect = document.getElementById('font-select');
+const keySelect = document.getElementById('key-select');
 
 const STATUS_EMPTY = 'No playable content found for VexFlow.';
 const MUSIC_FONT_CHOICES = {
@@ -33,6 +42,7 @@ const renderState = {
   meter: null,
   warnings: [],
   initialized: false,
+  keySig: 'C',
 };
 
 const interactions = createInteractionController({
@@ -59,6 +69,7 @@ window.addEventListener('mousedown', (event) => {
 }, true);
 
 if (vexflowContainer && vexflowStatus) {
+  initializeKeySelect();
   initializeVexflowDemo();
 } else if (vexflowStatus) {
   vexflowStatus.textContent = STATUS_EMPTY;
@@ -82,6 +93,9 @@ function initializeVexflowDemo() {
       renderVexflowStaff().catch(handleRenderFailure);
     });
   }
+  if (keySelect) {
+    keySelect.addEventListener('change', onKeySignatureChange);
+  }
 }
 
 function handleRenderFailure(error) {
@@ -92,7 +106,7 @@ function handleRenderFailure(error) {
 }
 
 async function renderVexflowStaff() {
-  return renderStaff({
+  const result = await renderStaff({
     container: vexflowContainer,
     statusEl: vexflowStatus,
     fontSelect,
@@ -104,6 +118,8 @@ async function renderVexflowStaff() {
       interactions.register(context, voices, baseMessage, scale, vexflowContainer);
     },
   });
+  syncKeySelectWithState();
+  return result;
 }
 
 function debounce(fn, delay) {
@@ -115,4 +131,62 @@ function debounce(fn, delay) {
       fn();
     }, delay);
   };
+}
+
+function initializeKeySelect() {
+  if (!keySelect) return;
+  const currentKey = canonicalizeKeySignature(renderState.keySig) || 'C';
+  keySelect.innerHTML = '';
+  SUPPORTED_KEY_SIGNATURES.forEach((key) => {
+    const option = document.createElement('option');
+    option.value = key;
+    option.textContent = key;
+    if (key === currentKey) {
+      option.selected = true;
+    }
+    keySelect.appendChild(option);
+  });
+}
+
+function onKeySignatureChange(event) {
+  const value = event?.target?.value ?? 'C';
+  const canonical = canonicalizeKeySignature(value) || 'C';
+  renderState.keySig = canonical;
+  if (keySelect && keySelect.value !== canonical) {
+    keySelect.value = canonical;
+  }
+  applyKeySignatureToVoices(renderState.voices, canonical);
+  renderVexflowStaff().catch(handleRenderFailure);
+}
+
+function syncKeySelectWithState() {
+  if (!keySelect) return;
+  const canonical = canonicalizeKeySignature(renderState.keySig) || 'C';
+  if (keySelect.value !== canonical) {
+    keySelect.value = canonical;
+  }
+}
+
+function applyKeySignatureToVoices(voices, keySig) {
+  const canonical = canonicalizeKeySignature(keySig) || 'C';
+  if (!Array.isArray(voices)) return;
+  voices.forEach((voice) => {
+    if (!voice || !Array.isArray(voice.noteSpecs)) return;
+    voice.noteSpecs.forEach((spec) => {
+      if (!spec || spec.isRest) return;
+      const keyCount = Array.isArray(spec.keys) ? spec.keys.length : 0;
+      if (keyCount === 0) return;
+      const midiSource = Array.isArray(spec.midis) && spec.midis.length >= keyCount
+        ? spec.midis
+        : spec.keys.map((key, index) => {
+            const accidental = Array.isArray(spec.accidentals) ? spec.accidentals[index] : null;
+            return keyToMidi(key, accidental);
+          });
+      for (let i = 0; i < keyCount; i += 1) {
+        const midi = midiSource[i];
+        if (!Number.isFinite(midi)) continue;
+        applySpecPitchUpdate(spec, midi, canonical, i);
+      }
+    });
+  });
 }
