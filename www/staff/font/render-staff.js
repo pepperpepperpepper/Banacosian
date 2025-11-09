@@ -1,99 +1,18 @@
-import VexFlow, {
-  Renderer,
-  Stave,
-  Voice,
-  Formatter,
-} from './vendor/lib/vexflow-esm/entry/vexflow-debug.js';
-import { readTokens } from '/staff/theme/readTokens.js';
-import { applyVexflowSvgTheme } from '/staff/theme/applySvgTheme.js';
-import { logStructured } from './utils/log.js';
-import { parseAbcToVoices } from './score-parser.js';
-import {
-  extractKeySignatureFromAbc,
-  canonicalizeKeySignature,
-} from './music-helpers.js';
-import { INITIAL_NOTE_COUNT } from './staff-config.js';
-import { buildLedgerStyle, createVexflowNote } from './render/note-factory.js';
+import VexFlow from './vendor/lib/vexflow-esm/entry/vexflow-debug.js';
+import { extractKeySignatureFromAbc, canonicalizeKeySignature } from './music-helpers.js';
 import { waitForAbcjs } from './utils/abcjs-loader.js';
-import { cloneNoteSpec } from './utils/spec.js';
-
-const DEFAULT_STAFF_SCALE = 1.8;
-
-function replaceKeySignatureInAbc(abc, keySig) {
-  const canonical = canonicalizeKeySignature(keySig);
-  if (!abc || typeof abc !== 'string' || !canonical) return abc;
-  const keyLineRegex = /(^|\n)K:[^\n]*/;
-  if (keyLineRegex.test(abc)) {
-    return abc.replace(keyLineRegex, (match, prefix) => `${prefix || ''}K:${canonical}`);
-  }
-  const separator = abc.endsWith('\n') ? '' : '\n';
-  return `${abc}${separator}K:${canonical}\n`;
-}
-
-function getStaffTheme() {
-  return readTokens();
-}
-
-function defaultAbc(keySig = 'C') {
-  const canonical = canonicalizeKeySignature(keySig) || 'C';
-  return `X:1
-T:VexFlow Default
-M:4/4
-L:1/4
-K:${canonical}
-C D |]`;
-}
-
-function constrainSeedVoices(voices) {
-  if (!Array.isArray(voices) || voices.length === 0) return;
-  let remaining = INITIAL_NOTE_COUNT;
-  logStructured('[VexflowRender] constrainSeedVoices start', {
-    INITIAL_NOTE_COUNT,
-    voiceCount: voices.length,
-  });
-  voices.forEach((voice, voiceIndex) => {
-    if (!voice || !Array.isArray(voice.noteSpecs)) return;
-    if (remaining <= 0) {
-      logStructured('[VexflowRender] clearing voice specs', { voiceIndex });
-      voice.noteSpecs = [];
-      return;
-    }
-    const takeCount = Math.min(voice.noteSpecs.length, remaining);
-    if (takeCount < voice.noteSpecs.length) {
-      logStructured('[VexflowRender] trimming voice specs', {
-        voiceIndex,
-        before: voice.noteSpecs.length,
-        after: takeCount,
-      });
-      voice.noteSpecs = voice.noteSpecs.slice(0, takeCount);
-    }
-    remaining -= takeCount;
-  });
-  logStructured('[VexflowRender] constrainSeedVoices complete', { remaining });
-}
-
-function applyVexflowTheme(container, palette) {
-  if (!container) return;
-  const svg = container.querySelector('svg');
-  if (!svg) return;
-  const colors = palette || getStaffTheme();
-  applyVexflowSvgTheme(svg, colors);
-}
-
-function resolveSelectedFont(fontSelect, fontChoices) {
-  if (!fontSelect) return fontChoices.bravura;
-  const value = fontSelect.value;
-  return fontChoices[value] || fontChoices.bravura;
-}
-
-function cloneVoices(voices) {
-  return (voices || []).map((voice) => ({
-    staffIndex: voice.staffIndex,
-    voiceIndex: voice.voiceIndex,
-    clef: voice.clef,
-    noteSpecs: (voice.noteSpecs || []).map((spec) => cloneNoteSpec(spec)),
-  }));
-}
+import {
+  defaultAbc,
+  replaceKeySignatureInAbc,
+  parseInitialVoices,
+  cloneVoices,
+} from './render/buildSeedVoices.js';
+import {
+  getStaffTheme,
+  resolveSelectedFont,
+  computeStaffScale,
+} from './render/theme.js';
+import { drawStaff } from './render/draw.js';
 
 export async function renderVexflowStaff({
   container,
@@ -125,27 +44,23 @@ export async function renderVexflowStaff({
   renderState.keySig = keySig;
 
   const abcjs = await waitForAbcjs({ requireMethod: 'parseOnly' });
+
   let voices;
   let meter;
-  let warnings;
+  let warnings = [];
 
   if (!renderState.initialized) {
-    const parsed = parseAbcToVoices(abcjs, renderState.abc);
-    constrainSeedVoices(parsed.voices);
+    const parsed = parseInitialVoices(abcjs, renderState.abc, renderState);
     voices = parsed.voices;
     meter = parsed.meter;
-    warnings = parsed.warnings;
-    renderState.voices = cloneVoices(voices);
-    renderState.meter = meter;
-    renderState.warnings = warnings;
-    renderState.initialized = true;
+    warnings = parsed.warnings || [];
   } else {
     voices = cloneVoices(renderState.voices);
     meter = renderState.meter;
     warnings = renderState.warnings ? [...renderState.warnings] : [];
   }
 
-  if (voices.length === 0) {
+  if (!voices || voices.length === 0) {
     container.innerHTML = '';
     statusEl.textContent = statusEmptyText;
     return null;
@@ -155,7 +70,9 @@ export async function renderVexflowStaff({
   if (fontChoice?.warning) {
     warnings.push(fontChoice.warning);
   }
+
   renderState.warnings = warnings.slice();
+
   if (Array.isArray(fontChoice?.stack) && fontChoice.stack.length > 0) {
     const stack = fontChoice.stack.filter(Boolean);
     try {
@@ -169,168 +86,38 @@ export async function renderVexflowStaff({
   }
 
   const theme = getStaffTheme();
-  const staffScaleOverride = Number.isFinite(renderState.staffScale) && renderState.staffScale > 0
-    ? renderState.staffScale
-    : null;
-  const globalScaleOverride = (typeof window !== 'undefined' && Number.isFinite(window.__VEXFLOW_STAFF_SCALE))
-    ? window.__VEXFLOW_STAFF_SCALE
-    : null;
-  const staffScale = staffScaleOverride || globalScaleOverride || DEFAULT_STAFF_SCALE;
-  renderState.staffScale = staffScale;
+  const staffScale = computeStaffScale(renderState);
 
-  const measuredWidth = container.clientWidth ? (container.clientWidth / staffScale) : 0;
-  const parentWidth = container.parentElement?.clientWidth || 0;
-  const widthCandidate = measuredWidth || parentWidth || 720;
-  const baseWidth = Math.max(480, widthCandidate);
-  const baseHeight = 200;
-  const scaledWidth = Math.round(baseWidth * staffScale);
-  const scaledHeight = Math.round(baseHeight * staffScale);
-
-  container.innerHTML = '';
-
-  const renderer = new Renderer(container, Renderer.Backends.SVG);
-  renderer.resize(scaledWidth, scaledHeight);
-  const context = renderer.getContext();
-  if (typeof context.scale === 'function') {
-    context.scale(staffScale, staffScale);
-  }
-  context.setBackgroundFillStyle('transparent');
-  if (theme.fill) context.setFillStyle(theme.fill);
-  if (theme.stroke) context.setStrokeStyle(theme.stroke);
-
-  if (context.svg) {
-    context.svg.setAttribute('viewBox', `0 0 ${baseWidth} ${baseHeight}`);
-  }
-
-  const stave = new Stave(24, 36, baseWidth - 48);
-  const primaryClef = voices[0]?.clef || 'treble';
-  stave.addClef(primaryClef);
-  if (keySig) {
-    try { stave.addKeySignature(keySig); } catch (_err) { /* ignore */ }
-  }
-  const ledgerStyle = buildLedgerStyle(theme);
-  if (ledgerStyle) {
-    stave.setDefaultLedgerLineStyle(ledgerStyle);
-  }
-  stave.setContext(context).draw();
-
-  try {
-    const tables = VexFlow?.Tables;
-    const clefProps = tables?.clefProperties ? tables.clefProperties(primaryClef) : null;
-    let svgRect = null;
-    if (context.svg?.getBoundingClientRect) {
-      const rect = context.svg.getBoundingClientRect();
-      if (rect) {
-        svgRect = {
-          x: rect.x,
-          y: rect.y,
-          width: rect.width,
-          height: rect.height,
-        };
-      }
-    }
-    const baseTopY = stave.getYForLine?.(0) ?? 0;
-    const baseBottomY = stave.getYForLine?.(4) ?? 0;
-    const baseSpacing = stave.getSpacingBetweenLines?.() ?? 12;
-    const baseXStart = stave.getX?.() ?? 0;
-    const staveWidth = stave.getWidth?.() ?? (baseWidth - 48);
-    const baseXEnd = baseXStart + staveWidth;
-    renderState.staffMetrics = {
-      clef: primaryClef,
-      lineShift: clefProps?.lineShift ?? 0,
-      topY: baseTopY,
-      bottomY: baseBottomY,
-      spacing: baseSpacing,
-      xStart: baseXStart,
-      xEnd: baseXEnd,
-      scale: staffScale,
-      staveY: typeof stave.getY === 'function' ? stave.getY() : null,
-      scaled: {
-        topY: baseTopY * staffScale,
-        bottomY: baseBottomY * staffScale,
-        spacing: baseSpacing * staffScale,
-        xStart: baseXStart * staffScale,
-        xEnd: baseXEnd * staffScale,
-      },
-    };
-    renderState.activeStave = stave;
-    renderState.svgRect = svgRect;
-    logStructured('[VexflowRender] cached staff metrics', {
-      staffMetrics: renderState.staffMetrics,
-      svgRect,
-    });
-  } catch (error) {
-    console.warn('[VexFlow Demo] Unable to cache staff metrics.', error);
-    renderState.staffMetrics = null;
-    renderState.activeStave = null;
-    renderState.svgRect = null;
-  }
-
-  const vexflowVoices = voices.map((voice, voiceIndex) => {
-    const tickables = voice.noteSpecs.map((spec, noteIndex) => {
-      const note = createVexflowNote(spec, theme);
-      note.__voiceIndex = voiceIndex;
-      note.__noteIndex = noteIndex;
-      return note;
-    });
-    const vfVoice = new Voice({
-      num_beats: meter?.num || 4,
-      beat_value: meter?.den || 4,
-      resolution: VexFlow.RESOLUTION,
-    });
-    vfVoice.setStrict(false);
-    vfVoice.addTickables(tickables);
-    return vfVoice;
+  const drawResult = drawStaff({
+    container,
+    theme,
+    staffScale,
+    voices,
+    meter,
+    keySig,
+    fontChoice,
+    renderState,
+    warnings,
+    registerInteractions,
   });
 
-  const formatter = new Formatter({ align_rests: true });
-  formatter.joinVoices(vexflowVoices);
-  formatter.format(vexflowVoices, baseWidth - 96);
+  if (!drawResult) {
+    statusEl.textContent = statusEmptyText;
+    return null;
+  }
 
-  vexflowVoices.forEach((voice) => voice.draw(context, stave));
-
-  vexflowVoices.forEach((voice, voiceIndex) => {
-    const tickables = voice.getTickables ? voice.getTickables() : [];
-    tickables.forEach((tickable, noteIndex) => {
-      console.log('[VexflowDraw] attrs after draw', {
-        voiceIndex,
-        noteIndex,
-        attrs: tickable.getAttrs?.(),
-        rawAttrs: tickable.attrs,
-      });
-    });
-  });
-
-  const totalElements = voices.reduce((sum, voice) => sum + voice.noteSpecs.length, 0);
-  const warningSuffix = warnings.length ? ` — ${warnings.length} warning${warnings.length === 1 ? '' : 's'} (see console)` : '';
-  const fontSuffix = fontChoice?.label ? ` using ${fontChoice.label}` : '';
-  const keySuffix = keySig ? ` Key: ${keySig}.` : '';
-  const baseMessage = `VexFlow rendered ${totalElements} element${totalElements === 1 ? '' : 's'} across ${voices.length} voice${voices.length === 1 ? '' : 's'}${fontSuffix}.${warningSuffix}${keySuffix}`;
+  const { context, vexflowVoices, baseMessage } = drawResult;
+  renderState.warnings = drawResult.warnings.slice();
 
   if (selectionState) selectionState.messageBase = baseMessage;
-  if (statusEl) statusEl.textContent = baseMessage;
-  warnings.forEach((warning) => console.warn('[VexFlow Demo]', warning));
-
-  applyVexflowTheme(container, theme);
-
-  if (typeof registerInteractions === 'function') {
-    registerInteractions({
-      context,
-      voices: vexflowVoices,
-      baseMessage,
-      scale: staffScale,
-    });
-  }
+  statusEl.textContent = baseMessage;
+  renderState.baseMessage = baseMessage;
 
   return {
     context,
     voices: vexflowVoices,
     theme,
     baseMessage,
-    warnings,
+    warnings: drawResult.warnings,
   };
-}
-
-export function clearAbcParserCache() {
-  abcjsPromise = null;
 }
