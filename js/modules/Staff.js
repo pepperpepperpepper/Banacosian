@@ -31,27 +31,43 @@ class StaffModule {
                 return null;
             }
             try {
-                const module = await import('/js/vexflow/StaffDisplay.js');
-                const DisplayCtor = module?.VexflowStaffDisplay || module?.default;
+                const [displayModule, utilsModule] = await Promise.all([
+                    import('/js/vexflow/StaffDisplay.js'),
+                    import('/js/shared/utils.js'),
+                ]);
+                const DisplayCtor = displayModule?.VexflowStaffDisplay || displayModule?.default;
                 if (!DisplayCtor) {
                     throw new Error('VexflowStaffDisplay export missing.');
                 }
-                const parsePositive = (value) => {
-                    if (typeof value !== 'string' || value.trim() === '') return null;
-                    const numeric = Number.parseFloat(value);
-                    return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
-                };
-                const widthOptions = this.containerEl.dataset
+                const {
+                    readPositiveDatasetNumber,
+                    parsePositiveNumber
+                } = utilsModule || {};
+                const parsePositive = typeof parsePositiveNumber === 'function'
+                    ? parsePositiveNumber
+                    : (value) => {
+                        if (value === null || value === undefined) return null;
+                        const source = typeof value === 'string' ? value.trim() : value;
+                        if (source === '') return null;
+                        const numeric = typeof source === 'number' ? source : Number.parseFloat(source);
+                        return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+                    };
+                const readDatasetPositive = typeof readPositiveDatasetNumber === 'function'
+                    ? (data, key) => readPositiveDatasetNumber(data, key)
+                    : (data, key) => {
+                        if (!data || typeof data !== 'object' || typeof key !== 'string') return null;
+                        return parsePositive(data[key]);
+                    };
+                const dataset = this.containerEl.dataset || null;
+                const widthOptions = dataset
                     ? {
-                        minWidth: parsePositive(this.containerEl.dataset.staffMinWidth),
-                        maxWidth: parsePositive(this.containerEl.dataset.staffMaxWidth),
-                        targetWidth: parsePositive(this.containerEl.dataset.staffTargetWidth),
-                        baseHeight: parsePositive(this.containerEl.dataset.staffBaseHeight),
+                        minWidth: readDatasetPositive(dataset, 'staffMinWidth'),
+                        maxWidth: readDatasetPositive(dataset, 'staffMaxWidth'),
+                        targetWidth: readDatasetPositive(dataset, 'staffTargetWidth'),
+                        baseHeight: readDatasetPositive(dataset, 'staffBaseHeight'),
                       }
                     : { minWidth: null, maxWidth: null, targetWidth: null, baseHeight: null };
-                const staffScale = this.containerEl.dataset
-                    ? parsePositive(this.containerEl.dataset.staffScale)
-                    : null;
+                const staffScale = dataset ? readDatasetPositive(dataset, 'staffScale') : null;
                 if (widthOptions.minWidth && widthOptions.maxWidth && widthOptions.maxWidth < widthOptions.minWidth) {
                     widthOptions.maxWidth = null;
                 }

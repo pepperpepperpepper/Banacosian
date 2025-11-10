@@ -29,7 +29,7 @@ import {
   clearPreviewGroup,
   drawPreviewGroup,
 } from './drag/preview.js';
-import { cloneNoteSpec } from './utils/spec.js';
+import { cloneNoteSpec } from '/js/vexflow/core/utils/spec.js';
 
 const DEFAULT_ACTIVATION_COLOR = '#1a2fd6';
 

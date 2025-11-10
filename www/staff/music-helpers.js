@@ -7,7 +7,7 @@ export {
   DURATION_TOLERANCE,
   durationFromDenom,
   resolveDuration,
-} from './helpers/duration.js';
+} from '/js/vexflow/core/helpers/duration.js';
 
 export {
   NOTE_LETTERS,
@@ -26,13 +26,13 @@ export {
   formatPitchLabel,
   accidentalToGlyph,
   findClosestPitchForY,
-} from './helpers/pitch.js';
+} from '/js/vexflow/core/helpers/pitch.js';
 
 export {
   extractKeySignatureFromAbc,
   decideAccidentalForKey,
   applySpecPitchUpdate,
-} from './helpers/tonality.js';
+} from '/js/vexflow/core/helpers/tonality.js';
 
 export function formatMeter(meter) {
   if (!meter) return null;

@@ -4,7 +4,7 @@ import { getRenderState, selectionState } from '../interaction-state.js';
 import { selectNote } from '../interaction-selection.js';
 import { beginDrag, applyWheelDelta } from '../interaction-drag.js';
 import { tryAddNoteAtCoords } from '../interaction-add.js';
-import { logStructured } from '../utils/log.js';
+import { logStructured } from '/js/shared/utils.js';
 
 function isWithinStaffBounds(coords, metrics) {
   if (!coords) return false;

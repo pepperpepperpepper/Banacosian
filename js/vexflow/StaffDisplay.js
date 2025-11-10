@@ -1,8 +1,9 @@
 import VexFlow from '/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js';
-import { drawStaff } from '/staff/render/draw.js';
+import { drawStaff } from '/js/vexflow/core/draw.js';
 import {
   getStaffTheme,
   computeStaffScale,
+  applyVexflowTheme,
 } from '/staff/render/theme.js';
 import {
   canonicalizeKeySignature,
@@ -12,9 +13,8 @@ import {
   getFontChoice,
   DEFAULT_FONT_ID,
 } from '/js/modules/StaffFonts.js';
-import {
-  keyToMidi,
-} from '/staff/music-helpers.js';
+import { keyToMidi } from '/js/vexflow/core/helpers/pitch.js';
+import { parsePositiveNumber } from '/js/shared/utils.js';
 
 const NOTE_REGEX = /^([A-Ga-g])([#♯b♭]{0,2})(-?\d)$/;
 const DEFAULT_METER = Object.freeze({ num: 4, den: 4 });
@@ -26,13 +26,6 @@ const STATE_STYLES = {
   incorrect: { fillStyle: '#F44336', strokeStyle: '#F44336' },
   highlight: { fillStyle: '#FF9800', strokeStyle: '#FF9800' },
 };
-
-function coercePositive(value) {
-  if (value === null || value === undefined || value === '') return null;
-  const numeric = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(numeric)) return null;
-  return numeric > 0 ? numeric : null;
-}
 
 function normalizeAccidental(raw) {
   if (!raw) return null;
@@ -115,14 +108,14 @@ export class VexflowStaffDisplay {
     this.sequenceEntries = [];
     this.highlightEntry = null;
     this.widthOptions = {
-      minWidth: coercePositive(minWidth),
-      maxWidth: coercePositive(maxWidth),
-      targetWidth: coercePositive(targetWidth),
-      baseHeight: coercePositive(baseHeight),
+      minWidth: parsePositiveNumber(minWidth),
+      maxWidth: parsePositiveNumber(maxWidth),
+      targetWidth: parsePositiveNumber(targetWidth),
+      baseHeight: parsePositiveNumber(baseHeight),
     };
     this.renderState = {
       initialized: true,
-      staffScale: coercePositive(staffScale),
+      staffScale: parsePositiveNumber(staffScale),
       primaryClef: this.clef,
       meter: this.meter,
       keySig: this.keySignature,
@@ -144,7 +137,16 @@ export class VexflowStaffDisplay {
 
   async configureFont() {
     this.fontChoice = getFontChoice(this.fontId);
-    await configureVexflowFont(VexFlow, this.fontChoice);
+    const fontResult = await configureVexflowFont(VexFlow, this.fontChoice);
+    if (fontResult?.choice) {
+      this.fontChoice = fontResult.choice;
+    }
+    if (Array.isArray(fontResult?.warnings) && fontResult.warnings.length > 0) {
+      const combinedWarnings = Array.isArray(this.renderState.warnings)
+        ? this.renderState.warnings.concat(fontResult.warnings)
+        : fontResult.warnings.slice();
+      this.renderState.warnings = [...new Set(combinedWarnings)];
+    }
     this.fontConfigured = true;
   }
 
@@ -175,30 +177,30 @@ export class VexflowStaffDisplay {
     const updated = { ...this.widthOptions };
     let dirty = false;
     if ('minWidth' in options) {
-      const coerced = coercePositive(options.minWidth);
-      if (updated.minWidth !== coerced) {
-        updated.minWidth = coerced;
+      const parsed = parsePositiveNumber(options.minWidth);
+      if (updated.minWidth !== parsed) {
+        updated.minWidth = parsed;
         dirty = true;
       }
     }
     if ('maxWidth' in options) {
-      const coerced = coercePositive(options.maxWidth);
-      if (updated.maxWidth !== coerced) {
-        updated.maxWidth = coerced;
+      const parsed = parsePositiveNumber(options.maxWidth);
+      if (updated.maxWidth !== parsed) {
+        updated.maxWidth = parsed;
         dirty = true;
       }
     }
     if ('targetWidth' in options) {
-      const coerced = coercePositive(options.targetWidth);
-      if (updated.targetWidth !== coerced) {
-        updated.targetWidth = coerced;
+      const parsed = parsePositiveNumber(options.targetWidth);
+      if (updated.targetWidth !== parsed) {
+        updated.targetWidth = parsed;
         dirty = true;
       }
     }
     if ('baseHeight' in options) {
-      const coerced = coercePositive(options.baseHeight);
-      if (updated.baseHeight !== coerced) {
-        updated.baseHeight = coerced;
+      const parsed = parsePositiveNumber(options.baseHeight);
+      if (updated.baseHeight !== parsed) {
+        updated.baseHeight = parsed;
         dirty = true;
       }
     }
@@ -301,6 +303,7 @@ export class VexflowStaffDisplay {
       renderState: this.renderState,
       warnings: [],
       registerInteractions: null,
+      applyTheme: applyVexflowTheme,
     });
 
     if (this.statusEl) {

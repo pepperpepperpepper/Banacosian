@@ -6,13 +6,16 @@ import {
   replaceKeySignatureInAbc,
   parseInitialVoices,
   cloneVoices,
-} from './render/buildSeedVoices.js';
+} from '/js/vexflow/core/buildSeedVoices.js';
 import {
   getStaffTheme,
   resolveSelectedFont,
   computeStaffScale,
+  applyVexflowTheme,
 } from './render/theme.js';
-import { drawStaff } from './render/draw.js';
+import { drawStaff } from '/js/vexflow/core/draw.js';
+import { INITIAL_NOTE_COUNT } from './staff-config.js';
+import { configureVexflowFont } from '/js/modules/StaffFonts.js';
 
 export async function renderVexflowStaff({
   container,
@@ -50,7 +53,7 @@ export async function renderVexflowStaff({
   let warnings = [];
 
   if (!renderState.initialized) {
-    const parsed = parseInitialVoices(abcjs, renderState.abc, renderState);
+    const parsed = parseInitialVoices(abcjs, renderState.abc, renderState, { maxNotes: INITIAL_NOTE_COUNT });
     voices = parsed.voices;
     meter = parsed.meter;
     warnings = parsed.warnings || [];
@@ -66,24 +69,15 @@ export async function renderVexflowStaff({
     return null;
   }
 
-  const fontChoice = resolveSelectedFont(fontSelect, fontChoices);
-  if (fontChoice?.warning) {
-    warnings.push(fontChoice.warning);
+  const requestedFontChoice = resolveSelectedFont(fontSelect, fontChoices);
+  const fontSetup = await configureVexflowFont(VexFlow, requestedFontChoice);
+  const fontChoice = fontSetup?.choice || requestedFontChoice;
+  if (Array.isArray(fontSetup?.warnings) && fontSetup.warnings.length > 0) {
+    warnings.push(...fontSetup.warnings);
   }
 
-  renderState.warnings = warnings.slice();
-
-  if (Array.isArray(fontChoice?.stack) && fontChoice.stack.length > 0) {
-    const stack = fontChoice.stack.filter(Boolean);
-    try {
-      if (stack.length > 0) {
-        await VexFlow.loadFonts(...stack);
-        VexFlow.setFonts(...stack);
-      }
-    } catch (error) {
-      console.warn('[VexFlow Demo] Unable to switch VexFlow font stack to', stack.join(', '), error);
-    }
-  }
+  const uniqueWarnings = [...new Set(warnings)];
+  renderState.warnings = uniqueWarnings;
 
   const theme = getStaffTheme();
   const staffScale = computeStaffScale(renderState);
@@ -97,8 +91,9 @@ export async function renderVexflowStaff({
     keySig,
     fontChoice,
     renderState,
-    warnings,
+    warnings: uniqueWarnings,
     registerInteractions,
+    applyTheme: applyVexflowTheme,
   });
 
   if (!drawResult) {

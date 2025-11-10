@@ -69,7 +69,7 @@ Then open `http://localhost:8080` in your browser.
 1. **Make changes** to any file:
    - `index.html` - Structure and content
    - `css/styles.css` - Styling and layout
-   - `js/script.js` - Application logic
+   - `js/MelodicDictation.js` & files in `js/modules/` - Application logic
 
 2. **See changes instantly** - browser automatically reloads
 
@@ -112,7 +112,9 @@ ear_training/
 ├── css/
 │   └── styles.css         # All styles
 ├── js/
-│   └── script.js          # Application logic
+│   ├── MelodicDictation.js  # Application bootstrap
+│   ├── modules/             # Core game logic, audio, storage, UI
+│   └── vexflow/StaffDisplay.js  # Shared VexFlow renderer
 ├── package.json           # Project configuration
 ├── DEV_SETUP.md           # This file
 └── node_modules/          # Dependencies (after npm install)

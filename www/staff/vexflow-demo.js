@@ -1,5 +1,5 @@
 import { renderVexflowStaff as renderStaff } from './render-staff.js';
-import { selectionState, createInteractionController } from './interaction-controller.js';
+import { createInteractionController } from './interaction-controller.js';
 import {
   SUPPORTED_KEY_SIGNATURES,
   canonicalizeKeySignature,
@@ -8,30 +8,13 @@ import {
   applySpecPitchUpdate,
   keyToMidi,
 } from './music-helpers.js';
+import { MUSIC_FONT_CHOICES } from '/js/modules/StaffFonts.js';
+import { debounce } from '/js/shared/utils.js';
 
 const fontSelect = document.getElementById('font-select');
 const keySelect = document.getElementById('key-select');
 
 const STATUS_EMPTY = 'No playable content found for VexFlow.';
-const MUSIC_FONT_CHOICES = {
-  bravura: {
-    id: 'bravura',
-    label: 'Bravura',
-    stack: ['Bravura', 'Academico'],
-  },
-  petaluma: {
-    id: 'petaluma',
-    label: 'Petaluma',
-    stack: ['Petaluma', 'Petaluma Script'],
-  },
-  leland: {
-    id: 'leland',
-    label: 'Leland',
-    stack: ['Bravura', 'Academico'],
-    fallback: true,
-    warning: 'VexFlow does not bundle Leland; falling back to Bravura.',
-  },
-};
 
 const DEMO_CONFIGS = [
   {
@@ -78,6 +61,7 @@ function createRenderState() {
     warnings: [],
     initialized: false,
     keySig: 'C',
+    interactionEnabled: true,
   };
 }
 
@@ -89,6 +73,8 @@ function createDemoContext(config) {
   }
 
   const renderState = createRenderState();
+  renderState.interactionEnabled = Boolean(config.interactive);
+
   const context = {
     ...config,
     container,
@@ -97,14 +83,13 @@ function createDemoContext(config) {
     interactions: null,
   };
 
-  if (config.interactive) {
-    context.interactions = createInteractionController({
-      statusEl,
-      renderState,
-      requestRender: () => renderDemo(context),
-      handleRenderFailure: (error) => reportRenderFailure(context, error),
-    });
-  }
+  context.interactions = createInteractionController({
+    statusEl,
+    renderState,
+    requestRender: () => renderDemo(context),
+    handleRenderFailure: (error) => reportRenderFailure(context, error),
+    enabled: renderState.interactionEnabled,
+  });
 
   return context;
 }
@@ -127,6 +112,16 @@ function initializeVexflowDemos() {
 
 async function renderDemo(context) {
   try {
+    if (context.interactions) {
+      context.interactions.updateDependencies({
+        statusEl: context.statusEl,
+        renderState: context.renderState,
+      });
+      context.interactions.setEnabled(Boolean(context.renderState.interactionEnabled));
+    }
+    const selectionStateForRender = context.interactions?.enabled
+      ? context.interactions.selectionState
+      : null;
     const result = await renderStaff({
       container: context.container,
       statusEl: context.statusEl,
@@ -134,18 +129,17 @@ async function renderDemo(context) {
       fontChoices: MUSIC_FONT_CHOICES,
       statusEmptyText: STATUS_EMPTY,
       renderState: context.renderState,
-      selectionState: context.interactive ? selectionState : null,
-      registerInteractions: context.interactive && context.interactions
-        ? ({ context: vfContext, voices, baseMessage, scale }) => {
-            context.interactions.register(
-              vfContext,
-              voices,
-              baseMessage,
-              scale,
-              context.container,
-            );
-          }
-        : () => {},
+      selectionState: selectionStateForRender,
+      registerInteractions: ({ context: vfContext, voices, baseMessage, scale }) => {
+        if (!context.interactions) return;
+        context.interactions.register(
+          vfContext,
+          voices,
+          baseMessage,
+          scale,
+          context.container,
+        );
+      },
     });
     syncKeySelectWithState();
     return result;
@@ -171,17 +165,6 @@ function reportRenderFailure(context, error) {
   if (context?.statusEl) {
     context.statusEl.textContent = 'Unable to render VexFlow staff.';
   }
-}
-
-function debounce(fn, delay) {
-  let timer = null;
-  return () => {
-    if (timer) window.clearTimeout(timer);
-    timer = window.setTimeout(() => {
-      timer = null;
-      fn();
-    }, delay);
-  };
 }
 
 function initializeKeySelect() {

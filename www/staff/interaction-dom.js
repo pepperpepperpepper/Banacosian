@@ -1,4 +1,4 @@
-import { logStructured } from './utils/log.js';
+import { logStructured } from '/js/shared/utils.js';
 
 export const HAS_POINTER_EVENTS = typeof window !== 'undefined' && 'PointerEvent' in window;
 const SVG_GRAPHICS_ELEMENT = typeof SVGGraphicsElement === 'undefined' ? null : SVGGraphicsElement;

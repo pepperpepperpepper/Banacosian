@@ -11,16 +11,16 @@
 - `www/staff/interaction-controller.js`
   - Responsibilities: register SVG event handlers, maintain selectable registry, bridge to drag/add.
   - Pain points: mixes selection reset, DOM queries, event handler attachment; hard to unit test.
-- Other key modules: `interaction-drag.js`, `interaction-add.js`, `interaction-dom.js`, `drag/preview.js`, `render/note-factory.js`.
+- Other key modules: `interaction-drag.js`, `interaction-add.js`, `interaction-dom.js`, `drag/preview.js`, plus shared VexFlow core under `js/vexflow/core/`.
 
 ### Suggested extraction targets
 
 | Concern | Proposed module | Notes |
 | --- | --- | --- |
-| Pitch helpers | `www/staff/helpers/pitch.js` | `keyToMidi`, `midiToKeySpec`, `findClosestPitchForY` |
-| Duration helpers | `www/staff/helpers/duration.js` | `durationFromDenom`, `resolveDuration` |
-| Tonality helpers | `www/staff/helpers/tonality.js` | Accidental maps, key signature utilities |
-| Render pipeline | `www/staff/render/buildSeedVoices.js`, `render/theme.js`, `render/draw.js` | Compose from `render-staff.js` entry |
+| Pitch helpers | `js/vexflow/core/helpers/pitch.js` | `keyToMidi`, `midiToKeySpec`, `findClosestPitchForY` |
+| Duration helpers | `js/vexflow/core/helpers/duration.js` | `durationFromDenom`, `resolveDuration` |
+| Tonality helpers | `js/vexflow/core/helpers/tonality.js` | Accidental maps, key signature utilities |
+| Render pipeline | `js/vexflow/core/buildSeedVoices.js`, `js/vexflow/core/draw.js`, `/staff/render/theme.js` | Compose from `render-staff.js` entry |
 | Interaction wiring | `www/staff/interaction/events.js`, `interaction/selection.js` (existing), `drag/state.js` | Reduce `interaction-controller.js` size |
 | Shared utilities | `www/staff/shared/` | Logging, config, ABC loader reuse |
 

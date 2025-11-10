@@ -14,7 +14,7 @@ import {
 } from './interaction-state.js';
 import { selectableRegistry } from './interaction-selectable.js';
 import { clearSelection } from './interaction-selection.js';
-import { logStructured } from './utils/log.js';
+import { logStructured } from '/js/shared/utils.js';
 
 const MAX_TOTAL_NOTES = INITIAL_NOTE_COUNT + MAX_ADDITIONAL_NOTES;
 

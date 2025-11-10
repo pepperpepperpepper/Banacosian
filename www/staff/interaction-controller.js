@@ -10,7 +10,7 @@ import {
   clearSelection,
   selectNote,
 } from './interaction-selection.js';
-import { logStructured } from './utils/log.js';
+import { logStructured } from '/js/shared/utils.js';
 import { attachSvgInteractionHandlers } from './interaction/events.js';
 
 logStructured('[VexflowInteraction] module loaded', {
@@ -125,16 +125,61 @@ export function createInteractionController({
   renderState,
   requestRender,
   handleRenderFailure,
+  enabled = true,
 }) {
-  setInteractionRefs({
-    statusEl,
-    renderState,
-    requestRender,
-    handleRenderFailure,
-  });
+  const dependencies = {
+    statusEl: statusEl || null,
+    renderState: renderState || null,
+    requestRender: requestRender || null,
+    handleRenderFailure: handleRenderFailure || null,
+  };
+
+  let isEnabled = Boolean(enabled);
+
+  function applyRefs() {
+    setInteractionRefs({
+      statusEl: dependencies.statusEl,
+      renderState: dependencies.renderState,
+      requestRender: dependencies.requestRender,
+      handleRenderFailure: dependencies.handleRenderFailure,
+    });
+  }
+
+  if (isEnabled) {
+    applyRefs();
+  }
+
+  function setEnabled(value) {
+    const next = Boolean(value);
+    if (next === isEnabled) return;
+    isEnabled = next;
+    if (isEnabled) {
+      applyRefs();
+    }
+  }
+
+  function updateDependencies(partial = {}) {
+    Object.assign(dependencies, partial);
+    if (isEnabled) {
+      applyRefs();
+    }
+  }
+
   return {
-    register: (context, voices, baseMessage, scale, container) => registerVexflowInteractions(context, voices, baseMessage, { scale, container }),
-    clearSelection: () => clearSelection(selectionState.messageBase),
+    get enabled() {
+      return isEnabled;
+    },
+    selectionState,
+    setEnabled,
+    updateDependencies,
+    register: (context, voices, baseMessage, scale, container) => {
+      if (!isEnabled) return;
+      registerVexflowInteractions(context, voices, baseMessage, { scale, container });
+    },
+    clearSelection: () => {
+      if (!isEnabled) return;
+      clearSelection(selectionState.messageBase);
+    },
   };
 }
 

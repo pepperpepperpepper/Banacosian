@@ -1,6 +1,6 @@
 import { TickContext } from '../vendor/lib/vexflow-esm/src/tickcontext.js';
-import { createVexflowNote } from '../render/note-factory.js';
-import { cloneNoteComponents, ensureAccidentalsLength } from '../utils/spec.js';
+import { createVexflowNote } from '/js/vexflow/core/noteFactory.js';
+import { cloneNoteComponents, ensureAccidentalsLength } from '/js/vexflow/core/utils/spec.js';
 
 function buildPreviewSpec(drag, previewKey, accidentalSymbol) {
   if (!drag?.specClone || drag.specClone.isRest) return null;
