@@ -2,7 +2,7 @@
   background: var(--app-card-surface);
   padding: 20px;
   border-radius: var(--app-border-radius-md);
-  margin: 20px 0;
+  margin: 6px 0;
   display: none;
 }
 
@@ -29,7 +29,7 @@
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin: 15px 0;
+  margin: 4px 0 2px;
   flex-wrap: wrap;
 }
 

@@ -25,14 +25,15 @@
 
 .vexflow-display {
   position: relative;
-  min-height: 180px;
+  min-height: 0;
   width: 100%;
+  max-width: 420px;
   border: none;
   background: transparent;
   backdrop-filter: none;
   overflow: hidden;
   padding: 0;
-  margin: 24px auto;
+  margin: 0 auto 12px;
 }
 
 .vexflow-display:focus-visible {
