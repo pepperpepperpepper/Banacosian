@@ -3,57 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Music Staff Demo • ABCJS</title>
+  <title>VexFlow Staff Demo</title>
   <link rel="stylesheet" href="/staff/theme/tokens.css">
+  <script>
+    (() => {
+      const param = 'cb';
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has(param)) {
+        url.searchParams.set(param, Date.now().toString(36));
+        window.location.replace(url.toString());
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="/staff/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/abcjs@6.2.2/dist/abcjs-basic-min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/tonal@4.14.2/browser/tonal.min.js" defer></script>
 </head>
 <body>
   <main>
     <header>
-      <h1>Music Staff Demo</h1>
+      <h1>VexFlow Staff Playground</h1>
       <p>
-        This page showcases <strong>ABCJS</strong>, a browser-based ABC notation renderer
-        (MIT license) that can draw responsive staves and even synthesize playback directly
-        from lightweight text input. Use the controls below to preview different key
-        signatures on a treble staff—no build step required.
+        Explore the interactive VexFlow staff: switch music fonts, adjust the key signature, drag notes,
+        and add new pitches directly on the stave.
       </p>
     </header>
 
-    <section class="controls ui-card">
-      <label>
-        Key signature
-        <select id="key-select">
-          <option value="C">C major / A minor</option>
-          <option value="G">G major / E minor</option>
-          <option value="D">D major / B minor</option>
-          <option value="A">A major / F♯ minor</option>
-          <option value="F">F major / D minor</option>
-          <option value="Bb">B♭ major / G minor</option>
-          <option value="Eb">E♭ major / C minor</option>
-        </select>
-      </label>
+    <section class="controls">
+      <label for="font-select" class="font-label">Staff Font</label>
+      <select id="font-select" class="font-select select-pill ui-pill" aria-label="VexFlow SMuFL font">
+        <option value="bravura">Bravura (reference)</option>
+        <option value="petaluma">Petaluma (handwritten)</option>
+        <option value="leland">Leland</option>
+      </select>
+      <label for="key-select" class="font-label">Key Signature</label>
+      <select id="key-select" class="font-select select-pill ui-pill" aria-label="Key signature">
+      </select>
     </section>
 
     <section class="staff-demo ui-card">
-      <div id="staff-container" class="interaction-draggable"></div>
-      <p id="staff-status" class="status" aria-live="polite"></p>
+      <h2>UI Demo</h2>
+      <div id="vexflow-container-ui" class="vexflow-container interaction-draggable" aria-live="polite"></div>
+      <p id="vexflow-status-ui" class="status"></p>
     </section>
 
-    <section class="notes ui-card">
-      <h2>Why ABCJS?</h2>
-      <ul>
-        <li>MIT licensed and purpose-built for the web with an active community.</li>
-        <li>Takes compact ABC notation strings—easy to generate from our theory engine.</li>
-        <li>Outputs scalable SVG and supports playback, highlighting, and multi-staff layouts.</li>
-      </ul>
-      <p class="footnote">
-        Learn more in the <a href="https://abcjs.net/">official ABCJS documentation</a>.
-      </p>
+    <section class="staff-demo ui-card">
+      <h2>Interaction Demo</h2>
+      <div id="vexflow-container" class="vexflow-container interaction-draggable" aria-live="polite"></div>
+      <p id="vexflow-status" class="status"></p>
     </section>
   </main>
 
-  <script type="module" src="/staff/staff-demo.js"></script>
+  <script type="module" src="/staff/vexflow-demo.js?v=20251030c"></script>
 </body>
 </html>

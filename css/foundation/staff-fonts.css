@@ -2,7 +2,7 @@
 
 @font-face {
   font-family: "Bravura";
-  src: url("/staff/font/Bravura.otf") format("opentype");
+  src: url("/staff/Bravura.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -11,7 +11,7 @@
 @font-face {
   font-family: "Bravura Text";
   src:
-    url("/staff/font/BravuraText.otf") format("opentype"),
+    url("/staff/BravuraText.otf") format("opentype"),
     url("https://raw.githubusercontent.com/steinbergmedia/bravura/master/redist/otf/BravuraText.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
@@ -20,7 +20,7 @@
 
 @font-face {
   font-family: "Petaluma";
-  src: url("/staff/font/Petaluma.otf") format("opentype");
+  src: url("/staff/Petaluma.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -29,7 +29,7 @@
 @font-face {
   font-family: "Petaluma Text";
   src:
-    url("/staff/font/PetalumaText.otf") format("opentype"),
+    url("/staff/PetalumaText.otf") format("opentype"),
     url("https://raw.githubusercontent.com/steinbergmedia/petaluma/master/redist/otf/PetalumaText.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
@@ -38,7 +38,7 @@
 
 @font-face {
   font-family: "Leland";
-  src: url("/staff/font/Leland.otf") format("opentype");
+  src: url("/staff/Leland.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -47,7 +47,7 @@
 @font-face {
   font-family: "Leland Text";
   src:
-    url("/staff/font/LelandText.otf") format("opentype"),
+    url("/staff/LelandText.otf") format("opentype"),
     url("https://raw.githubusercontent.com/MuseScoreFonts/Leland/main/LelandText.otf") format("opentype");
   font-weight: normal;
   font-style: normal;

@@ -6,7 +6,7 @@
   - `css/layout/` for container/timer/layout primitives.
   - `css/components/` for controls, piano, modal, and staff legacy styles.
   - `css/responsive.css` for unified breakpoints.
-- Introduced shared custom properties in `css/foundation/tokens.css`, importing the notation token sheet so `/staff` and `/staff/font` can share palette settings.
+- Introduced shared custom properties in `css/foundation/tokens.css`, importing the notation token sheet so every `/staff` view shares palette settings.
 - Added utility class `.ui-pill` for pill-shaped controls; selectors now opt-in via HTML classes instead of duplicating styles.
 - Moved modal styling out of inline HTML and into `css/components/modal.css`; updated markup to use structured classes.
 

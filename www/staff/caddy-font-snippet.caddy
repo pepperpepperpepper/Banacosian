@@ -1,4 +1,4 @@
-handle_path /staff/font/* {
+handle_path /staff/* {
   @otf {
     path_regexp fontfiles \.otf$
   }

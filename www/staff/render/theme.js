@@ -1,4 +1,4 @@
-import { readTokens, applyVexflowSvgTheme } from '../../shared/theme.js';
+import { readTokens, applyVexflowSvgTheme } from '../shared/theme.js';
 
 export const DEFAULT_STAFF_SCALE = 1.8;
 

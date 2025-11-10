@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Headless diagnostic runner that serves /var/www/staff, opens /font/ in Chromium,
+ * Headless diagnostic runner that serves /var/www/staff, opens the staff demo in Chromium,
  * and streams console/network errors to stdout so remote debugging is easier.
  *
- * Usage: node font/tools/run-console-check.js [path=/font/] [waitMs=6000]
+ * Usage: node staff/tools/run-console-check.js [path=/staff/] [waitMs=6000]
  */
 
 const http = require('http');
@@ -14,7 +14,7 @@ const { chromium } = require('playwright');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..', '..');
 const TARGET_ARG = process.argv[2];
-const DEFAULT_PATH = TARGET_ARG || '/staff/font/';
+const DEFAULT_PATH = TARGET_ARG || '/staff/';
 const WAIT_MS = Number.isFinite(Number(process.argv[3])) ? Number(process.argv[3]) : 6000;
 
 const MIME_TYPES = {

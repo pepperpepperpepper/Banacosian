@@ -3,7 +3,7 @@
 ## Overview
 - Primary bundle `css/styles.css` weighs in at 598 lines and mixes globals, layout, controls, piano, legacy staff, modal styling, and media queries.
 - Shared theme tokens already exist for notation demos under `www/staff/theme/tokens.css`; the main app still hardcodes colors, radii, blur amounts, and box shadows.
-- Additional CSS lives under `www/staff/font/styles.css` (294 lines) and `www/staff/theme/tokens.css`, plus backup snapshots in `www/staff/staff.bk/`.
+- Additional CSS lives under `www/staff/styles.css` (294 lines after the VexFlow migration) and `www/staff/theme/tokens.css`.
 
 ## Component Groupings
 - **Foundations**: universal reset, body background, typography (`styles.css:1-46`).
@@ -29,6 +29,6 @@
 - Media queries duplicated for `.piano-keys` height adjustments.
 
 ## Integration Notes
-- Any refactor should align color tokens with `/staff/font` theme variables (e.g., `--notation-accent`, `--staff-selection-color`) to keep brand consistency.
+- Any refactor should align color tokens with `/staff` theme variables (e.g., `--notation-accent`, `--staff-selection-color`) to keep brand consistency.
 - Once VexFlow staff replaces the DOM nodes on the main page, `.staff`/`.note.*` rules become removable; isolate them to simplify later deletion.
-- Investigate whether backup CSS under `www/staff/staff.bk/*` can be dropped or archived outside the repo after migration.
+- Confirm no stale CSS archives remain after the VexFlow migration; keep the repo free of unused snapshots.

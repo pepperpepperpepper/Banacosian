@@ -7,7 +7,7 @@ This document outlines a low‑risk refactor to centralize all visual styling fo
 - Single source of truth for notation visual tokens (colors, thickness, fonts, spacing).
 - Keep CSS vanilla and declarative; JS only reads tokens and applies via library APIs.
 - Minimize DOM style mutations; confine unavoidable ones to a single helper.
-- Unify theming for both demos: `www/staff/index.html` (ABCJS) and `www/staff/font/index.html` (VexFlow).
+- Ensure theming for the VexFlow demo at `www/staff/index.html` stays aligned with the main app.
 - Zero functional or visual change in this pass.
 
 ## Non‑Goals (for this pass)
@@ -19,11 +19,8 @@ This document outlines a low‑risk refactor to centralize all visual styling fo
 ## Current State (as of 2025‑11‑04)
 
 - CSS variables live in two places:
-  - `www/staff/styles.css` (page shell for ABCJS demo)
-  - `www/staff/font/styles.css` (page shell for VexFlow demo) — includes `--staff-ledger-thickness`
-- JS reads tokens independently in two modules:
-  - `www/staff/font/vexflow-demo.js` → `getStaffTheme()`
-  - `www/staff/font/font-demo.js` → `getStaffTheme()`
+  - `www/staff/styles.css` (page shell for the VexFlow demo) — includes `--staff-ledger-thickness`
+- JS reads tokens in `www/staff/vexflow-demo.js` → `getStaffTheme()` and the older experimental `www/staff/font-demo.js`.
 - Post‑render theming:
   - VexFlow: `applyVexflowTheme(container, palette)` sets stroke/fill and adjusts ledger node attributes.
   - ABCJS: `applyThemeToSvg(svg, palette)` does similar DOM mutations.
@@ -97,8 +94,8 @@ We will alias current names (e.g., `--staff-ledger-thickness`) to the new canoni
   - `www/staff/theme/applySvgTheme.js`
   - `www/staff/theme/README.md` (how to theme + where to change things)
 - Updated imports in:
-  - `www/staff/index.html` and `www/staff/font/index.html` to include `theme/tokens.css`
-  - `www/staff/font/vexflow-demo.js` and `www/staff/font/font-demo.js` to use shared helpers
+- `www/staff/index.html` includes `theme/tokens.css`
+- `www/staff/vexflow-demo.js` and `www/staff/font-demo.js` use shared helpers
 
 ## Migration Steps (Phased, Safe)
 
@@ -120,7 +117,7 @@ We will alias current names (e.g., `--staff-ledger-thickness`) to the new canoni
   - Staff stroke/fill
   - Ledger color and thickness above/below the staff
   - Selection and drag visuals
-- VexFlow page (`/staff/font`):
+- VexFlow page (`/staff/`):
   - Same items as above, including ledger thickness and extent
 - Wheel/drag interactions still prevent page scroll
 - Hard‑reload behavior (cache‑busting) doesn’t affect token resolution
@@ -139,4 +136,3 @@ We will alias current names (e.g., `--staff-ledger-thickness`) to the new canoni
 
 - Styling tokens: shared ownership; PRs must update `theme/README.md`.
 - Helper modules: code owners of the demos.
-

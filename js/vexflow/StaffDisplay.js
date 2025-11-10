@@ -1,9 +1,9 @@
-import VexFlow from '/staff/font/vendor/lib/vexflow-esm/entry/vexflow-debug.js';
-import { drawStaff } from '/staff/font/render/draw.js';
+import VexFlow from '/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js';
+import { drawStaff } from '/staff/render/draw.js';
 import {
   getStaffTheme,
   computeStaffScale,
-} from '/staff/font/render/theme.js';
+} from '/staff/render/theme.js';
 import {
   canonicalizeKeySignature,
 } from '/js/modules/KeySignatures.js';
@@ -14,7 +14,7 @@ import {
 } from '/js/modules/StaffFonts.js';
 import {
   keyToMidi,
-} from '/staff/font/music-helpers.js';
+} from '/staff/music-helpers.js';
 
 const NOTE_REGEX = /^([A-Ga-g])([#♯b♭]{0,2})(-?\d)$/;
 const DEFAULT_METER = Object.freeze({ num: 4, den: 4 });
