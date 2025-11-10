@@ -136,8 +136,8 @@ export function drawStaff({
     context.svg.style.display = 'block';
   }
 
-  const horizontalPadding = 1;
-  const verticalPadding = 0;
+  const horizontalPadding = Math.max(18, Math.round(baseWidth * 0.02));
+  const verticalPadding = Math.max(16, Math.round(baseHeight * 0.08));
   const staveWidth = Math.max(0, baseWidth - horizontalPadding * 2);
   const stave = new Stave(horizontalPadding, verticalPadding, staveWidth);
   const primaryClef = voices[0]?.clef || 'treble';
@@ -193,9 +193,7 @@ export function drawStaff({
     try {
       const formatter = new Formatter({ align_rests: true });
       formatter.joinVoices(playableVoices);
-      const formatWidthSource = typeof stave.getWidth === 'function' ? stave.getWidth() : staveWidth;
-      const formatWidth = Math.max(48, formatWidthSource - Math.max(16, horizontalPadding * 2));
-      formatter.format(playableVoices, formatWidth);
+      formatter.format(playableVoices, baseWidth - 96);
 
       playableVoices.forEach((voice) => voice.draw(context, stave));
 

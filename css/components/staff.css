@@ -23,16 +23,45 @@
   flex-wrap: wrap;
 }
 
+.staff-container {
+  background: var(--app-card-surface);
+  border-radius: var(--app-border-radius-lg);
+  border: 1px solid var(--app-card-border);
+  box-shadow: var(--app-card-shadow);
+  padding: 24px 20px;
+  margin: 24px auto;
+  max-width: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-gap-md);
+}
+
+.staff-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: var(--app-text-primary);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.staff-font-indicator {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--app-text-muted);
+}
+
 .vexflow-display {
   position: relative;
   min-height: 180px;
   width: 100%;
-  border: none;
-  background: transparent;
-  backdrop-filter: none;
+  border: 1px solid var(--app-card-border);
+  border-radius: var(--app-border-radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(6px);
   overflow: hidden;
   padding: 0;
-  margin: 24px auto;
 }
 
 .vexflow-display:focus-visible {
@@ -46,4 +75,10 @@
   height: auto;
   display: block;
   margin: 0;
+}
+
+.staff-status {
+  min-height: 1.2em;
+  font-size: 0.95rem;
+  color: var(--app-text-muted);
 }
