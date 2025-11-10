@@ -44,6 +44,7 @@
                     <option value="whole-tone">Whole Tone</option>
                 </select>
                 <select id="timbreSelect" class="select-pill ui-pill" aria-label="Select timbre"></select>
+                <select id="staffFont" class="select-pill ui-pill" aria-label="Select staff font"></select>
             </div>
         </div>
 
@@ -56,58 +57,20 @@
         </div>
 
         <div class="staff-container">
-            <div class="staff">
-                <div class="treble-clef">𝄞</div>
-                <div class="staff-line"></div>
-                <div class="staff-line"></div>
-                <div class="staff-line"></div>
-                <div class="staff-line"></div>
-                <div class="staff-line"></div>
-                
-                <!-- Ledger lines -->
-                <div class="ledger-line c4"></div>
-                <div class="ledger-line a5"></div>
-                
-                <!-- Notes -->
-                <div class="note C4"></div>
-                <div class="note D4"></div>
-                <div class="note E4"></div>
-                <div class="note F4"></div>
-                <div class="note G4"></div>
-                <div class="note A4"></div>
-                <div class="note B4"></div>
-                <div class="note C5"></div>
-                <div class="note D5"></div>
-                <div class="note E5"></div>
-                <div class="note F5"></div>
-                <div class="note G5"></div>
-                <div class="note A5"></div>
-                <div class="note B5"></div>
-                
-                <!-- Sharp notes -->
-                <div class="note C#4"></div>
-                <div class="note D#4"></div>
-                <div class="note F#4"></div>
-                <div class="note G#4"></div>
-                <div class="note A#4"></div>
-                <div class="note C#5"></div>
-                <div class="note D#5"></div>
-                <div class="note F#5"></div>
-                <div class="note G#5"></div>
-                <div class="note A#5"></div>
-                
-                <!-- Accidentals -->
-                <div class="accidental" style="top: 92px;" data-sharp="C#4">♯</div>
-                <div class="accidental" style="top: 85px;" data-sharp="D#4">♯</div>
-                <div class="accidental" style="top: 71px;" data-sharp="F#4">♯</div>
-                <div class="accidental" style="top: 64px;" data-sharp="G#4">♯</div>
-                <div class="accidental" style="top: 57px;" data-sharp="A#4">♯</div>
-                <div class="accidental" style="top: 43px;" data-sharp="C#5">♯</div>
-                <div class="accidental" style="top: 36px;" data-sharp="D#5">♯</div>
-                <div class="accidental" style="top: 29px;" data-sharp="F#5">♯</div>
-                <div class="accidental" style="top: 15px;" data-sharp="G#5">♯</div>
-                <div class="accidental" style="top: 8px;" data-sharp="A#5">♯</div>
+            <div class="staff-header">
+                <span>Staff Preview</span>
+                <span id="staff-font-indicator" class="staff-font-indicator"></span>
             </div>
+            <div
+                id="staff-vexflow"
+                class="vexflow-display interaction-draggable"
+                role="img"
+                aria-label="Rendered musical staff"
+                data-staff-min-width="240"
+                data-staff-base-height="140"
+                data-staff-scale="3"
+            ></div>
+            <div id="staff-status" class="staff-status" aria-live="polite"></div>
         </div>
 
         <div class="piano">

@@ -8,14 +8,38 @@ import { logStructured } from '../utils/log.js';
 import { buildLedgerStyle, createVexflowNote } from '../render/note-factory.js';
 import { applyVexflowTheme } from './theme.js';
 
-export function computeDimensions(container, staffScale) {
+function coercePositive(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return numeric > 0 ? numeric : null;
+}
+
+export function computeDimensions(container, staffScale, renderState) {
+  const configuredMinWidth = coercePositive(renderState?.minWidth);
+  const configuredMaxWidth = coercePositive(renderState?.maxWidth);
+  const configuredTargetWidth = coercePositive(renderState?.targetWidth);
+  const configuredBaseHeight = coercePositive(renderState?.baseHeight);
+
+  const minWidth = configuredMinWidth ?? 480;
+  const targetWidth = configuredTargetWidth ?? null;
   const measuredWidth = container.clientWidth ? (container.clientWidth / staffScale) : 0;
-  const parentWidth = container.parentElement?.clientWidth || 0;
-  const widthCandidate = measuredWidth || parentWidth || 720;
-  const baseWidth = Math.max(480, widthCandidate);
-  const baseHeight = 200;
+  const parentWidth = container.parentElement?.clientWidth
+    ? (container.parentElement.clientWidth / staffScale)
+    : 0;
+  const widthCandidate = targetWidth || measuredWidth || parentWidth || minWidth || 720;
+  let baseWidth = widthCandidate;
+  if (configuredMaxWidth) {
+    baseWidth = Math.min(baseWidth, configuredMaxWidth);
+  }
+  baseWidth = Math.max(minWidth, baseWidth);
+  const baseHeight = configuredBaseHeight ?? 200;
   const scaledWidth = Math.round(baseWidth * staffScale);
   const scaledHeight = Math.round(baseHeight * staffScale);
+  if (renderState) {
+    renderState.computedWidth = baseWidth;
+    renderState.computedHeight = baseHeight;
+  }
   return {
     baseWidth,
     baseHeight,
@@ -90,7 +114,7 @@ export function drawStaff({
   warnings,
   registerInteractions,
 }) {
-  const { baseWidth, baseHeight, scaledWidth, scaledHeight } = computeDimensions(container, staffScale);
+  const { baseWidth, baseHeight, scaledWidth, scaledHeight } = computeDimensions(container, staffScale, renderState);
   container.innerHTML = '';
 
   const renderer = new Renderer(container, Renderer.Backends.SVG);
@@ -105,9 +129,17 @@ export function drawStaff({
 
   if (context.svg) {
     context.svg.setAttribute('viewBox', `0 0 ${baseWidth} ${baseHeight}`);
+    context.svg.removeAttribute('width');
+    context.svg.removeAttribute('height');
+    context.svg.style.width = '100%';
+    context.svg.style.height = 'auto';
+    context.svg.style.display = 'block';
   }
 
-  const stave = new Stave(24, 36, baseWidth - 48);
+  const horizontalPadding = Math.max(18, Math.round(baseWidth * 0.02));
+  const verticalPadding = Math.max(16, Math.round(baseHeight * 0.08));
+  const staveWidth = Math.max(0, baseWidth - horizontalPadding * 2);
+  const stave = new Stave(horizontalPadding, verticalPadding, staveWidth);
   const primaryClef = voices[0]?.clef || 'treble';
   renderState.primaryClef = primaryClef;
   stave.addClef(primaryClef);
@@ -122,9 +154,19 @@ export function drawStaff({
 
   cacheStaffMetrics({ context, stave, baseWidth, staffScale, renderState });
 
+  console.debug('[VexflowDraw] incoming voices', voices);
+
   const vexflowVoices = voices.map((voice, voiceIndex) => {
     const tickables = voice.noteSpecs.map((spec, noteIndex) => {
       const note = createVexflowNote(spec, theme);
+      if (spec?.style && typeof note.setStyle === 'function') {
+        const fill = spec.style.fillStyle ?? spec.style.fill ?? null;
+        const stroke = spec.style.strokeStyle ?? spec.style.stroke ?? fill ?? null;
+        note.setStyle({
+          fillStyle: fill ?? stroke ?? undefined,
+          strokeStyle: stroke ?? fill ?? undefined,
+        });
+      }
       note.__voiceIndex = voiceIndex;
       note.__noteIndex = noteIndex;
       return note;
@@ -139,23 +181,38 @@ export function drawStaff({
     return vfVoice;
   });
 
-  const formatter = new Formatter({ align_rests: true });
-  formatter.joinVoices(vexflowVoices);
-  formatter.format(vexflowVoices, baseWidth - 96);
-
-  vexflowVoices.forEach((voice) => voice.draw(context, stave));
-
-  vexflowVoices.forEach((voice, voiceIndex) => {
-    const tickables = voice.getTickables ? voice.getTickables() : [];
-    tickables.forEach((tickable, noteIndex) => {
-      console.log('[VexflowDraw] attrs after draw', {
-        voiceIndex,
-        noteIndex,
-        attrs: tickable.getAttrs?.(),
-        rawAttrs: tickable.attrs,
-      });
-    });
+  const playableVoices = vexflowVoices.filter((voice) => {
+    if (typeof voice.getTickables !== 'function') return false;
+    const tickables = voice.getTickables();
+    return Array.isArray(tickables) && tickables.length > 0;
   });
+
+  let drawnVoices = playableVoices;
+
+  if (playableVoices.length > 0) {
+    try {
+      const formatter = new Formatter({ align_rests: true });
+      formatter.joinVoices(playableVoices);
+      formatter.format(playableVoices, baseWidth - 96);
+
+      playableVoices.forEach((voice) => voice.draw(context, stave));
+
+      playableVoices.forEach((voice, voiceIndex) => {
+        const tickables = voice.getTickables ? voice.getTickables() : [];
+        tickables.forEach((tickable, noteIndex) => {
+          console.log('[VexflowDraw] attrs after draw', {
+            voiceIndex,
+            noteIndex,
+            attrs: tickable.getAttrs?.(),
+            rawAttrs: tickable.attrs,
+          });
+        });
+      });
+    } catch (error) {
+      console.warn('[VexflowDraw] unable to format voices', error);
+      drawnVoices = [];
+    }
+  }
 
   const totalElements = voices.reduce((sum, voice) => sum + voice.noteSpecs.length, 0);
   const warningSuffix = warnings.length ? ` — ${warnings.length} warning${warnings.length === 1 ? '' : 's'} (see console)` : '';
@@ -168,7 +225,7 @@ export function drawStaff({
   if (typeof registerInteractions === 'function') {
     registerInteractions({
       context,
-      voices: vexflowVoices,
+      voices: drawnVoices,
       baseMessage,
       scale: staffScale,
     });

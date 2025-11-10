@@ -4,6 +4,6 @@
 
 - Card container styling is effectively repeated: `css/layout/container.css:1-38` defines the glassmorphism card used on the home page, while `www/staff/styles.css:36-70` manually restates a very similar pattern (background, border radius, shadow, padding). You could export a generic `.card` pattern (background, border, shadow, radius) in a shared layout file and let each side extend it for their specific spacing needs.
 
-- The legacy DOM staff still enumerates two separate blocks of identical `top` assignments for naturals and sharps (`css/components/staff-legacy.css:164-236`). If you keep that code around, it’s a good candidate for consolidation—e.g., switch to `[data-note="C4"]` selectors or a shared custom property map so each pitch position is declared once.
+- Legacy DOM staff rules were removed alongside the VexFlow migration (`css/components/staff.css`). Double-check for any remaining references to the old `.staff` markup so we can delete unused CSS/HTML fragments safely.
 
 - Responsive rules for the piano keys show up in both `css/responsive.css:1-14` (main app) and `www/staff/font/styles.css:206-228` (font demo) with only minor differences. Extract a single breakpoint block (perhaps in a shared `css/responsive/piano.css`) so the keyboard height math is maintained in one place.

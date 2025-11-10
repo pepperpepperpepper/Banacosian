@@ -54,6 +54,11 @@ class UIModule {
         if (timbreSelect && typeof callbacks.onTimbreChange === 'function') {
             timbreSelect.addEventListener('change', callbacks.onTimbreChange);
         }
+
+        const staffFontSelect = document.getElementById('staffFont');
+        if (staffFontSelect && typeof callbacks.onStaffFontChange === 'function') {
+            staffFontSelect.addEventListener('change', callbacks.onStaffFontChange);
+        }
     }
 
     /**
@@ -125,6 +130,35 @@ class UIModule {
         const timbreSelect = document.getElementById('timbreSelect');
         if (timbreSelect && value) {
             timbreSelect.value = value;
+        }
+    }
+
+    /**
+     * Populate staff font options in settings panel
+     * @param {Array<{id:string,label:string}>} fonts
+     * @param {string} selectedValue
+     */
+    populateStaffFontOptions(fonts, selectedValue) {
+        const fontSelect = document.getElementById('staffFont');
+        if (!fontSelect) return;
+        fontSelect.innerHTML = '';
+        fonts.forEach(font => {
+            const option = document.createElement('option');
+            option.value = font.id;
+            option.textContent = font.label || font.id;
+            fontSelect.appendChild(option);
+        });
+        this.setStaffFontValue(selectedValue);
+    }
+
+    /**
+     * Update the current staff font selection
+     * @param {string} value
+     */
+    setStaffFontValue(value) {
+        const fontSelect = document.getElementById('staffFont');
+        if (fontSelect && value) {
+            fontSelect.value = value;
         }
     }
 
@@ -402,7 +436,8 @@ class UIModule {
             tonic: document.getElementById('tonicSelect').value,
             scaleType: document.getElementById('scaleType').value,
             mode: document.getElementById('mode').value,
-            timbre: document.getElementById('timbreSelect') ? document.getElementById('timbreSelect').value : undefined
+            timbre: document.getElementById('timbreSelect') ? document.getElementById('timbreSelect').value : undefined,
+            staffFont: document.getElementById('staffFont') ? document.getElementById('staffFont').value : undefined
         };
     }
 
@@ -425,6 +460,9 @@ class UIModule {
         }
         if (values.timbre !== undefined) {
             this.setTimbreValue(values.timbre);
+        }
+        if (values.staffFont !== undefined) {
+            this.setStaffFontValue(values.staffFont);
         }
     }
 }

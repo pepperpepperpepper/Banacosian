@@ -1,11 +1,12 @@
 @import url("./foundation/tokens.css");
+@import url("./foundation/staff-fonts.css");
 @import url("./foundation/base.css");
 @import url("./layout/container.css");
 @import url("./components/controls.css");
 @import url("./components/status.css");
 @import url("./components/piano.css");
 @import url("./components/modal.css");
-@import url("./components/staff-legacy.css");
+@import url("./components/staff.css");
 @import url("./utilities/interaction.css");
 @import url("./responsive/piano.css");
 @import url("./responsive.css");

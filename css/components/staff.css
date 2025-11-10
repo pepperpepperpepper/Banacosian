@@ -1,0 +1,84 @@
+@charset "UTF-8";
+
+.instructions {
+  background: var(--app-card-surface);
+  padding: 15px;
+  border-radius: var(--app-border-radius-sm);
+  margin-top: 20px;
+  font-size: 0.9em;
+  line-height: 1.4;
+  color: var(--app-text-muted);
+}
+
+.data-controls {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.data-row {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.staff-container {
+  background: var(--app-card-surface);
+  border-radius: var(--app-border-radius-lg);
+  border: 1px solid var(--app-card-border);
+  box-shadow: var(--app-card-shadow);
+  padding: 24px 20px;
+  margin: 24px auto;
+  max-width: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-gap-md);
+}
+
+.staff-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: var(--app-text-primary);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.staff-font-indicator {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--app-text-muted);
+}
+
+.vexflow-display {
+  position: relative;
+  min-height: 180px;
+  width: 100%;
+  border: 1px solid var(--app-card-border);
+  border-radius: var(--app-border-radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+  padding: 0;
+}
+
+.vexflow-display:focus-visible {
+  outline: 2px solid var(--notation-selection, var(--app-info));
+  outline-offset: 4px;
+}
+
+.vexflow-display svg {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  display: block;
+  margin: 0;
+}
+
+.staff-status {
+  min-height: 1.2em;
+  font-size: 0.95rem;
+  color: var(--app-text-muted);
+}

@@ -12,7 +12,7 @@
 
 ## Follow-Up Items
 - Move inline styles produced in `UI.showHistory` into template strings that reference CSS classes rather than hard-coded `style` attributes.
-- Gradually retire `css/components/staff-legacy.css` once the main app fully adopts the VexFlow SVG staff.
+- Document the new VexFlow staff styling in `css/components/staff.css` and ensure `/staff` demos continue to share palette/token overrides.
 - Audit backup CSS copies under `www/staff/staff.bk/` and determine whether they can be removed or archived outside the repo.
 
 ## Tooling

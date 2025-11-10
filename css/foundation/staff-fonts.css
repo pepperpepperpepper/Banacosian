@@ -1,0 +1,55 @@
+@charset "UTF-8";
+
+@font-face {
+  font-family: "Bravura";
+  src: url("/staff/font/Bravura.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bravura Text";
+  src:
+    url("/staff/font/BravuraText.otf") format("opentype"),
+    url("https://raw.githubusercontent.com/steinbergmedia/bravura/master/redist/otf/BravuraText.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Petaluma";
+  src: url("/staff/font/Petaluma.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Petaluma Text";
+  src:
+    url("/staff/font/PetalumaText.otf") format("opentype"),
+    url("https://raw.githubusercontent.com/steinbergmedia/petaluma/master/redist/otf/PetalumaText.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Leland";
+  src: url("/staff/font/Leland.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Leland Text";
+  src:
+    url("/staff/font/LelandText.otf") format("opentype"),
+    url("https://raw.githubusercontent.com/MuseScoreFonts/Leland/main/LelandText.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

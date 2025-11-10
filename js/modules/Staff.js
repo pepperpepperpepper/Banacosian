@@ -1,169 +1,196 @@
 /**
- * Staff Module - Handles musical staff display and note positioning
+ * Staff Module - VexFlow-backed musical staff display
  */
 class StaffModule {
     constructor() {
-        this.staffNotes = []; // Track notes on staff
-    }
-
-    /**
-     * Show a note on the musical staff
-     * @param {string} note - Note name (e.g., 'C4')
-     */
-    showNoteOnStaff(note) {
-        console.log('=== showNoteOnStaff called with:', note, 'type:', typeof note);
-        
-        if (!note) {
-            console.warn('showNoteOnStaff: note is falsy');
-            return; // Safety check
-        }
-        
-        console.log('About to query staff note with selector:', `.staff .note.${note}`);
-        
-        // Flash the note briefly, then make it persistent
-        const staffNote = document.querySelector(`.staff .note.${note}`);
-        if (staffNote) {
-            // Position the note for the sequence
-            const noteIndex = this.staffNotes.length;
-            const spacing = 45; // Horizontal spacing between notes
-            const startX = 90; // Start position after treble clef
-            
-            staffNote.style.left = `${startX + (noteIndex * spacing)}px`;
-            staffNote.classList.add('visible');
-            
-            // Add to our tracking array
-            this.staffNotes.push({
-                note: note,
-                element: staffNote,
-                index: noteIndex
-            });
-            
-            // Show accidental if it's a sharp
-            if (note.includes('#')) {
-                const accidental = document.querySelector(`.staff .accidental[data-sharp="${note}"]`);
-                if (accidental) {
-                    accidental.style.left = `${startX + (noteIndex * spacing) - 15}px`;
-                    accidental.classList.add('visible');
-                }
-            }
-            
-            // After flash animation, make it persistent with user color
-            setTimeout(() => {
-                staffNote.classList.remove('visible');
-                staffNote.classList.add('persistent', 'user');
-            }, 500);
-        }
-    }
-
-    /**
-     * Clear all notes and accidentals from staff
-     */
-    clearStaffNotes() {
-        // Clear all notes and accidentals from staff
-        document.querySelectorAll('.staff .note').forEach(n => {
-            n.classList.remove('visible', 'persistent');
-            n.style.left = '50%'; // Reset to center
-        });
-        document.querySelectorAll('.staff .accidental').forEach(a => {
-            a.classList.remove('visible');
-            a.style.left = '35%'; // Reset to default
-        });
-        
-        // Reset tracking array
+        this.noteEntries = [];
         this.staffNotes = [];
-    }
-
-    /**
-     * Update staff notes with comparison colors
-     * @param {Array} currentSequence - The target sequence
-     * @param {Array} userSequence - The user's sequence
-     */
-    updateStaffComparison(currentSequence, userSequence) {
-        // Update staff notes with comparison colors
-        for (let i = 0; i < currentSequence.length; i++) {
-            if (i < userSequence.length) {
-                if (this.staffNotes[i]) {
-                    if (userSequence[i] === currentSequence[i]) {
-                        this.staffNotes[i].element.classList.remove('user', 'incorrect');
-                        this.staffNotes[i].element.classList.add('correct');
-                    } else {
-                        this.staffNotes[i].element.classList.remove('user', 'correct');
-                        this.staffNotes[i].element.classList.add('incorrect');
-                    }
-                }
-            }
+        this.keySignature = 'C';
+        this.fontPreference = 'bravura';
+        this.highlightTimeout = null;
+        this.operationQueue = Promise.resolve();
+        this.displayPromise = null;
+        const hasDocument = typeof document !== 'undefined';
+        this.containerEl = hasDocument ? document.getElementById('staff-vexflow') : null;
+        this.statusEl = hasDocument ? document.getElementById('staff-status') : null;
+        this.fontIndicatorEl = hasDocument ? document.getElementById('staff-font-indicator') : null;
+        if (hasDocument) {
+            this.initializeDisplay();
         }
     }
 
-    /**
-     * Get the current staff notes
-     * @returns {Array} Array of staff notes
-     */
+    initializeDisplay() {
+        if (this.displayPromise) return this.displayPromise;
+        this.displayPromise = (async () => {
+            if (typeof window === 'undefined') {
+                return null;
+            }
+            if (!this.containerEl) {
+                console.warn('[StaffModule] staff container not found.');
+                if (this.statusEl) this.statusEl.textContent = 'Staff unavailable.';
+                return null;
+            }
+            try {
+                const module = await import('/js/vexflow/StaffDisplay.js');
+                const DisplayCtor = module?.VexflowStaffDisplay || module?.default;
+                if (!DisplayCtor) {
+                    throw new Error('VexflowStaffDisplay export missing.');
+                }
+                const parsePositive = (value) => {
+                    if (typeof value !== 'string' || value.trim() === '') return null;
+                    const numeric = Number.parseFloat(value);
+                    return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+                };
+                const widthOptions = this.containerEl.dataset
+                    ? {
+                        minWidth: parsePositive(this.containerEl.dataset.staffMinWidth),
+                        maxWidth: parsePositive(this.containerEl.dataset.staffMaxWidth),
+                        targetWidth: parsePositive(this.containerEl.dataset.staffTargetWidth),
+                        baseHeight: parsePositive(this.containerEl.dataset.staffBaseHeight),
+                      }
+                    : { minWidth: null, maxWidth: null, targetWidth: null, baseHeight: null };
+                const staffScale = this.containerEl.dataset
+                    ? parsePositive(this.containerEl.dataset.staffScale)
+                    : null;
+                if (widthOptions.minWidth && widthOptions.maxWidth && widthOptions.maxWidth < widthOptions.minWidth) {
+                    widthOptions.maxWidth = null;
+                }
+                const display = new DisplayCtor({
+                    container: this.containerEl,
+                    statusEl: this.statusEl,
+                    keySignature: this.keySignature,
+                    fontId: this.fontPreference,
+                    minWidth: widthOptions.minWidth ?? undefined,
+                    maxWidth: widthOptions.maxWidth ?? undefined,
+                    targetWidth: widthOptions.targetWidth ?? undefined,
+                    baseHeight: widthOptions.baseHeight ?? undefined,
+                    staffScale: staffScale ?? undefined,
+                });
+                await display.initialize();
+                this.updateFontIndicator(display);
+                if (this.noteEntries.length > 0) {
+                    await display.setSequence(this.noteEntries);
+                }
+                return display;
+            } catch (error) {
+                console.error('[StaffModule] failed to initialize staff.', error);
+                if (this.statusEl) this.statusEl.textContent = 'Unable to load staff.';
+                return null;
+            }
+        })();
+        return this.displayPromise;
+    }
+
+    async ensureDisplay() {
+        return this.displayPromise || this.initializeDisplay();
+    }
+
+    updateFontIndicator(display) {
+        if (!this.fontIndicatorEl || !display) return;
+        const label = display.getFontLabel();
+        this.fontIndicatorEl.textContent = label ? `Font: ${label}` : '';
+    }
+
+    enqueue(task) {
+        this.operationQueue = this.operationQueue
+            .then(() => this.ensureDisplay())
+            .then(async (display) => {
+                if (!display) return;
+                await task(display);
+                this.updateFontIndicator(display);
+            })
+            .catch((error) => console.error('[StaffModule] operation failed', error));
+        return this.operationQueue;
+    }
+
+    showNoteOnStaff(note) {
+        if (!note) return;
+        const entry = { note, state: 'user' };
+        this.noteEntries.push(entry);
+        this.staffNotes.push({
+            note,
+            index: this.staffNotes.length,
+            state: 'user',
+            element: null
+        });
+        this.enqueue((display) => display.setSequence(this.noteEntries));
+    }
+
+    clearStaffNotes() {
+        this.noteEntries = [];
+        this.staffNotes = [];
+        if (this.highlightTimeout) {
+            const clearFn = typeof window !== 'undefined' ? window.clearTimeout : clearTimeout;
+            clearFn(this.highlightTimeout);
+            this.highlightTimeout = null;
+        }
+        this.enqueue(async (display) => {
+            await display.clearHighlight();
+            await display.setSequence([]);
+        });
+    }
+
+    updateStaffComparison(currentSequence, userSequence) {
+        if (!Array.isArray(currentSequence) || currentSequence.length === 0) return;
+        const user = Array.isArray(userSequence) ? userSequence : [];
+        const limit = Math.min(this.noteEntries.length, currentSequence.length);
+        for (let i = 0; i < limit; i += 1) {
+            if (i < user.length) {
+                const isCorrect = user[i] === currentSequence[i];
+                this.noteEntries[i] = {
+                    ...this.noteEntries[i],
+                    state: isCorrect ? 'correct' : 'incorrect'
+                };
+                if (this.staffNotes[i]) {
+                    this.staffNotes[i].state = isCorrect ? 'correct' : 'incorrect';
+                }
+            }
+        }
+        this.enqueue((display) => display.setSequence(this.noteEntries));
+    }
+
     getStaffNotes() {
         return this.staffNotes;
     }
 
-    /**
-     * Get the number of notes currently on staff
-     * @returns {number} Number of notes
-     */
     getStaffNotesCount() {
         return this.staffNotes.length;
     }
 
-    /**
-     * Show a temporary highlight on the staff for a single note (used for tonic sequence)
-     * @param {string} note - Note name (e.g., 'C4')
-     * @param {number} duration - Duration in milliseconds to show the highlight
-     * @returns {Promise} Promise that resolves when the highlight is complete
-     */
-    async highlightNoteOnStaff(note, duration = 600) {
-        if (!note) {
-            console.warn('highlightNoteOnStaff: note is falsy');
-            return;
+    highlightNoteOnStaff(note, duration = 600) {
+        if (!note) return;
+        const entry = { note, state: 'highlight' };
+        this.enqueue((display) => display.setHighlight(entry));
+        if (this.highlightTimeout) {
+            const clearFn = typeof window !== 'undefined' ? window.clearTimeout : clearTimeout;
+            clearFn(this.highlightTimeout);
+            this.highlightTimeout = null;
         }
-
-        const staffNote = document.querySelector(`.staff .note.${note}`);
-        if (staffNote) {
-            // Position the note in the center for tonic highlighting
-            staffNote.style.left = '50%';
-            
-            // Show the note with tonic highlighting
-            staffNote.classList.add('tonic-highlight');
-            
-            // Show accidental if it's a sharp
-            if (note.includes('#')) {
-                const accidental = document.querySelector(`.staff .accidental[data-sharp="${note}"]`);
-                if (accidental) {
-                    accidental.style.left = '35%';
-                    accidental.classList.add('tonic-highlight');
-                }
-            }
-            
-            // Wait for the specified duration
-            await new Promise(resolve => setTimeout(resolve, duration));
-            
-            // Remove the highlighting
-            staffNote.classList.remove('tonic-highlight');
-            if (note.includes('#')) {
-                const accidental = document.querySelector(`.staff .accidental[data-sharp="${note}"]`);
-                if (accidental) {
-                    accidental.classList.remove('tonic-highlight');
-                }
-            }
-        }
+        const scheduleTimeout = typeof window !== 'undefined' ? window.setTimeout : setTimeout;
+        this.highlightTimeout = scheduleTimeout(() => {
+            this.highlightTimeout = null;
+            this.enqueue((display) => display.clearHighlight());
+        }, Math.max(0, duration));
     }
 
-    /**
-     * Clear any tonic highlights from the staff
-     */
     clearTonicHighlights() {
-        document.querySelectorAll('.staff .note.tonic-highlight').forEach(note => {
-            note.classList.remove('tonic-highlight');
-        });
-        document.querySelectorAll('.staff .accidental.tonic-highlight').forEach(accidental => {
-            accidental.classList.remove('tonic-highlight');
-        });
+        if (this.highlightTimeout) {
+            const clearFn = typeof window !== 'undefined' ? window.clearTimeout : clearTimeout;
+            clearFn(this.highlightTimeout);
+            this.highlightTimeout = null;
+        }
+        this.enqueue((display) => display.clearHighlight());
+    }
+
+    setKeySignature(keySig) {
+        this.keySignature = keySig || this.keySignature;
+        this.enqueue((display) => display.setKeySignature(this.keySignature));
+    }
+
+    setFontPreference(fontId) {
+        if (!fontId || fontId === this.fontPreference) return;
+        this.fontPreference = fontId;
+        this.enqueue((display) => display.setFont(fontId));
     }
 }
 
