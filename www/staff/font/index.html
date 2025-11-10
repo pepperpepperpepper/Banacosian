@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ABCJS SMuFL Experiment</title>
+  <title>VexFlow Staff Demo</title>
   <link rel="stylesheet" href="/staff/theme/tokens.css">
   <script>
     (() => {
@@ -21,16 +21,15 @@
 <body>
   <main>
     <header>
-      <h1>SMuFL Font Experiment</h1>
+      <h1>VexFlow Staff Playground</h1>
       <p>
-        This sandbox renders a treble staff with <strong>ABCJS</strong> and then swaps its SVG glyphs
-        for characters from the <em>Bravura</em> SMuFL font. Use the toggle to compare the default
-        engraving with the experimental SMuFL-driven rendering.
+        Explore the interactive VexFlow staff: switch music fonts, adjust the key signature, drag notes,
+        and add new pitches directly on the stave.
       </p>
     </header>
 
     <section class="controls">
-      <label for="font-select" class="font-label">VexFlow Font</label>
+      <label for="font-select" class="font-label">Staff Font</label>
       <select id="font-select" class="font-select select-pill ui-pill" aria-label="VexFlow SMuFL font">
         <option value="bravura">Bravura (reference)</option>
         <option value="petaluma">Petaluma (handwritten)</option>
@@ -39,36 +38,21 @@
       <label for="key-select" class="font-label">Key Signature</label>
       <select id="key-select" class="font-select select-pill ui-pill" aria-label="Key signature">
       </select>
-      <button id="render-default" class="ui-pill primary">Render ABCJS Staff</button>
-      <button id="render-smufl" class="ui-pill">Refresh</button>
     </section>
 
     <section class="staff-demo ui-card">
-      <h2>VexFlow Prototype</h2>
+      <h2>UI Demo</h2>
+      <div id="vexflow-container-ui" class="vexflow-container interaction-draggable" aria-live="polite"></div>
+      <p id="vexflow-status-ui" class="status"></p>
+    </section>
+
+    <section class="staff-demo ui-card">
+      <h2>Interaction Demo</h2>
       <div id="vexflow-container" class="vexflow-container interaction-draggable" aria-live="polite"></div>
       <p id="vexflow-status" class="status"></p>
     </section>
-
-    <section class="staff-demo ui-card">
-      <div id="staff-container" class="interaction-draggable" aria-live="polite"></div>
-      <p id="status" class="status"></p>
-      <div id="error-log" class="error-log" aria-live="polite" aria-atomic="false"></div>
-    </section>
-
-    <section class="notes ui-card">
-      <h2>Under the Hood</h2>
-      <ul>
-        <li>Loads the Bravura font (SMuFL reference implementation) directly in the browser.</li>
-        <li>Maps ABCJS notehead and accidental classes to SMuFL code points using metadata.</li>
-        <li>Replaces SVG paths with positioned <code>&lt;text&gt;</code> elements from the font.</li>
-      </ul>
-      <p class="footnote">
-        This is a proof-of-concept—spacing, beam anchors, and articulation metrics still need deeper integration with SMuFL metadata.
-      </p>
-    </section>
   </main>
 
-  <script type="module" src="/staff/font/font-demo.js?v=20251030c"></script>
   <script type="module" src="/staff/font/vexflow-demo.js?v=20251030c"></script>
 </body>
 </html>

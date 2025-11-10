@@ -9,8 +9,6 @@ import {
   keyToMidi,
 } from './music-helpers.js';
 
-const vexflowContainer = document.getElementById('vexflow-container');
-const vexflowStatus = document.getElementById('vexflow-status');
 const fontSelect = document.getElementById('font-select');
 const keySelect = document.getElementById('key-select');
 
@@ -35,62 +33,91 @@ const MUSIC_FONT_CHOICES = {
   },
 };
 
-let resizeHandler = null;
-const renderState = {
-  abc: null,
-  voices: null,
-  meter: null,
-  warnings: [],
-  initialized: false,
-  keySig: 'C',
-};
+const DEMO_CONFIGS = [
+  {
+    id: 'ui-demo',
+    containerId: 'vexflow-container-ui',
+    statusId: 'vexflow-status-ui',
+    interactive: false,
+  },
+  {
+    id: 'interaction-demo',
+    containerId: 'vexflow-container',
+    statusId: 'vexflow-status',
+    interactive: true,
+  },
+];
 
-const interactions = createInteractionController({
-  statusEl: vexflowStatus,
-  renderState,
-  requestRender: () => renderVexflowStaff(),
-  handleRenderFailure,
+let resizeHandler = null;
+
+const demoContexts = DEMO_CONFIGS.map(createDemoContext).filter(Boolean);
+
+console.log('[VexflowDemo] script loaded', {
+  demoCount: demoContexts.length,
 });
 
-console.log('[VexflowDemo] script loaded');
-
-window.addEventListener('pointerdown', (event) => {
-  console.log('[VexflowDemo] window pointerdown', {
-    target: event.target?.tagName,
-    className: event.target?.className?.baseVal || event.target?.className,
-  });
-}, true);
-
-window.addEventListener('mousedown', (event) => {
-  console.log('[VexflowDemo] window mousedown', {
-    target: event.target?.tagName,
-    className: event.target?.className?.baseVal || event.target?.className,
-  });
-}, true);
-
-if (vexflowContainer && vexflowStatus) {
+if (demoContexts.length > 0) {
   initializeKeySelect();
-  initializeVexflowDemo();
-} else if (vexflowStatus) {
-  vexflowStatus.textContent = STATUS_EMPTY;
+  initializeVexflowDemos();
+} else {
+  console.warn('[VexflowDemo] No demo containers found on page.');
 }
 
 if (typeof window !== 'undefined') {
-  window.requestVexflowRender = () => renderVexflowStaff().catch((error) => {
-    handleRenderFailure(error);
+  window.requestVexflowRender = () => renderAllDemos().catch((error) => {
+    reportRenderFailure(null, error);
     return null;
   });
 }
 
-function initializeVexflowDemo() {
-  renderVexflowStaff().catch(handleRenderFailure);
+function createRenderState() {
+  return {
+    abc: null,
+    voices: null,
+    meter: null,
+    warnings: [],
+    initialized: false,
+    keySig: 'C',
+  };
+}
+
+function createDemoContext(config) {
+  const container = document.getElementById(config.containerId);
+  const statusEl = document.getElementById(config.statusId);
+  if (!container || !statusEl) {
+    return null;
+  }
+
+  const renderState = createRenderState();
+  const context = {
+    ...config,
+    container,
+    statusEl,
+    renderState,
+    interactions: null,
+  };
+
+  if (config.interactive) {
+    context.interactions = createInteractionController({
+      statusEl,
+      renderState,
+      requestRender: () => renderDemo(context),
+      handleRenderFailure: (error) => reportRenderFailure(context, error),
+    });
+  }
+
+  return context;
+}
+
+function initializeVexflowDemos() {
+  renderAllDemos().catch((error) => reportRenderFailure(null, error));
   resizeHandler = debounce(() => {
-    renderVexflowStaff().catch(handleRenderFailure);
+    renderAllDemos().catch((error) => reportRenderFailure(null, error));
   }, 150);
   window.addEventListener('resize', resizeHandler);
   if (fontSelect) {
     fontSelect.addEventListener('change', () => {
-      renderVexflowStaff().catch(handleRenderFailure);
+      renderAllDemos().catch((error) => reportRenderFailure(null, error));
     });
   }
   if (keySelect) {
@@ -98,28 +125,52 @@ function initializeVexflowDemo() {
   }
 }
 
-function handleRenderFailure(error) {
-  console.error('[VexFlow Demo] Render failed.', error);
-  if (vexflowStatus) {
-    vexflowStatus.textContent = 'Unable to render VexFlow staff.';
+async function renderDemo(context) {
+  try {
+    const result = await renderStaff({
+      container: context.container,
+      statusEl: context.statusEl,
+      fontSelect,
+      fontChoices: MUSIC_FONT_CHOICES,
+      statusEmptyText: STATUS_EMPTY,
+      renderState: context.renderState,
+      selectionState: context.interactive ? selectionState : null,
+      registerInteractions: context.interactive && context.interactions
+        ? ({ context: vfContext, voices, baseMessage, scale }) => {
+            context.interactions.register(
+              vfContext,
+              voices,
+              baseMessage,
+              scale,
+              context.container,
+            );
+          }
+        : () => {},
+    });
+    syncKeySelectWithState();
+    return result;
+  } catch (error) {
+    reportRenderFailure(context, error);
+    throw error;
   }
 }
 
-async function renderVexflowStaff() {
-  const result = await renderStaff({
-    container: vexflowContainer,
-    statusEl: vexflowStatus,
-    fontSelect,
-    fontChoices: MUSIC_FONT_CHOICES,
-    statusEmptyText: STATUS_EMPTY,
-    renderState,
-    selectionState,
-    registerInteractions: ({ context, voices, baseMessage, scale }) => {
-      interactions.register(context, voices, baseMessage, scale, vexflowContainer);
-    },
-  });
-  syncKeySelectWithState();
-  return result;
+function renderAllDemos() {
+  if (demoContexts.length === 0) return Promise.resolve([]);
+  return Promise.all(
+    demoContexts.map((context) => renderDemo(context).catch((error) => {
+      reportRenderFailure(context, error);
+      return null;
+    })),
+  );
+}
+
+function reportRenderFailure(context, error) {
+  const label = context?.id || 'unknown-demo';
+  console.error(`[VexFlow Demo] Render failed for ${label}.`, error);
+  if (context?.statusEl) {
+    context.statusEl.textContent = 'Unable to render VexFlow staff.';
+  }
 }
 
 function debounce(fn, delay) {
@@ -135,7 +186,8 @@ function debounce(fn, delay) {
 
 function initializeKeySelect() {
   if (!keySelect) return;
-  const currentKey = canonicalizeKeySignature(renderState.keySig) || 'C';
+  const primaryState = demoContexts[0]?.renderState;
+  const currentKey = canonicalizeKeySignature(primaryState?.keySig) || 'C';
   keySelect.innerHTML = '';
   SUPPORTED_KEY_SIGNATURES.forEach((key) => {
     const option = document.createElement('option');
@@ -151,17 +203,19 @@ function initializeKeySelect() {
 function onKeySignatureChange(event) {
   const value = event?.target?.value ?? 'C';
   const canonical = canonicalizeKeySignature(value) || 'C';
-  renderState.keySig = canonical;
+  demoContexts.forEach((context) => {
+    context.renderState.keySig = canonical;
+    applyKeySignatureToVoices(context.renderState.voices, canonical);
+  });
   if (keySelect && keySelect.value !== canonical) {
     keySelect.value = canonical;
   }
-  applyKeySignatureToVoices(renderState.voices, canonical);
-  renderVexflowStaff().catch(handleRenderFailure);
+  renderAllDemos().catch((error) => reportRenderFailure(null, error));
 }
 
 function syncKeySelectWithState() {
   if (!keySelect) return;
-  const canonical = canonicalizeKeySignature(renderState.keySig) || 'C';
+  const canonical = canonicalizeKeySignature(demoContexts[0]?.renderState?.keySig) || 'C';
   if (keySelect.value !== canonical) {
     keySelect.value = canonical;
   }

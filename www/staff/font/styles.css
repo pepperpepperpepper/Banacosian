@@ -160,12 +160,6 @@ p {
   padding: 24px;
 }
 
-#staff-container svg {
-  width: 100%;
-  height: auto;
-  max-height: 320px;
-}
-
 .status {
   margin-top: 12px;
   font-size: 0.95rem;
@@ -198,81 +192,6 @@ p {
 
 /* Ledger theming is applied via JS helper (applyVexflowSvgTheme). */
 
-.error-log {
-  margin-top: 16px;
-  padding: 12px 14px;
-  background: rgba(255, 82, 82, 0.12);
-  border: 1px solid rgba(255, 82, 82, 0.35);
-  border-radius: 12px;
-  font-family: "IBM Plex Mono", "SFMono-Regular", ui-monospace, "Source Code Pro", monospace;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  display: none;
-  max-height: 220px;
-  overflow-y: auto;
-  gap: 8px;
-}
-
-.error-log.active {
-  display: grid;
-}
-
-.error-log-entry {
-  display: grid;
-  gap: 2px;
-  padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: var(--color-text-primary);
-}
-
-.error-log-entry.info {
-  border-color: rgba(144, 238, 144, 0.35);
-  background: rgba(46, 139, 87, 0.15);
-}
-
-.error-log-entry.warn {
-  border-color: rgba(255, 193, 7, 0.45);
-  background: rgba(255, 193, 7, 0.12);
-}
-
-.error-log-entry.error {
-  border-color: rgba(255, 82, 82, 0.45);
-  background: rgba(255, 82, 82, 0.15);
-}
-
-.error-log-entry pre {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.notes {
-  --card-surface: rgba(255, 255, 255, 0.06);
-  --card-border: var(--color-surface-border);
-  --card-radius: 18px;
-  --card-shadow: none;
-  padding: 24px;
-  color: var(--color-text-secondary);
-}
-
-.notes h2 {
-  margin: 0 0 1rem;
-  color: var(--color-text-primary);
-}
-
-.notes ul {
-  margin: 0 0 1rem;
-  padding-left: 1.25rem;
-  line-height: 1.6;
-}
-
-.notes a {
-  color: var(--color-accent);
-  text-decoration: none;
-  font-weight: 600;
-}
-
 @media (max-width: 640px) {
   body {
     padding: 32px 16px;
@@ -280,9 +199,5 @@ p {
 
   main {
     padding: 32px 20px;
-  }
-
-  #staff-container {
-    min-height: 180px;
   }
 }
