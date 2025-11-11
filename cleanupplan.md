@@ -1,3 +1,5 @@
+- The shared VexFlow configuration (`js/vexflow/core/config.js`) and utilities (`js/shared/utils.js`) now own staff sizing, dataset parsing, and DOM rect helpers. Future staff-related code should consume these exports instead of re-implementing width/scale logic in individual modules.
+
 - Buttons & selects share near-identical “pill” styling in two places: `css/components/controls.css:1-73` (`.ui-pill`, `.select-pill`) and `www/staff/styles.css:123-154` (`.font-select, button`). You can drop the latter in favour of the shared `.ui-pill` class (e.g., add `class="ui-pill"` in the staff playground controls) and expose any demo-specific tweaks through additional modifiers instead of duplicating the base styles.
 
 - We hard-code drag/selection guards twice. The block that sets `touch-action: none`, `-webkit-user-select: none`, and `-webkit-tap-highlight-color: transparent` lives in both `www/staff/styles.css:61-76` and `css/utilities/interaction.css`. Consider moving that into a reusable utility (e.g., `.interaction-draggable`) defined once in a shared sheet so both demos can apply it.

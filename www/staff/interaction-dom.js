@@ -1,4 +1,4 @@
-import { logStructured } from '/js/shared/utils.js';
+import { logStructured, normalizeDomRect } from '/js/shared/utils.js';
 
 export const HAS_POINTER_EVENTS = typeof window !== 'undefined' && 'PointerEvent' in window;
 const SVG_GRAPHICS_ELEMENT = typeof SVGGraphicsElement === 'undefined' ? null : SVGGraphicsElement;
@@ -105,9 +105,11 @@ export function convertToSvgCoords(pointerEvent, svg) {
   const clientY = pointerEvent.clientY ?? pointerEvent.pageY;
   if (clientX == null || clientY == null) return null;
   const targetTag = pointerEvent.target?.tagName || pointerEvent.srcElement?.tagName || null;
-  const svgRect = typeof svg.getBoundingClientRect === 'function'
-    ? svg.getBoundingClientRect()
-    : null;
+  const svgRect = normalizeDomRect(
+    typeof svg.getBoundingClientRect === 'function'
+      ? svg.getBoundingClientRect()
+      : null,
+  );
   const scale = Number.isFinite(svg.__vexflowScale) && svg.__vexflowScale > 0
     ? svg.__vexflowScale
     : 1;
@@ -116,12 +118,7 @@ export function convertToSvgCoords(pointerEvent, svg) {
     clientY,
     pointerType: pointerEvent.pointerType || pointerEvent.type,
     targetTag,
-    svgRect: svgRect && {
-      x: svgRect.x,
-      y: svgRect.y,
-      width: svgRect.width,
-      height: svgRect.height,
-    },
+    svgRect,
     viewBox: svg.getAttribute?.('viewBox') || null,
     appliedScale: scale,
   });

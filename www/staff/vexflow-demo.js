@@ -10,6 +10,11 @@ import {
 } from './music-helpers.js';
 import { MUSIC_FONT_CHOICES } from '/js/modules/StaffFonts.js';
 import { debounce } from '/js/shared/utils.js';
+import { createRenderRuntime } from '/js/vexflow/core/seeds.js';
+import {
+  readStaffConfigFromDataset,
+  applyStaffSizingToState,
+} from '/js/vexflow/core/config.js';
 
 const fontSelect = document.getElementById('font-select');
 const keySelect = document.getElementById('key-select');
@@ -53,16 +58,21 @@ if (typeof window !== 'undefined') {
   });
 }
 
-function createRenderState() {
-  return {
-    abc: null,
-    voices: null,
-    meter: null,
-    warnings: [],
-    initialized: false,
-    keySig: 'C',
-    interactionEnabled: true,
-  };
+function applyRuntimeSizing(runtime, sizing, scale) {
+  if (!runtime) return;
+  const update = {};
+  if (sizing && typeof sizing === 'object') {
+    if (Number.isFinite(sizing.minWidth)) update.minWidth = sizing.minWidth;
+    if (Number.isFinite(sizing.maxWidth)) update.maxWidth = sizing.maxWidth;
+    if (Number.isFinite(sizing.targetWidth)) update.targetWidth = sizing.targetWidth;
+    if (Number.isFinite(sizing.baseHeight)) update.baseHeight = sizing.baseHeight;
+  }
+  if (Number.isFinite(scale)) {
+    update.staffScale = scale;
+  }
+  if (Object.keys(update).length > 0) {
+    runtime.update(update);
+  }
 }
 
 function createDemoContext(config) {
@@ -72,15 +82,35 @@ function createDemoContext(config) {
     return null;
   }
 
-  const renderState = createRenderState();
-  renderState.interactionEnabled = Boolean(config.interactive);
+  const containerConfig = readStaffConfigFromDataset(container.dataset || null);
+  const sizingConfig = containerConfig?.sizing || {};
+  const configuredScale = containerConfig?.scale ?? null;
+
+  const initialState = {
+    interactionEnabled: Boolean(config.interactive),
+    keySig: 'C',
+  };
+  applyStaffSizingToState(initialState, sizingConfig);
+  if (Number.isFinite(configuredScale)) {
+    initialState.staffScale = configuredScale;
+  }
+
+  const runtime = createRenderRuntime({ initialState });
+  const renderState = runtime.state;
+  applyStaffSizingToState(renderState, sizingConfig);
+  applyRuntimeSizing(runtime, sizingConfig, configuredScale);
 
   const context = {
     ...config,
     container,
     statusEl,
+    renderRuntime: runtime,
     renderState,
     interactions: null,
+    sizingConfig: {
+      sizing: sizingConfig,
+      scale: configuredScale,
+    },
   };
 
   context.interactions = createInteractionController({
@@ -119,6 +149,13 @@ async function renderDemo(context) {
       });
       context.interactions.setEnabled(Boolean(context.renderState.interactionEnabled));
     }
+    if (context.renderRuntime) {
+      applyRuntimeSizing(
+        context.renderRuntime,
+        context.sizingConfig?.sizing,
+        context.sizingConfig?.scale,
+      );
+    }
     const selectionStateForRender = context.interactions?.enabled
       ? context.interactions.selectionState
       : null;
@@ -142,6 +179,9 @@ async function renderDemo(context) {
       },
     });
     syncKeySelectWithState();
+    if (context.renderRuntime && result?.warnings) {
+      context.renderRuntime.recordWarnings(result.warnings);
+    }
     return result;
   } catch (error) {
     reportRenderFailure(context, error);

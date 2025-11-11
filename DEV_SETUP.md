@@ -67,9 +67,12 @@ Then open `http://localhost:8080` in your browser.
 ## Development Workflow
 
 1. **Make changes** to any file:
-   - `index.html` - Structure and content
-   - `css/styles.css` - Styling and layout
-   - `js/MelodicDictation.js` & files in `js/modules/` - Application logic
+   - `index.html` – Landing page layout and staff container dataset hints (`data-staff-*`)
+   - `css/` – Shared styling (see `css/components/`, `css/layout/`)
+   - `js/modules/` – Application orchestration (`Staff.js`, `StaffFonts.js`, keyboard/audio logic)
+   - `js/vexflow/core/` – Shared rendering pipeline (`config.js`, `renderPipeline.js`, `draw.js`, `seeds.js`)
+   - `js/shared/utils.js` – Cross-cutting helpers (structured logging, debounce, dataset parsing, DOM rects)
+   - `www/staff/` – VexFlow demo entry points that consume the shared core
 
 2. **See changes instantly** - browser automatically reloads
 
@@ -107,18 +110,28 @@ When ready to deploy to Android app:
 ## File Structure
 
 ```
-ear_training/
-├── index.html              # Main HTML file
-├── css/
-│   └── styles.css         # All styles
+project-root/
+├── index.html                 # Main page; configures the app staff via data-staff-* attributes
+├── css/                       # Shared styles (components, layout, utilities)
 ├── js/
-│   ├── MelodicDictation.js  # Application bootstrap
-│   ├── modules/             # Core game logic, audio, storage, UI
-│   └── vexflow/StaffDisplay.js  # Shared VexFlow renderer
-├── package.json           # Project configuration
-├── DEV_SETUP.md           # This file
-└── node_modules/          # Dependencies (after npm install)
+│   ├── modules/               # App-level controllers (Staff.js, StaffFonts.js, Keyboard.js, etc.)
+│   ├── shared/utils.js        # Logging, debounce, dataset parsing, DOM helpers
+│   └── vexflow/
+│       ├── StaffDisplay.js    # High-level staff orchestrator used on the main page
+│       └── core/              # Shared VexFlow pipeline (config, draw, renderPipeline, seeds, helpers)
+├── www/staff/
+│   ├── index.html             # Standalone UI + interaction demos
+│   └── vexflow-demo.js        # Demo bootstrap wired into the shared VexFlow core
+├── docs/                      # Reference docs (refactor map, dependency graphs, notes)
+├── package.json               # Project configuration & scripts
+└── node_modules/              # Dependencies (after npm install)
 ```
+
+### Shared VexFlow modules
+
+- `js/vexflow/core/config.js` centralizes staff sizing, padding defaults, and SVG theme application slots.
+- `js/shared/utils.js` hosts reusable helpers (structured logging, debounce, dataset readers, `normalizeDomRect`).
+- Both the main app (`js/modules/Staff.js`) and the `/staff` demos rely on these modules; extend them when adding new staff features instead of duplicating logic locally.
 
 ## Tips for Development
 

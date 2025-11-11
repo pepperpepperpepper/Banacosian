@@ -1,18 +1,9 @@
-import { readTokens, applyVexflowSvgTheme } from '../shared/theme.js';
-
-export const DEFAULT_STAFF_SCALE = 1.8;
-
-export function getStaffTheme() {
-  return readTokens();
-}
-
-export function applyVexflowTheme(container, palette) {
-  if (!container) return;
-  const svg = container.querySelector('svg');
-  if (!svg) return;
-  const colors = palette || getStaffTheme();
-  applyVexflowSvgTheme(svg, colors);
-}
+import {
+  DEFAULT_STAFF_SCALE,
+  getStaffTheme as coreGetStaffTheme,
+  applyVexflowTheme as coreApplyVexflowTheme,
+  resolveStaffScale,
+} from '/js/vexflow/core/config.js';
 
 export function resolveSelectedFont(fontSelect, fontChoices) {
   if (!fontSelect) return fontChoices?.bravura;
@@ -21,13 +12,15 @@ export function resolveSelectedFont(fontSelect, fontChoices) {
 }
 
 export function computeStaffScale(renderState) {
-  const staffScaleOverride = Number.isFinite(renderState.staffScale) && renderState.staffScale > 0
-    ? renderState.staffScale
-    : null;
-  const globalScaleOverride = (typeof window !== 'undefined' && Number.isFinite(window.__VEXFLOW_STAFF_SCALE))
-    ? window.__VEXFLOW_STAFF_SCALE
-    : null;
-  const staffScale = staffScaleOverride || globalScaleOverride || DEFAULT_STAFF_SCALE;
-  renderState.staffScale = staffScale;
-  return staffScale;
+  return resolveStaffScale(renderState, { defaultScale: DEFAULT_STAFF_SCALE });
 }
+
+export function getStaffTheme() {
+  return coreGetStaffTheme();
+}
+
+export function applyVexflowTheme(container, palette) {
+  coreApplyVexflowTheme(container, palette);
+}
+
+export { DEFAULT_STAFF_SCALE };

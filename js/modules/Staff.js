@@ -8,8 +8,9 @@ class StaffModule {
         this.keySignature = 'C';
         this.fontPreference = 'bravura';
         this.highlightTimeout = null;
-        this.operationQueue = Promise.resolve();
         this.displayPromise = null;
+        this.renderRuntime = null;
+        this.renderRuntimePromise = null;
         const hasDocument = typeof document !== 'undefined';
         this.containerEl = hasDocument ? document.getElementById('staff-vexflow') : null;
         this.statusEl = hasDocument ? document.getElementById('staff-status') : null;
@@ -17,6 +18,43 @@ class StaffModule {
         if (hasDocument) {
             this.initializeDisplay();
         }
+    }
+
+    ensureRenderRuntime() {
+        if (this.renderRuntime) {
+            this.renderRuntime.update({ keySig: this.keySignature });
+            return Promise.resolve(this.renderRuntime);
+        }
+        if (this.renderRuntimePromise) {
+            return this.renderRuntimePromise.then((runtime) => {
+                if (runtime) runtime.update({ keySig: this.keySignature });
+                return runtime;
+            });
+        }
+        this.renderRuntimePromise = import('/js/vexflow/core/seeds.js')
+            .then((module) => {
+                const factory = module?.createRenderRuntime;
+                if (typeof factory !== 'function') {
+                    throw new Error('createRenderRuntime export missing.');
+                }
+                const runtime = factory({
+                    initialState: {
+                        interactionEnabled: false,
+                        keySig: this.keySignature,
+                    },
+                });
+                this.renderRuntime = runtime;
+                return runtime;
+            })
+            .catch((error) => {
+                console.error('[StaffModule] failed to load render runtime.', error);
+                this.renderRuntimePromise = null;
+                return null;
+            });
+        return this.renderRuntimePromise.then((runtime) => {
+            if (runtime) runtime.update({ keySig: this.keySignature });
+            return runtime;
+        });
     }
 
     initializeDisplay() {
@@ -31,55 +69,41 @@ class StaffModule {
                 return null;
             }
             try {
-                const [displayModule, utilsModule] = await Promise.all([
+                const [displayModule, configModule, runtime] = await Promise.all([
                     import('/js/vexflow/StaffDisplay.js'),
-                    import('/js/shared/utils.js'),
+                    import('/js/vexflow/core/config.js'),
+                    this.ensureRenderRuntime(),
                 ]);
                 const DisplayCtor = displayModule?.VexflowStaffDisplay || displayModule?.default;
                 if (!DisplayCtor) {
                     throw new Error('VexflowStaffDisplay export missing.');
                 }
-                const {
-                    readPositiveDatasetNumber,
-                    parsePositiveNumber
-                } = utilsModule || {};
-                const parsePositive = typeof parsePositiveNumber === 'function'
-                    ? parsePositiveNumber
-                    : (value) => {
-                        if (value === null || value === undefined) return null;
-                        const source = typeof value === 'string' ? value.trim() : value;
-                        if (source === '') return null;
-                        const numeric = typeof source === 'number' ? source : Number.parseFloat(source);
-                        return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
-                    };
-                const readDatasetPositive = typeof readPositiveDatasetNumber === 'function'
-                    ? (data, key) => readPositiveDatasetNumber(data, key)
-                    : (data, key) => {
-                        if (!data || typeof data !== 'object' || typeof key !== 'string') return null;
-                        return parsePositive(data[key]);
-                    };
+                const { readStaffConfigFromDataset } = configModule || {};
                 const dataset = this.containerEl.dataset || null;
-                const widthOptions = dataset
-                    ? {
-                        minWidth: readDatasetPositive(dataset, 'staffMinWidth'),
-                        maxWidth: readDatasetPositive(dataset, 'staffMaxWidth'),
-                        targetWidth: readDatasetPositive(dataset, 'staffTargetWidth'),
-                        baseHeight: readDatasetPositive(dataset, 'staffBaseHeight'),
-                      }
-                    : { minWidth: null, maxWidth: null, targetWidth: null, baseHeight: null };
-                const staffScale = dataset ? readDatasetPositive(dataset, 'staffScale') : null;
-                if (widthOptions.minWidth && widthOptions.maxWidth && widthOptions.maxWidth < widthOptions.minWidth) {
-                    widthOptions.maxWidth = null;
+                const config = typeof readStaffConfigFromDataset === 'function'
+                    ? readStaffConfigFromDataset(dataset)
+                    : { sizing: { minWidth: null, maxWidth: null, targetWidth: null, baseHeight: null }, scale: null };
+                const sizing = config?.sizing || { minWidth: null, maxWidth: null, targetWidth: null, baseHeight: null };
+                const staffScale = config?.scale ?? null;
+                if (runtime) {
+                    runtime.update({
+                        keySig: this.keySignature,
+                        minWidth: sizing.minWidth,
+                        maxWidth: sizing.maxWidth,
+                        targetWidth: sizing.targetWidth,
+                        baseHeight: sizing.baseHeight,
+                        staffScale: staffScale ?? runtime.state.staffScale,
+                    });
                 }
                 const display = new DisplayCtor({
                     container: this.containerEl,
                     statusEl: this.statusEl,
                     keySignature: this.keySignature,
                     fontId: this.fontPreference,
-                    minWidth: widthOptions.minWidth ?? undefined,
-                    maxWidth: widthOptions.maxWidth ?? undefined,
-                    targetWidth: widthOptions.targetWidth ?? undefined,
-                    baseHeight: widthOptions.baseHeight ?? undefined,
+                    minWidth: sizing.minWidth ?? undefined,
+                    maxWidth: sizing.maxWidth ?? undefined,
+                    targetWidth: sizing.targetWidth ?? undefined,
+                    baseHeight: sizing.baseHeight ?? undefined,
                     staffScale: staffScale ?? undefined,
                 });
                 await display.initialize();
@@ -108,15 +132,20 @@ class StaffModule {
     }
 
     enqueue(task) {
-        this.operationQueue = this.operationQueue
-            .then(() => this.ensureDisplay())
-            .then(async (display) => {
-                if (!display) return;
-                await task(display);
-                this.updateFontIndicator(display);
+        return this.ensureRenderRuntime()
+            .then((runtime) => {
+                if (!runtime) return null;
+                return runtime.enqueue(async () => {
+                    const display = await this.ensureDisplay();
+                    if (!display) return;
+                    await task(display, runtime.state);
+                    this.updateFontIndicator(display);
+                });
             })
-            .catch((error) => console.error('[StaffModule] operation failed', error));
-        return this.operationQueue;
+            .catch((error) => {
+                console.error('[StaffModule] operation failed', error);
+                return null;
+            });
     }
 
     showNoteOnStaff(note) {

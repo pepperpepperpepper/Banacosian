@@ -1,10 +1,5 @@
 import VexFlow from '/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js';
-import { drawStaff } from '/js/vexflow/core/draw.js';
-import {
-  getStaffTheme,
-  computeStaffScale,
-  applyVexflowTheme,
-} from '/staff/render/theme.js';
+import { renderPipeline } from '/js/vexflow/core/renderPipeline.js';
 import {
   canonicalizeKeySignature,
 } from '/js/modules/KeySignatures.js';
@@ -15,6 +10,14 @@ import {
 } from '/js/modules/StaffFonts.js';
 import { keyToMidi } from '/js/vexflow/core/helpers/pitch.js';
 import { parsePositiveNumber } from '/js/shared/utils.js';
+import {
+  normalizeStaffSizing,
+  resolveStaffScale,
+  applyStaffSizingToState,
+  getStaffTheme,
+  applyVexflowTheme,
+} from '/js/vexflow/core/config.js';
+import { createRenderRuntime } from '/js/vexflow/core/seeds.js';
 
 const NOTE_REGEX = /^([A-Ga-g])([#♯b♭]{0,2})(-?\d)$/;
 const DEFAULT_METER = Object.freeze({ num: 4, den: 4 });
@@ -107,13 +110,13 @@ export class VexflowStaffDisplay {
       : { ...DEFAULT_METER };
     this.sequenceEntries = [];
     this.highlightEntry = null;
-    this.widthOptions = {
-      minWidth: parsePositiveNumber(minWidth),
-      maxWidth: parsePositiveNumber(maxWidth),
-      targetWidth: parsePositiveNumber(targetWidth),
-      baseHeight: parsePositiveNumber(baseHeight),
-    };
-    this.renderState = {
+    this.widthOptions = normalizeStaffSizing({
+      minWidth,
+      maxWidth,
+      targetWidth,
+      baseHeight,
+    });
+    const initialState = {
       initialized: true,
       staffScale: parsePositiveNumber(staffScale),
       primaryClef: this.clef,
@@ -121,39 +124,41 @@ export class VexflowStaffDisplay {
       keySig: this.keySignature,
       warnings: [],
       voices: [],
-      minWidth: this.widthOptions.minWidth,
-      maxWidth: this.widthOptions.maxWidth,
-      targetWidth: this.widthOptions.targetWidth,
-      baseHeight: this.widthOptions.baseHeight,
     };
+    applyStaffSizingToState(initialState, this.widthOptions);
+    this.renderRuntime = createRenderRuntime({ initialState });
+    this.renderState = this.renderRuntime.state;
     this.fontConfigured = false;
   }
 
   async initialize() {
-    await this.configureFont();
-    computeStaffScale(this.renderState);
     await this.render();
   }
 
-  async configureFont() {
+  async configureFont(force = false) {
+    if (!force && this.fontConfigured && this.fontChoice) {
+      return {
+        fontChoice: this.fontChoice,
+        warnings: [],
+      };
+    }
     this.fontChoice = getFontChoice(this.fontId);
     const fontResult = await configureVexflowFont(VexFlow, this.fontChoice);
     if (fontResult?.choice) {
       this.fontChoice = fontResult.choice;
     }
-    if (Array.isArray(fontResult?.warnings) && fontResult.warnings.length > 0) {
-      const combinedWarnings = Array.isArray(this.renderState.warnings)
-        ? this.renderState.warnings.concat(fontResult.warnings)
-        : fontResult.warnings.slice();
-      this.renderState.warnings = [...new Set(combinedWarnings)];
-    }
+    const warnings = Array.isArray(fontResult?.warnings) ? fontResult.warnings : [];
     this.fontConfigured = true;
+    return {
+      fontChoice: this.fontChoice,
+      warnings,
+    };
   }
 
   async setFont(fontId) {
     if (!fontId || fontId === this.fontId) return;
     this.fontId = fontId;
-    await this.configureFont();
+    this.fontConfigured = false;
     await this.render();
   }
 
@@ -174,40 +179,21 @@ export class VexflowStaffDisplay {
 
   async setWidthOptions(options = {}) {
     if (!options || typeof options !== 'object') return this.render();
-    const updated = { ...this.widthOptions };
-    let dirty = false;
-    if ('minWidth' in options) {
-      const parsed = parsePositiveNumber(options.minWidth);
-      if (updated.minWidth !== parsed) {
-        updated.minWidth = parsed;
-        dirty = true;
-      }
+    const merged = normalizeStaffSizing({ ...this.widthOptions, ...options });
+    const changed = ['minWidth', 'maxWidth', 'targetWidth', 'baseHeight'].some(
+      (key) => this.widthOptions[key] !== merged[key],
+    );
+    if (!changed) return this.render();
+    this.widthOptions = merged;
+    applyStaffSizingToState(this.renderState, merged);
+    if (this.renderRuntime) {
+      this.renderRuntime.update({
+        minWidth: merged.minWidth,
+        maxWidth: merged.maxWidth,
+        targetWidth: merged.targetWidth,
+        baseHeight: merged.baseHeight,
+      });
     }
-    if ('maxWidth' in options) {
-      const parsed = parsePositiveNumber(options.maxWidth);
-      if (updated.maxWidth !== parsed) {
-        updated.maxWidth = parsed;
-        dirty = true;
-      }
-    }
-    if ('targetWidth' in options) {
-      const parsed = parsePositiveNumber(options.targetWidth);
-      if (updated.targetWidth !== parsed) {
-        updated.targetWidth = parsed;
-        dirty = true;
-      }
-    }
-    if ('baseHeight' in options) {
-      const parsed = parsePositiveNumber(options.baseHeight);
-      if (updated.baseHeight !== parsed) {
-        updated.baseHeight = parsed;
-        dirty = true;
-      }
-    }
-    if (!dirty) {
-      return this.render();
-    }
-    this.widthOptions = updated;
     return this.render();
   }
 
@@ -255,64 +241,60 @@ export class VexflowStaffDisplay {
   }
 
   async render() {
-    if (!this.fontConfigured) {
-      await this.configureFont();
-    }
-    const theme = getStaffTheme();
-    const staffScale = computeStaffScale(this.renderState);
-    this.renderState.minWidth = this.widthOptions.minWidth;
-    this.renderState.maxWidth = this.widthOptions.maxWidth;
-    this.renderState.targetWidth = this.widthOptions.targetWidth;
-    this.renderState.baseHeight = this.widthOptions.baseHeight;
-    const voices = [];
-    const specs = this.sequenceEntries
-      .map((entry) => this.toSpec(entry))
-      .filter(Boolean);
-    if (specs.length > 0) {
-      voices.push({
-        clef: this.clef,
-        noteSpecs: specs,
-      });
-    }
-    if (this.highlightEntry) {
-      const highlightSpec = this.toSpec(this.highlightEntry);
-      if (highlightSpec) {
-        highlightSpec.style = resolveStyle({ state: 'highlight' });
-        voices.push({
-          clef: this.clef,
-          noteSpecs: [highlightSpec],
-        });
-      }
-    }
+    applyStaffSizingToState(this.renderState, this.widthOptions);
     this.renderState.primaryClef = this.clef;
     this.renderState.keySig = this.keySignature;
     this.renderState.meter = this.meter;
-    this.renderState.voices = voices.map((voice) => ({
-      clef: voice.clef,
-      noteSpecs: voice.noteSpecs.map((spec) => ({ ...spec })),
-    }));
 
-    const result = drawStaff({
+    const result = await renderPipeline({
       container: this.container,
-      theme,
-      staffScale,
-      voices,
-      meter: this.meter,
-      keySig: this.keySignature,
-      fontChoice: this.fontChoice,
+      statusEl: this.statusEl,
+      statusBusyText: 'Rendering with VexFlow…',
+      statusEmptyText: 'Staff unavailable.',
       renderState: this.renderState,
-      warnings: [],
+      resolveFont: async () => this.configureFont(),
+      produceVoices: async () => {
+        const voices = [];
+        const specs = this.sequenceEntries
+          .map((entry) => this.toSpec(entry))
+          .filter(Boolean);
+        if (specs.length > 0) {
+          voices.push({
+            clef: this.clef,
+            noteSpecs: specs,
+          });
+        }
+        if (this.highlightEntry) {
+          const highlightSpec = this.toSpec(this.highlightEntry);
+          if (highlightSpec) {
+            highlightSpec.style = resolveStyle({ state: 'highlight' });
+            voices.push({
+              clef: this.clef,
+              noteSpecs: [highlightSpec],
+            });
+          }
+        }
+        return {
+          voices,
+          meter: this.meter,
+          keySig: this.keySignature,
+          warnings: [],
+        };
+      },
+      resolveTheme: () => getStaffTheme(),
+      resolveScale: (state) => {
+        applyStaffSizingToState(state, this.widthOptions);
+        return resolveStaffScale(state);
+      },
       registerInteractions: null,
       applyTheme: applyVexflowTheme,
+      allowEmptyVoices: true,
     });
 
-    if (this.statusEl) {
-      if (!result) {
-        this.statusEl.textContent = 'Staff unavailable.';
-      } else {
-        this.statusEl.textContent = result.baseMessage || '';
-      }
+    if (this.renderRuntime && result?.warnings) {
+      this.renderRuntime.recordWarnings(result.warnings);
     }
+
     return result;
   }
 }

@@ -1,6 +1,5 @@
 import VexFlow from './vendor/lib/vexflow-esm/entry/vexflow-debug.js';
 import { extractKeySignatureFromAbc, canonicalizeKeySignature } from './music-helpers.js';
-import { waitForAbcjs } from './utils/abcjs-loader.js';
 import {
   defaultAbc,
   replaceKeySignatureInAbc,
@@ -13,8 +12,8 @@ import {
   computeStaffScale,
   applyVexflowTheme,
 } from './render/theme.js';
-import { drawStaff } from '/js/vexflow/core/draw.js';
-import { INITIAL_NOTE_COUNT } from './staff-config.js';
+import { renderPipeline } from '/js/vexflow/core/renderPipeline.js';
+import { waitForAbcjs, INITIAL_NOTE_COUNT } from '/js/vexflow/core/seeds.js';
 import { configureVexflowFont } from '/js/modules/StaffFonts.js';
 
 export async function renderVexflowStaff({
@@ -29,90 +28,80 @@ export async function renderVexflowStaff({
 }) {
   if (!container || !statusEl) return null;
 
-  statusEl.textContent = 'Rendering with VexFlow…';
-
-  const requestedKeySig = canonicalizeKeySignature(renderState.keySig) || null;
-  const defaultAbcString = defaultAbc(requestedKeySig || 'C');
-  if (!renderState.initialized) {
-    renderState.abc = defaultAbcString;
-  } else if (!renderState.abc) {
-    renderState.abc = defaultAbcString;
-  }
-
-  let keySig = extractKeySignatureFromAbc(renderState.abc);
-  if (requestedKeySig && requestedKeySig !== keySig) {
-    renderState.abc = replaceKeySignatureInAbc(renderState.abc, requestedKeySig);
-    keySig = requestedKeySig;
-  }
-  renderState.keySig = keySig;
-
-  const abcjs = await waitForAbcjs({ requireMethod: 'parseOnly' });
-
-  let voices;
-  let meter;
-  let warnings = [];
-
-  if (!renderState.initialized) {
-    const parsed = parseInitialVoices(abcjs, renderState.abc, renderState, { maxNotes: INITIAL_NOTE_COUNT });
-    voices = parsed.voices;
-    meter = parsed.meter;
-    warnings = parsed.warnings || [];
-  } else {
-    voices = cloneVoices(renderState.voices);
-    meter = renderState.meter;
-    warnings = renderState.warnings ? [...renderState.warnings] : [];
-  }
-
-  if (!voices || voices.length === 0) {
-    container.innerHTML = '';
-    statusEl.textContent = statusEmptyText;
-    return null;
-  }
-
-  const requestedFontChoice = resolveSelectedFont(fontSelect, fontChoices);
-  const fontSetup = await configureVexflowFont(VexFlow, requestedFontChoice);
-  const fontChoice = fontSetup?.choice || requestedFontChoice;
-  if (Array.isArray(fontSetup?.warnings) && fontSetup.warnings.length > 0) {
-    warnings.push(...fontSetup.warnings);
-  }
-
-  const uniqueWarnings = [...new Set(warnings)];
-  renderState.warnings = uniqueWarnings;
-
-  const theme = getStaffTheme();
-  const staffScale = computeStaffScale(renderState);
-
-  const drawResult = drawStaff({
+  const result = await renderPipeline({
     container,
-    theme,
-    staffScale,
-    voices,
-    meter,
-    keySig,
-    fontChoice,
+    statusEl,
+    statusBusyText: 'Rendering with VexFlow…',
+    statusEmptyText,
     renderState,
-    warnings: uniqueWarnings,
-    registerInteractions,
+    resolveFont: async () => {
+      const requestedFontChoice = resolveSelectedFont(fontSelect, fontChoices);
+      const fontSetup = await configureVexflowFont(VexFlow, requestedFontChoice);
+      return {
+        fontChoice: fontSetup?.choice || requestedFontChoice,
+        warnings: Array.isArray(fontSetup?.warnings) ? fontSetup.warnings : [],
+      };
+    },
+    produceVoices: async (state) => {
+      const requestedKeySig = canonicalizeKeySignature(state.keySig) || null;
+      const defaultAbcString = defaultAbc(requestedKeySig || 'C');
+      if (!state.initialized) {
+        state.abc = defaultAbcString;
+      } else if (!state.abc) {
+        state.abc = defaultAbcString;
+      }
+
+      let keySig = extractKeySignatureFromAbc(state.abc);
+      if (requestedKeySig && requestedKeySig !== keySig) {
+        state.abc = replaceKeySignatureInAbc(state.abc, requestedKeySig);
+        keySig = requestedKeySig;
+      }
+      state.keySig = keySig;
+
+      const abcjs = await waitForAbcjs({ requireMethod: 'parseOnly' });
+
+      let voices;
+      let meter;
+      let warnings = [];
+
+      if (!state.initialized) {
+        const parsed = parseInitialVoices(abcjs, state.abc, state, { maxNotes: INITIAL_NOTE_COUNT });
+        voices = parsed.voices;
+        meter = parsed.meter;
+        warnings = parsed.warnings || [];
+        state.initialized = true;
+      } else {
+        voices = cloneVoices(state.voices);
+        meter = state.meter;
+        warnings = state.warnings ? [...state.warnings] : [];
+      }
+
+      return {
+        voices,
+        meter,
+        keySig,
+        warnings,
+      };
+    },
+    resolveTheme: () => getStaffTheme(),
+    resolveScale: (state) => computeStaffScale(state),
+    registerInteractions: typeof registerInteractions === 'function'
+      ? ({ context: vfContext, voices, baseMessage, scale }) => {
+        registerInteractions({
+          context: vfContext,
+          voices,
+          baseMessage,
+          scale,
+          container,
+        });
+      }
+      : null,
     applyTheme: applyVexflowTheme,
   });
 
-  if (!drawResult) {
-    statusEl.textContent = statusEmptyText;
-    return null;
+  if (selectionState) {
+    selectionState.messageBase = result?.baseMessage || '';
   }
 
-  const { context, vexflowVoices, baseMessage } = drawResult;
-  renderState.warnings = drawResult.warnings.slice();
-
-  if (selectionState) selectionState.messageBase = baseMessage;
-  statusEl.textContent = baseMessage;
-  renderState.baseMessage = baseMessage;
-
-  return {
-    context,
-    voices: vexflowVoices,
-    theme,
-    baseMessage,
-    warnings: drawResult.warnings,
-  };
+  return result;
 }

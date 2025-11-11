@@ -6,7 +6,7 @@ import {
 import {
   INITIAL_NOTE_COUNT,
   MAX_ADDITIONAL_NOTES,
-} from './staff-config.js';
+} from '/js/vexflow/core/seeds.js';
 import {
   getRenderState,
   triggerRender,
