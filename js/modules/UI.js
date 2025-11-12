@@ -210,23 +210,39 @@ class UIModule {
     updateSequenceDisplay(sequence, options = {}) {
         const display = document.getElementById('sequenceDisplay');
         if (!display) return;
-        
+        const userDisplay = document.getElementById('userSequenceDisplay');
+
+        const hasSequence = Array.isArray(sequence) && sequence.length > 0;
+        if (!hasSequence) {
+            display.innerHTML = '';
+            display.style.display = 'none';
+            if (userDisplay && userDisplay.childElementCount === 0) {
+                userDisplay.style.display = 'none';
+            }
+            return;
+        }
+
         display.innerHTML = '';
 
         const dictationType = options.dictationType === 'harmonic' ? 'harmonic' : 'melodic';
-        
+
         const title = document.createElement('div');
         title.textContent = dictationType === 'harmonic' ? 'Target chord:' : 'Target sequence:';
         title.style.marginBottom = '10px';
         title.style.fontSize = '0.9em';
         display.appendChild(title);
-        
-        sequence.forEach(note => {
+
+        sequence.forEach(() => {
             const noteEl = document.createElement('div');
             noteEl.className = 'sequence-note';
             noteEl.textContent = '♪';
             display.appendChild(noteEl);
         });
+
+        display.style.display = 'flex';
+        if (userDisplay) {
+            userDisplay.style.display = 'none';
+        }
     }
 
     /**
@@ -236,19 +252,30 @@ class UIModule {
      */
     updateUserSequenceDisplay(userSequence, currentSequence, options = {}) {
         const userDisplay = document.getElementById('userSequenceDisplay');
+        const targetDisplay = document.getElementById('sequenceDisplay');
         if (!userDisplay) return;
         
         const expectedLength = Number.isInteger(options.expectedLength)
             ? Math.max(options.expectedLength, userSequence.length)
             : userSequence.length;
 
-        if (userSequence.length === 0 && expectedLength === 0) {
+        const hasUserContent = userSequence.length > 0 || expectedLength > 0;
+
+        if (!hasUserContent) {
             userDisplay.innerHTML = '';
+            userDisplay.style.display = 'none';
+            if (targetDisplay && targetDisplay.childElementCount > 0) {
+                targetDisplay.style.display = 'flex';
+            }
             return;
         }
-        
+
+        if (targetDisplay) {
+            targetDisplay.style.display = 'none';
+        }
+
         userDisplay.innerHTML = '';
-        
+
         const title = document.createElement('div');
         const dictationType = options.dictationType === 'harmonic' ? 'harmonic' : 'melodic';
         title.textContent = dictationType === 'harmonic' ? 'Your chord:' : 'Your sequence:';
@@ -290,6 +317,8 @@ class UIModule {
             
             userDisplay.appendChild(noteEl);
         }
+
+        userDisplay.style.display = 'flex';
     }
 
     /**

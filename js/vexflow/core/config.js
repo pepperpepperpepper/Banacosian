@@ -16,9 +16,9 @@ export const DEFAULT_STAFF_SIZING = Object.freeze({
 
 export const DEFAULT_STAFF_PADDING = Object.freeze({
     horizontalRatio: 0.02,
-    verticalRatio: 0.025,
-    minHorizontal: 14,
-    minVertical: 6,
+    verticalRatio: 0.018,
+    minHorizontal: 10,
+    minVertical: 3,
 });
 
 export function normalizeStaffSizing(source = {}, defaults = DEFAULT_STAFF_SIZING) {

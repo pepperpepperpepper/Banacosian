@@ -127,8 +127,8 @@ export function drawStaff({
     baseHeight,
   );
   const staveWidth = Math.max(0, baseWidth - horizontalPadding * 2);
-  const spaceAboveStaffLn = Math.max(0, renderState?.spaceAboveStaffLn ?? 1.5);
-  const spaceBelowStaffLn = Math.max(0, renderState?.spaceBelowStaffLn ?? 1.5);
+  const spaceAboveStaffLn = Math.max(0, renderState?.spaceAboveStaffLn ?? 1.3);
+  const spaceBelowStaffLn = Math.max(0, renderState?.spaceBelowStaffLn ?? 0.7);
   const stave = new Stave(horizontalPadding, verticalPadding, staveWidth, {
     spaceAboveStaffLn,
     spaceBelowStaffLn,
