@@ -54,9 +54,9 @@ export function readPositiveDatasetNumber(dataset, key) {
 export function calculateStaffPadding(baseWidth, baseHeight, options = {}) {
   const {
     horizontalRatio = 0.02,
-    verticalRatio = 0.025,
-    minHorizontal = 14,
-    minVertical = 6,
+    verticalRatio = 0.08,
+    minHorizontal = 18,
+    minVertical = 16,
   } = options;
   const width = parsePositiveNumber(baseWidth) ?? 0;
   const height = parsePositiveNumber(baseHeight) ?? 0;

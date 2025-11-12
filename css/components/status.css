@@ -1,8 +1,8 @@
 .status-area {
   background: var(--app-card-surface);
-  padding: 12px;
+  padding: 20px;
   border-radius: var(--app-border-radius-md);
-  margin: 10px 0;
+  margin: 20px 0;
   display: none;
 }
 
