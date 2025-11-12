@@ -12,6 +12,8 @@ class KeyboardModule {
         this.whiteKeyElements = Array.from(document.querySelectorAll('.white-key'));
         this.blackKeyElements = Array.from(document.querySelectorAll('.black-key'));
         this.pianoKeysContainer = document.querySelector('.piano-keys');
+        this.pianoRoot = document.querySelector('.piano');
+        this.disabledKeysStyle = 'hatched';
         this.currentLayout = null;
         this.boundKeyHandler = null;
         this.onNotePlayedCallback = null;
@@ -19,6 +21,8 @@ class KeyboardModule {
         this.hasTrailingBlack = false;
         this.updateMetricsHandle = null;
         this.handleResize = this.handleResize.bind(this);
+
+        this.applyDisabledKeysStyle();
 
         if (typeof window !== 'undefined') {
             window.addEventListener('resize', this.handleResize);
@@ -72,6 +76,8 @@ class KeyboardModule {
         if (!this.pianoKeysContainer) {
             return;
         }
+        this.pianoRoot = this.pianoRoot || document.querySelector('.piano');
+        this.applyDisabledKeysStyle();
 
         const container = this.pianoKeysContainer;
         container.innerHTML = '';
@@ -512,21 +518,24 @@ class KeyboardModule {
             })();
             const labelText = noteLabel ? noteLabel.replace(/[0-9]/g, '') : '';
             labelEl.textContent = labelText;
-            labelEl.style.visibility = labelText ? 'visible' : 'hidden';
+
+            const shouldDisable = !showAllNotes && !activeNotes.has(actualNote);
+
+            if (shouldDisable && this.disabledKeysStyle === 'invisible') {
+                labelEl.style.visibility = 'hidden';
+            } else {
+                labelEl.style.visibility = labelText ? 'visible' : 'hidden';
+            }
             if (noteLabel) {
                 key.dataset.displayLabel = noteLabel;
             } else {
                 key.removeAttribute('data-display-label');
             }
 
-            if (showAllNotes) {
-                key.classList.remove('disabled');
+            if (shouldDisable) {
+                key.classList.add('disabled');
             } else {
-                if (activeNotes.has(actualNote)) {
-                    key.classList.remove('disabled');
-                } else {
-                    key.classList.add('disabled');
-                }
+                key.classList.remove('disabled');
             }
         });
         
@@ -536,6 +545,29 @@ class KeyboardModule {
             piano.style.removeProperty('background');
             piano.style.removeProperty('padding');
         }
+    }
+
+    /**
+     * Set how disabled keys should be rendered visually
+     * @param {string} style - 'hatched' or 'invisible'
+     */
+    setDisabledKeysStyle(style) {
+        const normalized = style === 'invisible' ? 'invisible' : 'hatched';
+        this.disabledKeysStyle = normalized;
+        this.applyDisabledKeysStyle();
+    }
+
+    /**
+     * Apply the disabled key class to the piano container
+     */
+    applyDisabledKeysStyle() {
+        if (!this.pianoRoot || !this.pianoRoot.classList) {
+            this.pianoRoot = document.querySelector('.piano');
+        }
+        if (!this.pianoRoot) {
+            return;
+        }
+        this.pianoRoot.classList.toggle('disabled-keys-invisible', this.disabledKeysStyle === 'invisible');
     }
 
     /**

@@ -137,16 +137,20 @@ class StorageModule {
      * @param {string} scaleType - Current scale type
      * @param {string} mode - Current mode
      * @param {string} tonic - Current tonic letter
+     * @param {string} timbre - Current timbre id
+     * @param {string} staffFont - Selected staff font id
+     * @param {string} disabledKeysStyle - Disabled key rendering style
      * @returns {Object} Settings object
      */
-    getCurrentSettings(sequenceLength, scaleType, mode, tonic, timbre, staffFont) {
+    getCurrentSettings(sequenceLength, scaleType, mode, tonic, timbre, staffFont, disabledKeysStyle) {
         return {
             sequenceLength: sequenceLength,
             scaleType: scaleType,
             mode: mode,
             tonic: tonic,
             timbre: timbre,
-            staffFont: staffFont
+            staffFont: staffFont,
+            disabledKeysStyle: disabledKeysStyle
         };
     }
 }

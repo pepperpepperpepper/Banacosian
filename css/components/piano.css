@@ -100,3 +100,19 @@
     var(--piano-black-disabled);
   color: rgba(209, 213, 219, 0.45);
 }
+
+.piano.disabled-keys-invisible .flat-key.disabled {
+  opacity: 0;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.piano.disabled-keys-invisible .white-key.disabled,
+.piano.disabled-keys-invisible .black-key.disabled {
+  background: transparent;
+  color: transparent;
+}
+
+.piano.disabled-keys-invisible .flat-key.disabled .key-label {
+  visibility: hidden;
+}

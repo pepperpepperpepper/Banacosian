@@ -59,6 +59,11 @@ class UIModule {
         if (staffFontSelect && typeof callbacks.onStaffFontChange === 'function') {
             staffFontSelect.addEventListener('change', callbacks.onStaffFontChange);
         }
+
+        const disabledKeysStyleSelect = document.getElementById('disabledKeysStyle');
+        if (disabledKeysStyleSelect && typeof callbacks.onDisabledKeysStyleChange === 'function') {
+            disabledKeysStyleSelect.addEventListener('change', callbacks.onDisabledKeysStyleChange);
+        }
     }
 
     /**
@@ -437,7 +442,10 @@ class UIModule {
             scaleType: document.getElementById('scaleType').value,
             mode: document.getElementById('mode').value,
             timbre: document.getElementById('timbreSelect') ? document.getElementById('timbreSelect').value : undefined,
-            staffFont: document.getElementById('staffFont') ? document.getElementById('staffFont').value : undefined
+            staffFont: document.getElementById('staffFont') ? document.getElementById('staffFont').value : undefined,
+            disabledKeysStyle: document.getElementById('disabledKeysStyle')
+                ? document.getElementById('disabledKeysStyle').value
+                : undefined
         };
     }
 
@@ -464,8 +472,18 @@ class UIModule {
         if (values.staffFont !== undefined) {
             this.setStaffFontValue(values.staffFont);
         }
+        if (values.disabledKeysStyle !== undefined) {
+            this.setDisabledKeysStyleValue(values.disabledKeysStyle);
+        }
     }
 }
+
+UIModule.prototype.setDisabledKeysStyleValue = function setDisabledKeysStyleValue(value) {
+    const select = document.getElementById('disabledKeysStyle');
+    if (select && value) {
+        select.value = value;
+    }
+};
 
 // Export the module
 if (typeof module !== 'undefined' && module.exports) {

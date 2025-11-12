@@ -25,6 +25,7 @@ class MelodicDictation {
         this.mode = 'ionian';
         this.tonic = this.musicTheory.getDefaultTonicLetter(this.mode);
         this.staffFont = 'bravura';
+        this.disabledKeysStyle = 'hatched';
         this.availableTonics = this.musicTheory.getAvailableTonics();
         this.availableTimbres = this.audioModule.getAvailableTimbres();
         this.timbre = this.audioModule.getCurrentTimbreId();
@@ -41,6 +42,9 @@ class MelodicDictation {
                     if (saved.tonic) this.tonic = saved.tonic;
                     if (saved.timbre) this.timbre = this.audioModule.setTimbre(saved.timbre);
                     if (saved.staffFont) this.staffFont = saved.staffFont;
+                    if (saved.disabledKeysStyle) {
+                        this.disabledKeysStyle = saved.disabledKeysStyle === 'invisible' ? 'invisible' : 'hatched';
+                    }
                 }
             }
         } catch (e) {
@@ -48,6 +52,7 @@ class MelodicDictation {
         }
 
         this.staffModule.setFontPreference(this.staffFont);
+        this.keyboardModule.setDisabledKeysStyle(this.disabledKeysStyle);
 
         // Initialize keyboard module with current settings (possibly restored)
         this.keyboardModule.setScaleType(this.scaleType);
@@ -94,7 +99,8 @@ class MelodicDictation {
                 scaleType: this.scaleType,
                 mode: this.mode,
                 timbre: this.timbre,
-                staffFont: this.staffFont
+                staffFont: this.staffFont,
+                disabledKeysStyle: this.disabledKeysStyle
             });
             this.audioModule.setTimbre(this.timbre);
             
@@ -160,7 +166,8 @@ class MelodicDictation {
             onScaleTypeChange: (e) => this.handleScaleTypeChange(e),
             onModeChange: (e) => this.handleModeChange(e),
             onTimbreChange: (e) => this.handleTimbreChange(e),
-            onStaffFontChange: (e) => this.handleStaffFontChange(e)
+            onStaffFontChange: (e) => this.handleStaffFontChange(e),
+            onDisabledKeysStyleChange: (e) => this.handleDisabledKeysStyleChange(e)
         });
 
         // Setup keyboard event listeners
@@ -348,7 +355,15 @@ class MelodicDictation {
         
         // Auto-save to Google Drive
         this.storageModule.autoSaveToGoogleDrive(
-            this.storageModule.getCurrentSettings(this.sequenceLength, this.scaleType, this.mode, this.tonic, this.timbre, this.staffFont)
+            this.storageModule.getCurrentSettings(
+                this.sequenceLength,
+                this.scaleType,
+                this.mode,
+                this.tonic,
+                this.timbre,
+                this.staffFont,
+                this.disabledKeysStyle
+            )
         );
         
         // Show completion message
@@ -414,6 +429,18 @@ class MelodicDictation {
         if (!selectedFont) return;
         this.staffFont = selectedFont;
         this.staffModule.setFontPreference(this.staffFont);
+        this.persistSettings();
+    }
+
+    /**
+     * Handle disabled key style change
+     * @param {Event} e - Change event
+     */
+    handleDisabledKeysStyleChange(e) {
+        const requestedStyle = e && e.target ? e.target.value : null;
+        this.disabledKeysStyle = requestedStyle === 'invisible' ? 'invisible' : 'hatched';
+        this.keyboardModule.setDisabledKeysStyle(this.disabledKeysStyle);
+        this.keyboardModule.updateKeyboardVisibility();
         this.persistSettings();
     }
 
@@ -490,7 +517,8 @@ class MelodicDictation {
                 mode: this.mode,
                 tonic: this.tonic,
                 timbre: this.timbre,
-                staffFont: this.staffFont
+                staffFont: this.staffFont,
+                disabledKeysStyle: this.disabledKeysStyle
             };
             if (window.SettingsStore && typeof window.SettingsStore.save === 'function') {
                 window.SettingsStore.save(settings);
@@ -533,7 +561,8 @@ class MelodicDictation {
                 this.mode,
                 this.tonic,
                 this.timbre,
-                this.staffFont
+                this.staffFont,
+                this.disabledKeysStyle
             );
             const message = await this.storageModule.saveToGoogleDrive(settings);
             this.uiModule.updateFeedback(message, 'correct');
@@ -557,6 +586,11 @@ class MelodicDictation {
                     this.tonic = result.data.settings.tonic || this.musicTheory.getDefaultTonicLetter(this.mode);
                     this.timbre = result.data.settings.timbre || this.audioModule.getCurrentTimbreId();
                     this.staffFont = result.data.settings.staffFont || this.staffFont || 'bravura';
+                    if (result.data.settings.disabledKeysStyle) {
+                        this.disabledKeysStyle = result.data.settings.disabledKeysStyle === 'invisible' ? 'invisible' : 'hatched';
+                    } else {
+                        this.disabledKeysStyle = 'hatched';
+                    }
                     
                     this.uiModule.setFormValues({
                         difficulty: this.sequenceLength,
@@ -564,7 +598,8 @@ class MelodicDictation {
                         scaleType: this.scaleType,
                         mode: this.mode,
                         timbre: this.timbre,
-                        staffFont: this.staffFont
+                        staffFont: this.staffFont,
+                        disabledKeysStyle: this.disabledKeysStyle
                     });
                     
                     this.keyboardModule.setScaleType(this.scaleType);
@@ -572,6 +607,7 @@ class MelodicDictation {
                 } else {
                     this.uiModule.setTonicValue(this.tonic);
                 }
+                this.keyboardModule.setDisabledKeysStyle(this.disabledKeysStyle);
                 this.keyboardModule.updateKeyboardVisibility();
                 this.keyboardModule.positionBlackKeys();
                 this.audioModule.setTimbre(this.timbre);
