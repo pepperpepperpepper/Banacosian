@@ -39,7 +39,7 @@ class ScoringModule {
      * @param {Array} currentSequence - Target sequence
      * @returns {Object} Result object with correctness and timing info
      */
-    checkSequence(userSequence, currentSequence) {
+    checkSequence(userSequence, currentSequence, options = {}) {
         // Stop the sequence timer
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
@@ -52,7 +52,10 @@ class ScoringModule {
         this.score.total++;
         this.currentRound.total++;
         
-        const isCorrect = this.arraysEqual(userSequence, currentSequence);
+        const dictationType = options.dictationType === 'harmonic' ? 'harmonic' : 'melodic';
+        const isCorrect = dictationType === 'harmonic'
+            ? this.multisetEqual(userSequence, currentSequence)
+            : this.arraysEqual(userSequence, currentSequence);
         
         if (isCorrect) {
             this.score.correct++;
@@ -68,6 +71,7 @@ class ScoringModule {
             sequence: [...currentSequence],
             userResponse: [...userSequence],
             correct: isCorrect,
+            dictationType,
             timeMs: sequenceTime,
             timeFormatted: this.formatDuration(sequenceTime)
         });
@@ -94,7 +98,7 @@ class ScoringModule {
      * @param {number} sequenceLength - Current sequence length
      * @returns {Object} Round completion data
      */
-    completeRound(scaleType, mode, sequenceLength) {
+    completeRound(scaleType, mode, dictationType, sequenceLength) {
         // Stop timer
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
@@ -116,6 +120,7 @@ class ScoringModule {
             duration: this.formatDuration(duration),
             durationMs: duration,
             scaleType: scaleType,
+            dictationType: dictationType,
             mode: mode,
             sequenceLength: sequenceLength
         };
@@ -231,6 +236,31 @@ class ScoringModule {
      */
     arraysEqual(a, b) {
         return a.length === b.length && a.every((val, i) => val === b[i]);
+    }
+
+    multisetEqual(a, b) {
+        if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
+            return false;
+        }
+        const counts = new Map();
+        const normalize = (note) => (typeof note === 'string' ? note.trim().toUpperCase() : String(note));
+        a.forEach((note) => {
+            const key = normalize(note);
+            counts.set(key, (counts.get(key) || 0) + 1);
+        });
+        for (let i = 0; i < b.length; i += 1) {
+            const key = normalize(b[i]);
+            if (!counts.has(key)) {
+                return false;
+            }
+            const remaining = counts.get(key) - 1;
+            if (remaining === 0) {
+                counts.delete(key);
+            } else {
+                counts.set(key, remaining);
+            }
+        }
+        return counts.size === 0;
     }
 
     /**

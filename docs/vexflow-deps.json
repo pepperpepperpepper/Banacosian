@@ -1,0 +1,1383 @@
+{
+  "js/MelodicDictation.js": [
+    "/js/modules/StaffFonts.js"
+  ],
+  "js/modules/Audio.js": [],
+  "js/modules/KeySignatures.js": [],
+  "js/modules/Keyboard.js": [],
+  "js/modules/MidiInput.js": [],
+  "js/modules/MusicTheory.js": [],
+  "js/modules/Scoring.js": [],
+  "js/modules/SettingsStore.js": [],
+  "js/modules/Staff.js": [
+    "/js/vexflow/StaffDisplay.js",
+    "/js/vexflow/core/config.js",
+    "/js/vexflow/core/seeds.js"
+  ],
+  "js/modules/StaffFonts.js": [],
+  "js/modules/Storage.js": [],
+  "js/modules/UI.js": [],
+  "js/shared/utils.js": [],
+  "js/vexflow/StaffDisplay.js": [
+    "/js/modules/KeySignatures.js",
+    "/js/modules/StaffFonts.js",
+    "/js/shared/utils.js",
+    "/js/vexflow/core/config.js",
+    "/js/vexflow/core/draw.js",
+    "/js/vexflow/core/helpers/pitch.js",
+    "/js/vexflow/core/seeds.js",
+    "/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js"
+  ],
+  "js/vexflow/core/buildSeedVoices.js": [
+    "./scoreParser.js",
+    "./utils/spec.js",
+    "/js/modules/KeySignatures.js",
+    "/js/shared/utils.js"
+  ],
+  "js/vexflow/core/draw.js": [
+    "./noteFactory.js",
+    "/js/shared/utils.js",
+    "/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js"
+  ],
+  "js/vexflow/core/helpers/duration.js": [],
+  "js/vexflow/core/helpers/pitch.js": [
+    "/js/shared/utils.js",
+    "/staff/vendor/lib/vexflow-esm/src/tables.js"
+  ],
+  "js/vexflow/core/helpers/tonality.js": [
+    "../utils/spec.js",
+    "./pitch.js",
+    "/js/modules/KeySignatures.js"
+  ],
+  "js/vexflow/core/index.js": [],
+  "js/vexflow/core/noteFactory.js": [
+    "./helpers/pitch.js",
+    "/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js"
+  ],
+  "js/vexflow/core/scoreParser.js": [
+    "./helpers/duration.js",
+    "./helpers/pitch.js"
+  ],
+  "js/vexflow/core/utils/spec.js": [],
+  "www/staff/drag/listeners.js": [
+    "../interaction-dom.js",
+    "../interaction-state.js"
+  ],
+  "www/staff/drag/preview.js": [
+    "../vendor/lib/vexflow-esm/src/tickcontext.js",
+    "/js/vexflow/core/noteFactory.js",
+    "/js/vexflow/core/utils/spec.js"
+  ],
+  "www/staff/interaction/events.js": [
+    "../interaction-add.js",
+    "../interaction-dom.js",
+    "../interaction-drag.js",
+    "../interaction-selectable.js",
+    "../interaction-selection.js",
+    "../interaction-state.js",
+    "/js/shared/utils.js"
+  ],
+  "www/staff/interaction-add.js": [
+    "./interaction-selectable.js",
+    "./interaction-selection.js",
+    "./interaction-state.js",
+    "./music-helpers.js",
+    "/js/vexflow/core/seeds.js",
+    "/js/shared/utils.js"
+  ],
+  "www/staff/interaction-controller.js": [
+    "./interaction-dom.js",
+    "./interaction-selectable.js",
+    "./interaction-selection.js",
+    "./interaction-state.js",
+    "./interaction/events.js",
+    "./vendor/lib/vexflow-esm/entry/vexflow-debug.js",
+    "/js/shared/utils.js"
+  ],
+  "www/staff/interaction-dom.js": [
+    "/js/shared/utils.js"
+  ],
+  "www/staff/interaction-drag.js": [
+    "./drag/listeners.js",
+    "./drag/preview.js",
+    "./interaction-dom.js",
+    "./interaction-selection.js",
+    "./interaction-state.js",
+    "./music-helpers.js",
+    "/js/vexflow/core/utils/spec.js",
+    "/staff/theme/readTokens.js"
+  ],
+  "www/staff/interaction-selectable.js": [],
+  "www/staff/interaction-selection.js": [
+    "./interaction-dom.js",
+    "./interaction-state.js",
+    "./music-helpers.js"
+  ],
+  "www/staff/interaction-state.js": [],
+  "www/staff/music-helpers.js": [],
+  "www/staff/render/theme.js": [
+    "/js/vexflow/core/config.js"
+  ],
+  "www/staff/render-staff.js": [
+    "./music-helpers.js",
+    "./render/theme.js",
+    "./vendor/lib/vexflow-esm/entry/vexflow-debug.js",
+    "/js/modules/StaffFonts.js",
+    "/js/vexflow/core/buildSeedVoices.js",
+    "/js/vexflow/core/draw.js",
+    "/js/vexflow/core/renderPipeline.js",
+    "/js/vexflow/core/seeds.js"
+  ],
+  "www/staff/shared/theme.js": [],
+  "www/staff/theme/applySvgTheme.js": [
+    "./readTokens.js"
+  ],
+  "www/staff/theme/readTokens.js": [],
+  "www/staff/tools/run-console-check.js": [],
+  "www/staff/vendor/lib/vexflow-esm/entry/vexflow-bravura.js": [
+    "../src/font.js",
+    "../src/fonts/academico.js",
+    "../src/fonts/academicobold.js",
+    "../src/fonts/bravura.js",
+    "../src/vexflow.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/entry/vexflow-core.js": [
+    "../src/vexflow.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/entry/vexflow-debug-with-tests.js": [
+    "../src/font.js",
+    "../src/fonts/academico.js",
+    "../src/fonts/academicobold.js",
+    "../src/fonts/bravura.js",
+    "../src/fonts/gonville.js",
+    "../src/fonts/petaluma.js",
+    "../src/fonts/petalumascript.js",
+    "../src/vexflow.js",
+    "../tests/vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js": [
+    "../src/font.js",
+    "../src/fonts/academico.js",
+    "../src/fonts/academicobold.js",
+    "../src/fonts/bravura.js",
+    "../src/fonts/gonville.js",
+    "../src/fonts/petaluma.js",
+    "../src/fonts/petalumascript.js",
+    "../src/vexflow.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/entry/vexflow.js": [
+    "../src/font.js",
+    "../src/fonts/academico.js",
+    "../src/fonts/academicobold.js",
+    "../src/fonts/bravura.js",
+    "../src/fonts/gonville.js",
+    "../src/fonts/petaluma.js",
+    "../src/fonts/petalumascript.js",
+    "../src/vexflow.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/accidental.js": [
+    "./fraction.js",
+    "./metrics.js",
+    "./modifier.js",
+    "./music.js",
+    "./tables.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/annotation.js": [
+    "./font.js",
+    "./metrics.js",
+    "./modifier.js",
+    "./stem.js",
+    "./tables.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/articulation.js": [
+    "./glyphs.js",
+    "./modifier.js",
+    "./stem.js",
+    "./tables.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/barnote.js": [
+    "./note.js",
+    "./stavebarline.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/beam.js": [
+    "./element.js",
+    "./fraction.js",
+    "./stem.js",
+    "./tables.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/bend.js": [
+    "./element.js",
+    "./metrics.js",
+    "./modifier.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/boundingbox.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/canvascontext.js": [
+    "./font.js",
+    "./rendercontext.js",
+    "./util.js",
+    "./web.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/chordsymbol.js": [
+    "./element.js",
+    "./font.js",
+    "./glyphs.js",
+    "./metrics.js",
+    "./modifier.js",
+    "./tables.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/clef.js": [
+    "./glyphs.js",
+    "./metrics.js",
+    "./stavemodifier.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/clefnote.js": [
+    "./clef.js",
+    "./note.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/crescendo.js": [
+    "./note.js",
+    "./tickcontext.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/curve.js": [
+    "./element.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/dot.js": [
+    "./glyphs.js",
+    "./modifier.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/easyscore.js": [
+    "./articulation.js",
+    "./dot.js",
+    "./frethandfinger.js",
+    "./music.js",
+    "./parser.js",
+    "./stem.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/element.js": [
+    "./boundingbox.js",
+    "./font.js",
+    "./metrics.js",
+    "./registry.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/factory.js": [
+    "./accidental.js",
+    "./annotation.js",
+    "./articulation.js",
+    "./barnote.js",
+    "./beam.js",
+    "./chordsymbol.js",
+    "./clefnote.js",
+    "./curve.js",
+    "./easyscore.js",
+    "./formatter.js",
+    "./frethandfinger.js",
+    "./ghostnote.js",
+    "./glyphnote.js",
+    "./gracenote.js",
+    "./gracenotegroup.js",
+    "./keysignote.js",
+    "./modifiercontext.js",
+    "./multimeasurerest.js",
+    "./notesubgroup.js",
+    "./ornament.js",
+    "./pedalmarking.js",
+    "./renderer.js",
+    "./repeatnote.js",
+    "./stave.js",
+    "./staveconnector.js",
+    "./staveline.js",
+    "./stavenote.js",
+    "./stavetie.js",
+    "./stringnumber.js",
+    "./system.js",
+    "./tabnote.js",
+    "./tabstave.js",
+    "./textbracket.js",
+    "./textdynamics.js",
+    "./textnote.js",
+    "./tickcontext.js",
+    "./timesignote.js",
+    "./tuplet.js",
+    "./util.js",
+    "./vibratobracket.js",
+    "./voice.js",
+    "./web.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/flag.js": [
+    "./element.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/font.js": [
+    "./metrics.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/fonts/academico.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/fonts/academicobold.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/fonts/bravura.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/fonts/gonville.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/fonts/petaluma.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/fonts/petalumascript.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/formatter.js": [
+    "./beam.js",
+    "./fraction.js",
+    "./metrics.js",
+    "./modifiercontext.js",
+    "./stave.js",
+    "./staveconnector.js",
+    "./tables.js",
+    "./tickcontext.js",
+    "./typeguard.js",
+    "./util.js",
+    "./voice.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/fraction.js": [
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/frethandfinger.js": [
+    "./metrics.js",
+    "./modifier.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/ghostnote.js": [
+    "./stemmablenote.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/glyphnote.js": [
+    "./note.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/glyphs.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/gracenote.js": [
+    "./stavenote.js",
+    "./stem.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/gracenotegroup.js": [
+    "./beam.js",
+    "./formatter.js",
+    "./modifier.js",
+    "./stavenote.js",
+    "./stavetie.js",
+    "./tables.js",
+    "./tabtie.js",
+    "./typeguard.js",
+    "./util.js",
+    "./voice.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/gracetabnote.js": [
+    "./tabnote.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/index.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/keymanager.js": [
+    "./music.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/keysignature.js": [
+    "./boundingbox.js",
+    "./element.js",
+    "./glyphs.js",
+    "./stave.js",
+    "./stavemodifier.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/keysignote.js": [
+    "./keysignature.js",
+    "./note.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/metrics.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/modifier.js": [
+    "./element.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/modifiercontext.js": [
+    "./accidental.js",
+    "./annotation.js",
+    "./articulation.js",
+    "./bend.js",
+    "./chordsymbol.js",
+    "./dot.js",
+    "./frethandfinger.js",
+    "./gracenotegroup.js",
+    "./notesubgroup.js",
+    "./ornament.js",
+    "./parenthesis.js",
+    "./stavenote.js",
+    "./stringnumber.js",
+    "./strokes.js",
+    "./util.js",
+    "./vibrato.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/multimeasurerest.js": [
+    "./element.js",
+    "./glyphs.js",
+    "./metrics.js",
+    "./stavemodifier.js",
+    "./tables.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/music.js": [
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/note.js": [
+    "./glyphs.js",
+    "./metrics.js",
+    "./rendercontext.js",
+    "./tables.js",
+    "./tickable.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/notehead.js": [
+    "./note.js",
+    "./stem.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/notesubgroup.js": [
+    "./formatter.js",
+    "./modifier.js",
+    "./tables.js",
+    "./voice.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/ornament.js": [
+    "./articulation.js",
+    "./element.js",
+    "./metrics.js",
+    "./modifier.js",
+    "./stem.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/parenthesis.js": [
+    "./modifier.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/parser.js": [
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/pedalmarking.js": [
+    "./element.js",
+    "./glyphs.js",
+    "./metrics.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/registry.js": [
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/rendercontext.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/renderer.js": [
+    "./canvascontext.js",
+    "./svgcontext.js",
+    "./typeguard.js",
+    "./util.js",
+    "./web.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/repeatnote.js": [
+    "./glyphnote.js",
+    "./glyphs.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stave.js": [
+    "./boundingbox.js",
+    "./clef.js",
+    "./element.js",
+    "./keysignature.js",
+    "./metrics.js",
+    "./stavebarline.js",
+    "./stavemodifier.js",
+    "./staverepetition.js",
+    "./stavesection.js",
+    "./stavetempo.js",
+    "./stavetext.js",
+    "./stavevolta.js",
+    "./tables.js",
+    "./timesignature.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stavebarline.js": [
+    "./stavemodifier.js",
+    "./tables.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/staveconnector.js": [
+    "./element.js",
+    "./glyphs.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stavehairpin.js": [
+    "./element.js",
+    "./modifier.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/staveline.js": [
+    "./element.js",
+    "./tables.js",
+    "./textnote.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stavemodifier.js": [
+    "./element.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stavenote.js": [
+    "./boundingbox.js",
+    "./glyphs.js",
+    "./metrics.js",
+    "./modifier.js",
+    "./note.js",
+    "./notehead.js",
+    "./stem.js",
+    "./stemmablenote.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/staverepetition.js": [
+    "./glyphs.js",
+    "./metrics.js",
+    "./stavemodifier.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stavesection.js": [
+    "./metrics.js",
+    "./stavemodifier.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stavetempo.js": [
+    "./element.js",
+    "./glyphs.js",
+    "./metrics.js",
+    "./stavemodifier.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stavetext.js": [
+    "./stavemodifier.js",
+    "./textnote.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stavetie.js": [
+    "./element.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stavevolta.js": [
+    "./stavemodifier.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stem.js": [
+    "./element.js",
+    "./metrics.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stemmablenote.js": [
+    "./flag.js",
+    "./glyphs.js",
+    "./note.js",
+    "./stem.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/stringnumber.js": [
+    "./metrics.js",
+    "./modifier.js",
+    "./renderer.js",
+    "./stem.js",
+    "./tables.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/strokes.js": [
+    "./element.js",
+    "./glyphs.js",
+    "./metrics.js",
+    "./modifier.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/svgcontext.js": [
+    "./element.js",
+    "./font.js",
+    "./metrics.js",
+    "./rendercontext.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/system.js": [
+    "./boundingbox.js",
+    "./element.js",
+    "./formatter.js",
+    "./note.js",
+    "./stave.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/tables.js": [
+    "./fraction.js",
+    "./glyphs.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/tabnote.js": [
+    "./element.js",
+    "./glyphs.js",
+    "./modifier.js",
+    "./note.js",
+    "./stem.js",
+    "./stemmablenote.js",
+    "./typeguard.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/tabslide.js": [
+    "./tabtie.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/tabstave.js": [
+    "./stave.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/tabtie.js": [
+    "./stavetie.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/textbracket.js": [
+    "./element.js",
+    "./font.js",
+    "./renderer.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/textdynamics.js": [
+    "./glyphs.js",
+    "./note.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/textnote.js": [
+    "./element.js",
+    "./font.js",
+    "./glyphs.js",
+    "./metrics.js",
+    "./note.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/tickable.js": [
+    "./element.js",
+    "./fraction.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/tickcontext.js": [
+    "./fraction.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/timesignature.js": [
+    "./element.js",
+    "./glyphs.js",
+    "./stavemodifier.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/timesignote.js": [
+    "./note.js",
+    "./timesignature.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/tremolo.js": [
+    "./glyphs.js",
+    "./metrics.js",
+    "./modifier.js",
+    "./stem.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/tuning.js": [
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/tuplet.js": [
+    "./element.js",
+    "./formatter.js",
+    "./glyphs.js",
+    "./metrics.js",
+    "./stem.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/typeguard.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/util.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/version.js": [],
+  "www/staff/vendor/lib/vexflow-esm/src/vexflow.js": [
+    "./accidental.js",
+    "./annotation.js",
+    "./articulation.js",
+    "./barnote.js",
+    "./beam.js",
+    "./bend.js",
+    "./boundingbox.js",
+    "./canvascontext.js",
+    "./chordsymbol.js",
+    "./clef.js",
+    "./clefnote.js",
+    "./crescendo.js",
+    "./curve.js",
+    "./dot.js",
+    "./easyscore.js",
+    "./element.js",
+    "./factory.js",
+    "./font.js",
+    "./formatter.js",
+    "./fraction.js",
+    "./frethandfinger.js",
+    "./ghostnote.js",
+    "./glyphnote.js",
+    "./glyphs.js",
+    "./gracenote.js",
+    "./gracenotegroup.js",
+    "./gracetabnote.js",
+    "./keymanager.js",
+    "./keysignature.js",
+    "./keysignote.js",
+    "./metrics.js",
+    "./modifier.js",
+    "./modifiercontext.js",
+    "./multimeasurerest.js",
+    "./music.js",
+    "./note.js",
+    "./notehead.js",
+    "./notesubgroup.js",
+    "./ornament.js",
+    "./parenthesis.js",
+    "./parser.js",
+    "./pedalmarking.js",
+    "./registry.js",
+    "./rendercontext.js",
+    "./renderer.js",
+    "./repeatnote.js",
+    "./stave.js",
+    "./stavebarline.js",
+    "./staveconnector.js",
+    "./stavehairpin.js",
+    "./staveline.js",
+    "./stavemodifier.js",
+    "./stavenote.js",
+    "./staverepetition.js",
+    "./stavetempo.js",
+    "./stavetext.js",
+    "./stavetie.js",
+    "./stavevolta.js",
+    "./stem.js",
+    "./stringnumber.js",
+    "./strokes.js",
+    "./svgcontext.js",
+    "./system.js",
+    "./tables.js",
+    "./tabnote.js",
+    "./tabslide.js",
+    "./tabstave.js",
+    "./tabtie.js",
+    "./textbracket.js",
+    "./textdynamics.js",
+    "./textnote.js",
+    "./tickcontext.js",
+    "./timesignature.js",
+    "./timesignote.js",
+    "./tremolo.js",
+    "./tuning.js",
+    "./tuplet.js",
+    "./util.js",
+    "./version.js",
+    "./vibrato.js",
+    "./vibratobracket.js",
+    "./voice.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/vibrato.js": [
+    "./bend.js",
+    "./modifier.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/vibratobracket.js": [
+    "./element.js",
+    "./util.js",
+    "./vibrato.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/voice.js": [
+    "./element.js",
+    "./fraction.js",
+    "./tables.js",
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/src/web.js": [
+    "./util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/accidental_tests.js": [
+    "../src/accidental.js",
+    "../src/beam.js",
+    "../src/dot.js",
+    "../src/formatter.js",
+    "../src/glyphs.js",
+    "../src/modifiercontext.js",
+    "../src/note.js",
+    "../src/stave.js",
+    "../src/stavenote.js",
+    "../src/stem.js",
+    "../src/tickcontext.js",
+    "../src/timesignote.js",
+    "../src/typeguard.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/annotation_tests.js": [
+    "../src/annotation.js",
+    "../src/articulation.js",
+    "../src/beam.js",
+    "../src/bend.js",
+    "../src/formatter.js",
+    "../src/metrics.js",
+    "../src/modifier.js",
+    "../src/registry.js",
+    "../src/stave.js",
+    "../src/stavenote.js",
+    "../src/stem.js",
+    "../src/tabnote.js",
+    "../src/tabstave.js",
+    "../src/vexflow.js",
+    "../src/vibrato.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/articulation_tests.js": [
+    "../src/articulation.js",
+    "../src/beam.js",
+    "../src/formatter.js",
+    "../src/glyphs.js",
+    "../src/metrics.js",
+    "../src/modifier.js",
+    "../src/stave.js",
+    "../src/stavebarline.js",
+    "../src/stavenote.js",
+    "../src/stem.js",
+    "../src/tabnote.js",
+    "../src/tabstave.js",
+    "../src/vexflow.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/auto_beam_formatting_tests.js": [
+    "../src/beam.js",
+    "../src/fraction.js",
+    "../src/stave.js",
+    "../src/stem.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/barline_tests.js": [
+    "../src/stavebarline.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/beam_tests.js": [
+    "../src/index.js",
+    "../src/metrics.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/bend_tests.js": [
+    "../src/bend.js",
+    "../src/formatter.js",
+    "../src/metrics.js",
+    "../src/modifiercontext.js",
+    "../src/note.js",
+    "../src/tabnote.js",
+    "../src/tabstave.js",
+    "../src/tickcontext.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/boundingbox_tests.js": [
+    "../src/index.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/chordsymbol_tests.js": [
+    "../src/accidental.js",
+    "../src/chordsymbol.js",
+    "../src/element.js",
+    "../src/formatter.js",
+    "../src/ornament.js",
+    "../src/stave.js",
+    "../src/stavenote.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/clef_tests.js": [
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/crossbeam_tests.js": [
+    "../src/stave.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/curve_tests.js": [
+    "../src/curve.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/demo_petzold_tests.js": [
+    "../src/index.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/dot_tests.js": [
+    "../src/beam.js",
+    "../src/dot.js",
+    "../src/formatter.js",
+    "../src/modifiercontext.js",
+    "../src/note.js",
+    "../src/stave.js",
+    "../src/stavenote.js",
+    "../src/tickcontext.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/easyscore_tests.js": [
+    "../src/articulation.js",
+    "../src/easyscore.js",
+    "../src/frethandfinger.js",
+    "../src/modifier.js",
+    "../src/parenthesis.js",
+    "../src/staveconnector.js",
+    "../src/stem.js",
+    "../src/tuplet.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/factory_tests.js": [
+    "../src/factory.js",
+    "../src/stavebarline.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/font_tests.js": [
+    "../src/accidental.js",
+    "../src/bend.js",
+    "../src/canvascontext.js",
+    "../src/font.js",
+    "../src/pedalmarking.js",
+    "../src/stavenote.js",
+    "../src/textbracket.js",
+    "../src/textnote.js",
+    "../src/vexflow.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/formatter/framestack.js": [],
+  "www/staff/vendor/lib/vexflow-esm/tests/formatter/tests.js": [],
+  "www/staff/vendor/lib/vexflow-esm/tests/formatter_tests.js": [
+    "../src/accidental.js",
+    "../src/annotation.js",
+    "../src/articulation.js",
+    "../src/beam.js",
+    "../src/bend.js",
+    "../src/dot.js",
+    "../src/element.js",
+    "../src/font.js",
+    "../src/formatter.js",
+    "../src/frethandfinger.js",
+    "../src/glyphs.js",
+    "../src/metrics.js",
+    "../src/modifier.js",
+    "../src/note.js",
+    "../src/registry.js",
+    "../src/stave.js",
+    "../src/staveconnector.js",
+    "../src/stavenote.js",
+    "../src/stem.js",
+    "../src/stringnumber.js",
+    "../src/tuplet.js",
+    "../src/vexflow.js",
+    "../src/voice.js",
+    "./mocks.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/fraction_tests.js": [
+    "../src/fraction.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/ghostnote_tests.js": [
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/glyphnote_tests.js": [
+    "../src/chordsymbol.js",
+    "../src/glyphs.js",
+    "../src/registry.js",
+    "../src/staveconnector.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/gracenote_tests.js": [
+    "../src.js",
+    "../src/accidental.js",
+    "../src/annotation.js",
+    "../src/articulation.js",
+    "../src/dot.js",
+    "../src/formatter.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/gracetabnote_tests.js": [
+    "../src/formatter.js",
+    "../src/gracenotegroup.js",
+    "../src/gracetabnote.js",
+    "../src/tabnote.js",
+    "../src/tabstave.js",
+    "../src/vexflow.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/index.js": [],
+  "www/staff/vendor/lib/vexflow-esm/tests/key_clef_tests.js": [
+    "../src/element.js",
+    "../src/glyphs.js",
+    "../src/keysignature.js",
+    "../src/stave.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/keymanager_tests.js": [
+    "../src/index.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/keysignature_tests.js": [
+    "../src/element.js",
+    "../src/glyphs.js",
+    "../src/keysignature.js",
+    "../src/stave.js",
+    "../src/stavebarline.js",
+    "../src/vexflow.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/mocks.js": [
+    "../src/fraction.js",
+    "../src/tickable.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/modifier_tests.js": [
+    "../src/index.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/multimeasurerest_tests.js": [
+    "../src/element.js",
+    "../src/metrics.js",
+    "../src/vexflow.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/music_tests.js": [
+    "../src/keymanager.js",
+    "../src/music.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/notehead_tests.js": [
+    "../src/formatter.js",
+    "../src/notehead.js",
+    "../src/stave.js",
+    "../src/stavenote.js",
+    "../src/tickcontext.js",
+    "../src/vexflow.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/notesubgroup_tests.js": [
+    "../src/barnote.js",
+    "../src/note.js",
+    "../src/stavebarline.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/offscreencanvas_tests.js": [
+    "../src/canvascontext.js",
+    "../src/formatter.js",
+    "../src/stave.js",
+    "../src/stavebarline.js",
+    "../src/stavenote.js",
+    "../src/util.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/ornament_tests.js": [
+    "../src/accidental.js",
+    "../src/beam.js",
+    "../src/dot.js",
+    "../src/element.js",
+    "../src/formatter.js",
+    "../src/glyphs.js",
+    "../src/ornament.js",
+    "../src/stave.js",
+    "../src/stavenote.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/parser_tests.js": [
+    "../src/parser.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/pedalmarking_tests.js": [
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/percussion_tests.js": [
+    "../src/index.js",
+    "../src/metrics.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/qunit/qunit.js": [],
+  "www/staff/vendor/lib/vexflow-esm/tests/registry_tests.js": [
+    "../src/index.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/renderer_tests.js": [
+    "../src/index.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/rests_tests.js": [
+    "../src/beam.js",
+    "../src/dot.js",
+    "../src/formatter.js",
+    "../src/stave.js",
+    "../src/stavenote.js",
+    "../src/tuplet.js",
+    "../src/vexflow.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/rhythm_tests.js": [
+    "../src/annotation.js",
+    "../src/beam.js",
+    "../src/formatter.js",
+    "../src/stave.js",
+    "../src/stavebarline.js",
+    "../src/stavenote.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/stave_tests.js": [
+    "../src/accidental.js",
+    "../src/beam.js",
+    "../src/clef.js",
+    "../src/formatter.js",
+    "../src/keysignature.js",
+    "../src/modifier.js",
+    "../src/stave.js",
+    "../src/stavebarline.js",
+    "../src/stavenote.js",
+    "../src/staverepetition.js",
+    "../src/stavesection.js",
+    "../src/stavevolta.js",
+    "../src/textnote.js",
+    "../src/timesignature.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/staveconnector_tests.js": [
+    "../src/modifier.js",
+    "../src/stave.js",
+    "../src/stavebarline.js",
+    "../src/staveconnector.js",
+    "../src/vexflow.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/stavehairpin_tests.js": [
+    "../src/stavehairpin.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/staveline_tests.js": [
+    "../src/dot.js",
+    "../src/font.js",
+    "../src/metrics.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/stavemodifier_tests.js": [
+    "../src/stave.js",
+    "../src/stavebarline.js",
+    "../src/stavemodifier.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/stavenote_tests.js": [
+    "../src/accidental.js",
+    "../src/annotation.js",
+    "../src/articulation.js",
+    "../src/beam.js",
+    "../src/dot.js",
+    "../src/formatter.js",
+    "../src/fraction.js",
+    "../src/frethandfinger.js",
+    "../src/modifier.js",
+    "../src/modifiercontext.js",
+    "../src/ornament.js",
+    "../src/stave.js",
+    "../src/stavenote.js",
+    "../src/stem.js",
+    "../src/stringnumber.js",
+    "../src/strokes.js",
+    "../src/tickcontext.js",
+    "../src/vexflow.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/stavetie_tests.js": [
+    "../src/stem.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/stringnumber_tests.js": [
+    "../src/element.js",
+    "../src/glyphs.js",
+    "../src/renderer.js",
+    "../src/stave.js",
+    "../src/stavebarline.js",
+    "../src/strokes.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/strokes_tests.js": [
+    "../src/index.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/style_tests.js": [
+    "../src/annotation.js",
+    "../src/articulation.js",
+    "../src/bend.js",
+    "../src/formatter.js",
+    "../src/keysignature.js",
+    "../src/notesubgroup.js",
+    "../src/ornament.js",
+    "../src/stavemodifier.js",
+    "../src/strokes.js",
+    "../src/tabnote.js",
+    "../src/tabstave.js",
+    "../src/timesignature.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/tabnote_tests.js": [
+    "../src/dot.js",
+    "../src/formatter.js",
+    "../src/metrics.js",
+    "../src/stave.js",
+    "../src/tabnote.js",
+    "../src/tabstave.js",
+    "../src/tickcontext.js",
+    "../src/vexflow.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/tabslide_tests.js": [
+    "../src/formatter.js",
+    "../src/tabnote.js",
+    "../src/tabslide.js",
+    "../src/tabstave.js",
+    "../src/vexflow.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/tabstave_tests.js": [
+    "../src/tabstave.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/tabtie_tests.js": [
+    "../src/annotation.js",
+    "../src/formatter.js",
+    "../src/tabnote.js",
+    "../src/tabstave.js",
+    "../src/tabtie.js",
+    "../src/vexflow.js",
+    "../src/voice.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/textbracket_tests.js": [
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/textnote_tests.js": [
+    "../src/crescendo.js",
+    "../src/note.js",
+    "../src/stave.js",
+    "../src/textnote.js",
+    "../src/vexflow.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/threevoice_tests.js": [
+    "../src/beam.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/tickcontext_tests.js": [
+    "../src/tickcontext.js",
+    "../src/vexflow.js",
+    "./mocks.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/timesignature_tests.js": [
+    "../src/stave.js",
+    "../src/staveconnector.js",
+    "../src/timesignature.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/tremolo_tests.js": [
+    "../src/stavebarline.js",
+    "../src/tremolo.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/tuning_tests.js": [
+    "../src/tuning.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/tuplet_tests.js": [
+    "../src/dot.js",
+    "../src/formatter.js",
+    "../src/stem.js",
+    "../src/tuplet.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/typeguard_tests.js": [
+    "../src/canvascontext.js",
+    "../src/stavenote.js",
+    "../src/stemmablenote.js",
+    "../src/tabnote.js",
+    "../src/typeguard.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/unison_tests.js": [
+    "../src/vexflow.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/vexflow_test_helpers.js": [
+    "../src/index.js",
+    "../src/metrics.js",
+    "../src/util.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/vf_prefix_tests.js": [
+    "../src/index.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/vibrato_tests.js": [
+    "../src/index.js",
+    "../src/metrics.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/vibratobracket_tests.js": [
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow-esm/tests/voice_tests.js": [
+    "../src/formatter.js",
+    "../src/stave.js",
+    "../src/stavebarline.js",
+    "../src/stavenote.js",
+    "../src/vexflow.js",
+    "../src/voice.js",
+    "./mocks.js",
+    "./vexflow_test_helpers.js"
+  ],
+  "www/staff/vendor/lib/vexflow.js": [
+    "../src/font.js",
+    "../src/fonts/academico.js",
+    "../src/fonts/academicobold.js",
+    "../src/fonts/bravura.js",
+    "../src/fonts/gonville.js",
+    "../src/fonts/petaluma.js",
+    "../src/fonts/petalumascript.js",
+    "../src/vexflow.js"
+  ],
+  "www/staff/vendor/smufl-core.js": [],
+  "www/staff/vendor/smufl-shim.js": [
+    "./smufl-core.js"
+  ],
+  "www/staff/vexflow-demo.js": [
+    "./interaction-controller.js",
+    "./music-helpers.js",
+    "./render-staff.js",
+    "/js/modules/KeySignatures.js",
+    "/js/modules/StaffFonts.js",
+    "/js/shared/utils.js",
+    "/js/vexflow/core/seeds.js"
+  ]
+}

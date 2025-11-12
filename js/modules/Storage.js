@@ -143,10 +143,11 @@ class StorageModule {
      * @param {string} answerRevealMode - Correct answer replay preference
      * @returns {Object} Settings object
      */
-    getCurrentSettings(sequenceLength, scaleType, mode, tonic, timbre, staffFont, disabledKeysStyle, answerRevealMode) {
+    getCurrentSettings(sequenceLength, scaleType, dictationType, mode, tonic, timbre, staffFont, disabledKeysStyle, answerRevealMode) {
         return {
             sequenceLength: sequenceLength,
             scaleType: scaleType,
+            dictationType: dictationType,
             mode: mode,
             tonic: tonic,
             timbre: timbre,

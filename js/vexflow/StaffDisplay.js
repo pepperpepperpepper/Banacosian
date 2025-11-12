@@ -220,14 +220,40 @@ export class VexflowStaffDisplay {
   }
 
   toSpec(entry) {
-    if (!entry || !entry.note) return null;
+    if (!entry) return null;
+    const resolvedStyle = resolveStyle(entry);
+    if (Array.isArray(entry.notes) && entry.notes.length > 0) {
+      const parsedNotes = entry.notes
+        .map((note) => parseNote(note))
+        .filter(Boolean);
+      if (parsedNotes.length === 0) return null;
+      const keys = parsedNotes.map(({ letter, accidental, octave }) => {
+        const base = `${letter}/${octave}`;
+        return accidental ? `${letter}${accidental}/${octave}` : base;
+      });
+      const accidentals = parsedNotes.map(({ accidental }) => accidental || null);
+      const midis = parsedNotes.map(({ letter, accidental, octave }) => {
+        const base = `${letter}/${octave}`;
+        return keyToMidi(base, accidental || null);
+      });
+      return {
+        isRest: false,
+        duration: entry.duration || DEFAULT_DURATION,
+        dots: entry.dots || 0,
+        clef: entry.clef || this.clef,
+        keys,
+        accidentals,
+        midis,
+        style: resolvedStyle,
+      };
+    }
+    if (!entry.note) return null;
     const parsed = parseNote(entry.note);
     if (!parsed) return null;
     const { letter, accidental, octave } = parsed;
     const baseKey = `${letter}/${octave}`;
     const key = accidental ? `${letter}${accidental}/${octave}` : baseKey;
     const midi = keyToMidi(baseKey, accidental || null);
-    const style = resolveStyle(entry);
     return {
       isRest: false,
       duration: entry.duration || DEFAULT_DURATION,
@@ -236,7 +262,7 @@ export class VexflowStaffDisplay {
       keys: [key],
       accidentals: [accidental || null],
       midis: [midi],
-      style,
+      style: resolvedStyle,
     };
   }
 

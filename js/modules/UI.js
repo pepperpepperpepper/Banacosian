@@ -7,6 +7,23 @@ class UIModule {
         this.noteLabelFormatter = null;
     }
 
+    normalizeNoteKey(note) {
+        if (note === null || note === undefined) return '';
+        if (typeof note === 'string') return note.trim().toUpperCase();
+        return String(note).toUpperCase();
+    }
+
+    buildNoteCounts(sequence) {
+        const counts = new Map();
+        if (!Array.isArray(sequence)) return counts;
+        sequence.forEach((note) => {
+            const key = this.normalizeNoteKey(note);
+            if (!key) return;
+            counts.set(key, (counts.get(key) || 0) + 1);
+        });
+        return counts;
+    }
+
     /**
      * Set a formatter used to display note labels
      * @param {Function|null} formatter - Function that receives note string and returns formatted label
@@ -48,6 +65,10 @@ class UIModule {
         document.getElementById('difficulty').addEventListener('change', callbacks.onDifficultyChange);
         document.getElementById('tonicSelect').addEventListener('change', callbacks.onTonicChange);
         document.getElementById('scaleType').addEventListener('change', callbacks.onScaleTypeChange);
+        const dictationTypeSelect = document.getElementById('dictationType');
+        if (dictationTypeSelect && typeof callbacks.onDictationTypeChange === 'function') {
+            dictationTypeSelect.addEventListener('change', callbacks.onDictationTypeChange);
+        }
         document.getElementById('mode').addEventListener('change', callbacks.onModeChange);
 
         const timbreSelect = document.getElementById('timbreSelect');
@@ -186,14 +207,16 @@ class UIModule {
      * Update the sequence display
      * @param {Array} sequence - The sequence to display
      */
-    updateSequenceDisplay(sequence) {
+    updateSequenceDisplay(sequence, options = {}) {
         const display = document.getElementById('sequenceDisplay');
         if (!display) return;
         
         display.innerHTML = '';
+
+        const dictationType = options.dictationType === 'harmonic' ? 'harmonic' : 'melodic';
         
         const title = document.createElement('div');
-        title.textContent = 'Target sequence:';
+        title.textContent = dictationType === 'harmonic' ? 'Target chord:' : 'Target sequence:';
         title.style.marginBottom = '10px';
         title.style.fontSize = '0.9em';
         display.appendChild(title);
@@ -211,11 +234,15 @@ class UIModule {
      * @param {Array} userSequence - User's sequence
      * @param {Array} currentSequence - Target sequence (for comparison)
      */
-    updateUserSequenceDisplay(userSequence, currentSequence) {
+    updateUserSequenceDisplay(userSequence, currentSequence, options = {}) {
         const userDisplay = document.getElementById('userSequenceDisplay');
         if (!userDisplay) return;
         
-        if (userSequence.length === 0) {
+        const expectedLength = Number.isInteger(options.expectedLength)
+            ? Math.max(options.expectedLength, userSequence.length)
+            : userSequence.length;
+
+        if (userSequence.length === 0 && expectedLength === 0) {
             userDisplay.innerHTML = '';
             return;
         }
@@ -223,57 +250,39 @@ class UIModule {
         userDisplay.innerHTML = '';
         
         const title = document.createElement('div');
-        title.textContent = 'Your sequence:';
+        const dictationType = options.dictationType === 'harmonic' ? 'harmonic' : 'melodic';
+        title.textContent = dictationType === 'harmonic' ? 'Your chord:' : 'Your sequence:';
         title.style.marginBottom = '10px';
         title.style.fontSize = '0.9em';
         userDisplay.appendChild(title);
-        
-        userSequence.forEach((note, index) => {
+
+        const counts = dictationType === 'harmonic'
+            ? this.buildNoteCounts(currentSequence)
+            : null;
+
+        for (let index = 0; index < expectedLength; index += 1) {
+            const hasUserNote = index < userSequence.length;
+            const note = hasUserNote ? userSequence[index] : '?';
             const noteEl = document.createElement('div');
             noteEl.className = 'sequence-note user';
-            const displayLabel = this.noteLabelFormatter ? this.noteLabelFormatter(note, index) : note;
+            const displayLabel = hasUserNote && this.noteLabelFormatter
+                ? this.noteLabelFormatter(note, index)
+                : (hasUserNote ? note : '?');
             noteEl.textContent = displayLabel;
             
             // Add comparison styling if we have a target sequence
-            if (currentSequence && index < currentSequence.length) {
+            if (currentSequence && dictationType === 'melodic' && hasUserNote && index < currentSequence.length) {
                 if (note === currentSequence[index]) {
                     noteEl.classList.add('correct');
                 } else {
                     noteEl.classList.add('incorrect');
                 }
-            }
-            
-            userDisplay.appendChild(noteEl);
-        });
-    }
-
-    /**
-     * Show comparison between user sequence and target sequence
-     * @param {Array} userSequence - User's sequence
-     * @param {Array} currentSequence - Target sequence
-     */
-    showComparison(userSequence, currentSequence) {
-        const userDisplay = document.getElementById('userSequenceDisplay');
-        if (!userDisplay) return;
-        
-        userDisplay.innerHTML = '';
-        
-        const title = document.createElement('div');
-        title.textContent = 'Your sequence:';
-        title.style.marginBottom = '10px';
-        title.style.fontSize = '0.9em';
-        userDisplay.appendChild(title);
-        
-        for (let i = 0; i < currentSequence.length; i++) {
-            const actualNote = userSequence[i] || '?';
-            const noteEl = document.createElement('div');
-            noteEl.className = 'sequence-note user';
-            const displayLabel = this.noteLabelFormatter ? this.noteLabelFormatter(actualNote, i) : actualNote;
-            noteEl.textContent = displayLabel;
-            
-            if (i < userSequence.length) {
-                if (userSequence[i] === currentSequence[i]) {
+            } else if (currentSequence && dictationType === 'harmonic' && hasUserNote) {
+                const key = this.normalizeNoteKey(note);
+                const remaining = counts ? counts.get(key) || 0 : 0;
+                if (remaining > 0) {
                     noteEl.classList.add('correct');
+                    counts.set(key, remaining - 1);
                 } else {
                     noteEl.classList.add('incorrect');
                 }
@@ -281,6 +290,19 @@ class UIModule {
             
             userDisplay.appendChild(noteEl);
         }
+    }
+
+    /**
+     * Show comparison between user sequence and target sequence
+     * @param {Array} userSequence - User's sequence
+     * @param {Array} currentSequence - Target sequence
+     */
+    showComparison(userSequence, currentSequence, options = {}) {
+        const expectedLength = Array.isArray(currentSequence) ? currentSequence.length : userSequence.length;
+        this.updateUserSequenceDisplay(userSequence, currentSequence, {
+            ...options,
+            expectedLength
+        });
     }
 
     /**
@@ -418,6 +440,11 @@ class UIModule {
         }
     }
 
+    highlightChord() {
+        const noteElements = document.querySelectorAll('#sequenceDisplay .sequence-note');
+        noteElements.forEach((el) => el.classList.add('playing'));
+    }
+
     /**
      * Remove all playing note highlights
      */
@@ -445,6 +472,9 @@ class UIModule {
             difficulty: document.getElementById('difficulty').value,
             tonic: document.getElementById('tonicSelect').value,
             scaleType: document.getElementById('scaleType').value,
+            dictationType: document.getElementById('dictationType')
+                ? document.getElementById('dictationType').value
+                : undefined,
             mode: document.getElementById('mode').value,
             timbre: document.getElementById('timbreSelect') ? document.getElementById('timbreSelect').value : undefined,
             staffFont: document.getElementById('staffFont') ? document.getElementById('staffFont').value : undefined,
@@ -471,6 +501,9 @@ class UIModule {
         if (values.scaleType !== undefined) {
             document.getElementById('scaleType').value = values.scaleType;
         }
+        if (values.dictationType !== undefined) {
+            this.setDictationTypeValue(values.dictationType);
+        }
         if (values.mode !== undefined) {
             document.getElementById('mode').value = values.mode;
         }
@@ -491,6 +524,13 @@ class UIModule {
 
 UIModule.prototype.setDisabledKeysStyleValue = function setDisabledKeysStyleValue(value) {
     const select = document.getElementById('disabledKeysStyle');
+    if (select && value) {
+        select.value = value;
+    }
+};
+
+UIModule.prototype.setDictationTypeValue = function setDictationTypeValue(value) {
+    const select = document.getElementById('dictationType');
     if (select && value) {
         select.value = value;
     }

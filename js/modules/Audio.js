@@ -64,6 +64,57 @@ class AudioModule {
     }
 
     /**
+     * Play multiple tones simultaneously as a chord
+     * @param {number[]} frequencies - Array of frequencies in Hz
+     * @param {number} duration - Duration in seconds
+     */
+    async playChord(frequencies, duration = 0.6) {
+        if (!Array.isArray(frequencies) || frequencies.length === 0) {
+            return;
+        }
+        if (!this.audioContext) {
+            await this.initializeAudio();
+        }
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+
+        const sanitized = frequencies
+            .map((freq) => (typeof freq === 'number' && Number.isFinite(freq) ? freq : null))
+            .filter((freq) => typeof freq === 'number');
+        if (sanitized.length === 0) {
+            return;
+        }
+
+        const timbre = this.getTimbreConfig(this.currentTimbreId);
+        const waveform = timbre.type || 'sine';
+        const peakGain = typeof timbre.peakGain === 'number' ? timbre.peakGain : 0.3;
+        const normalizedGain = peakGain / Math.max(1, Math.sqrt(sanitized.length));
+
+        const masterGain = this.audioContext.createGain();
+        masterGain.connect(this.audioContext.destination);
+
+        const now = this.audioContext.currentTime;
+        const stopAt = now + duration;
+
+        masterGain.gain.setValueAtTime(0, now);
+        masterGain.gain.linearRampToValueAtTime(normalizedGain, now + 0.05);
+        masterGain.gain.exponentialRampToValueAtTime(
+            Math.max(normalizedGain * 0.03, 0.015),
+            stopAt
+        );
+
+        sanitized.forEach((freq) => {
+            const oscillator = this.audioContext.createOscillator();
+            oscillator.type = waveform;
+            oscillator.frequency.setValueAtTime(freq, now);
+            oscillator.connect(masterGain);
+            oscillator.start(now);
+            oscillator.stop(stopAt);
+        });
+    }
+
+    /**
      * Check if audio is currently playing
      * @returns {boolean}
      */

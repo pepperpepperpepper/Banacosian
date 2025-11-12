@@ -22,6 +22,7 @@ class MelodicDictation {
         this.userSequence = [];
         this.sequenceLength = 3;
         this.scaleType = 'diatonic';
+        this.dictationType = 'melodic';
         this.mode = 'ionian';
         this.tonic = this.musicTheory.getDefaultTonicLetter(this.mode);
         this.staffFont = 'bravura';
@@ -39,6 +40,9 @@ class MelodicDictation {
                 if (saved) {
                     if (saved.sequenceLength != null) this.sequenceLength = parseInt(saved.sequenceLength);
                     if (saved.scaleType) this.scaleType = saved.scaleType;
+                    if (saved.dictationType) {
+                        this.dictationType = saved.dictationType === 'harmonic' ? 'harmonic' : 'melodic';
+                    }
                     if (saved.mode) this.mode = saved.mode;
                     if (saved.tonic) this.tonic = saved.tonic;
                     if (saved.timbre) this.timbre = this.audioModule.setTimbre(saved.timbre);
@@ -101,12 +105,16 @@ class MelodicDictation {
                 difficulty: this.sequenceLength,
                 tonic: this.tonic,
                 scaleType: this.scaleType,
+                dictationType: this.dictationType,
                 mode: this.mode,
                 timbre: this.timbre,
                 staffFont: this.staffFont,
                 disabledKeysStyle: this.disabledKeysStyle,
                 answerRevealMode: this.answerRevealMode
             });
+            if (typeof this.staffModule.setDictationMode === 'function') {
+                this.staffModule.setDictationMode(this.dictationType);
+            }
             this.audioModule.setTimbre(this.timbre);
             
             // Update displays
@@ -149,7 +157,9 @@ class MelodicDictation {
         if (this.answerRevealMode !== 'show') return;
         if (!Array.isArray(this.currentSequence) || this.currentSequence.length === 0) return;
         try {
-            await this.staffModule.replaySequenceOnStaff(this.currentSequence);
+            await this.staffModule.replaySequenceOnStaff(this.currentSequence, {
+                dictationMode: this.dictationType
+            });
         } catch (error) {
             console.warn('Unable to replay correct sequence on staff:', error);
         }
@@ -182,6 +192,7 @@ class MelodicDictation {
             onDifficultyChange: (e) => this.handleDifficultyChange(e),
             onTonicChange: (e) => this.handleTonicChange(e),
             onScaleTypeChange: (e) => this.handleScaleTypeChange(e),
+            onDictationTypeChange: (e) => this.handleDictationTypeChange(e),
             onModeChange: (e) => this.handleModeChange(e),
             onTimbreChange: (e) => this.handleTimbreChange(e),
             onStaffFontChange: (e) => this.handleStaffFontChange(e),
@@ -203,6 +214,9 @@ class MelodicDictation {
         this.uiModule.showStatusArea();
         
         // Clear previous staff notes and tonic highlights
+        if (typeof this.staffModule.setDictationMode === 'function') {
+            this.staffModule.setDictationMode(this.dictationType);
+        }
         this.staffModule.clearStaffNotes();
         this.staffModule.clearTonicHighlights();
         
@@ -224,7 +238,7 @@ class MelodicDictation {
         }
         
         // Update displays
-        this.uiModule.updateSequenceDisplay(this.currentSequence);
+        this.uiModule.updateSequenceDisplay(this.currentSequence, { dictationType: this.dictationType });
         this.playSequence();
         
         const scaleText = this.scaleType === 'diatonic' ? ` (${this.mode} mode)` : '';
@@ -276,7 +290,12 @@ class MelodicDictation {
         try {
             referencePreviewPromise = this.staffModule.replaySequenceOnStaff(
                 referenceNotes,
-                { noteDuration: 300, gapDuration: 0, useTemporaryLayout: true }
+                {
+                    noteDuration: 300,
+                    gapDuration: 0,
+                    useTemporaryLayout: true,
+                    dictationMode: 'melodic'
+                }
             );
         } catch (previewError) {
             console.warn('Unable to start reference staff preview:', previewError);
@@ -297,19 +316,38 @@ class MelodicDictation {
             console.warn('Reference staff preview failed:', previewError);
         }
         
-        this.uiModule.updateFeedback('Now the sequence...');
+        const sequenceLabel = this.dictationType === 'harmonic' ? 'Now the harmony...' : 'Now the sequence...';
+        this.uiModule.updateFeedback(sequenceLabel);
         await this.delay(500);
         
         // Then play the actual sequence
-        for (let i = 0; i < this.currentSequence.length; i++) {
-            const note = this.currentSequence[i];
-            
-            // Highlight current note
-            this.uiModule.highlightPlayingNote(i);
-            
-            console.log('Playing note:', note, 'Frequency:', this.musicTheory.getNoteFrequency(note), 'Has frequency:', note in this.musicTheory.noteFrequencies);
-            await this.audioModule.playTone(this.musicTheory.getNoteFrequency(note), 0.6);
-            await this.delay(700); // Gap between notes
+        const melodicNoteDurationSeconds = 0.6;
+        const melodicNoteSpacingMs = 700;
+        if (this.dictationType === 'harmonic') {
+            this.uiModule.highlightChord();
+            const frequencies = this.currentSequence
+                .map((note) => this.musicTheory.getNoteFrequency(note))
+                .filter((freq) => typeof freq === 'number' && Number.isFinite(freq));
+            if (frequencies.length > 0) {
+                const sequenceLength = this.currentSequence.length;
+                const chordDurationSeconds = melodicNoteDurationSeconds * sequenceLength;
+                const chordSpacingMs = melodicNoteSpacingMs * sequenceLength;
+                await this.audioModule.playChord(frequencies, chordDurationSeconds);
+                await this.delay(chordSpacingMs);
+            } else {
+                await this.delay(melodicNoteSpacingMs);
+            }
+        } else {
+            for (let i = 0; i < this.currentSequence.length; i++) {
+                const note = this.currentSequence[i];
+                
+                // Highlight current note
+                this.uiModule.highlightPlayingNote(i);
+                
+                console.log('Playing note:', note, 'Frequency:', this.musicTheory.getNoteFrequency(note), 'Has frequency:', note in this.musicTheory.noteFrequencies);
+                await this.audioModule.playTone(this.musicTheory.getNoteFrequency(note), melodicNoteDurationSeconds);
+                await this.delay(melodicNoteSpacingMs); // Gap between notes
+            }
         }
         
         // Remove highlight
@@ -334,7 +372,7 @@ class MelodicDictation {
         this.staffModule.showNoteOnStaff(actualNote);
         
         this.userSequence.push(actualNote);
-        this.uiModule.updateUserSequenceDisplay(this.userSequence, this.currentSequence);
+        this.uiModule.updateUserSequenceDisplay(this.userSequence, this.currentSequence, { dictationType: this.dictationType });
         
         // Check if sequence is complete
         if (this.userSequence.length === this.currentSequence.length) {
@@ -350,7 +388,11 @@ class MelodicDictation {
      * Check if the user's sequence matches the target sequence
      */
     async checkSequence() {
-        const result = this.scoringModule.checkSequence(this.userSequence, this.currentSequence);
+        const result = this.scoringModule.checkSequence(
+            this.userSequence,
+            this.currentSequence,
+            { dictationType: this.dictationType }
+        );
         
         if (result.isCorrect) {
             this.uiModule.updateFeedback(`Perfect! Well done! (${result.sequenceTimeFormatted}) 🎉`, 'correct');
@@ -363,8 +405,11 @@ class MelodicDictation {
         this.scoringModule.updateRoundDisplay();
         
         // Show comparison
-        this.uiModule.showComparison(this.userSequence, this.currentSequence);
-        this.staffModule.updateStaffComparison(this.currentSequence, this.userSequence);
+        this.uiModule.showComparison(this.userSequence, this.currentSequence, { dictationType: this.dictationType });
+        this.staffModule.updateStaffComparison(this.currentSequence, this.userSequence, {
+            dictationMode: this.dictationType,
+            isCorrect: result.isCorrect
+        });
 
         await this.maybeReplayCorrectSequence();
         
@@ -385,7 +430,8 @@ class MelodicDictation {
     completeRound() {
         const roundResult = this.scoringModule.completeRound(
             this.scaleType, 
-            this.mode, 
+            this.mode,
+            this.dictationType,
             this.sequenceLength
         );
         
@@ -394,6 +440,7 @@ class MelodicDictation {
             this.storageModule.getCurrentSettings(
                 this.sequenceLength,
                 this.scaleType,
+                this.dictationType,
                 this.mode,
                 this.tonic,
                 this.timbre,
@@ -431,6 +478,33 @@ class MelodicDictation {
         this.keyboardModule.setScaleType(this.scaleType);
         this.keyboardModule.updateKeyboardVisibility();
         this.keyboardModule.positionBlackKeys();
+        this.persistSettings();
+    }
+
+    /**
+     * Handle dictation type change
+     * @param {Event} e - Change event
+     */
+    handleDictationTypeChange(e) {
+        const requestedType = e && e.target ? e.target.value : null;
+        this.dictationType = requestedType === 'harmonic' ? 'harmonic' : 'melodic';
+        if (typeof this.uiModule.setDictationTypeValue === 'function') {
+            this.uiModule.setDictationTypeValue(this.dictationType);
+        }
+        if (typeof this.staffModule.setDictationMode === 'function') {
+            this.staffModule.setDictationMode(this.dictationType);
+        }
+        this.currentSequence = [];
+        this.userSequence = [];
+        this.staffModule.clearStaffNotes();
+        this.staffModule.clearTonicHighlights();
+        this.uiModule.updateSequenceDisplay([], { dictationType: this.dictationType });
+        this.uiModule.updateUserSequenceDisplay([], [], { dictationType: this.dictationType });
+        this.uiModule.updateFeedback(
+            this.dictationType === 'harmonic'
+                ? 'Harmonic dictation enabled. Click "Start" to hear the chord.'
+                : 'Melodic dictation enabled. Click "Start" to hear the melody.'
+        );
         this.persistSettings();
     }
 
@@ -562,6 +636,7 @@ class MelodicDictation {
             const settings = {
                 sequenceLength: this.sequenceLength,
                 scaleType: this.scaleType,
+                dictationType: this.dictationType,
                 mode: this.mode,
                 tonic: this.tonic,
                 timbre: this.timbre,
@@ -607,6 +682,7 @@ class MelodicDictation {
             const settings = this.storageModule.getCurrentSettings(
                 this.sequenceLength,
                 this.scaleType,
+                this.dictationType,
                 this.mode,
                 this.tonic,
                 this.timbre,
@@ -636,6 +712,11 @@ class MelodicDictation {
                     this.tonic = result.data.settings.tonic || this.musicTheory.getDefaultTonicLetter(this.mode);
                     this.timbre = result.data.settings.timbre || this.audioModule.getCurrentTimbreId();
                     this.staffFont = result.data.settings.staffFont || this.staffFont || 'bravura';
+                    if (result.data.settings.dictationType) {
+                        this.dictationType = result.data.settings.dictationType === 'harmonic' ? 'harmonic' : 'melodic';
+                    } else {
+                        this.dictationType = 'melodic';
+                    }
                     if (result.data.settings.disabledKeysStyle) {
                         this.disabledKeysStyle = result.data.settings.disabledKeysStyle === 'invisible' ? 'invisible' : 'hatched';
                     } else {
@@ -651,6 +732,7 @@ class MelodicDictation {
                         difficulty: this.sequenceLength,
                         tonic: this.tonic,
                         scaleType: this.scaleType,
+                        dictationType: this.dictationType,
                         mode: this.mode,
                         timbre: this.timbre,
                         staffFont: this.staffFont,
@@ -668,6 +750,9 @@ class MelodicDictation {
                 this.keyboardModule.positionBlackKeys();
                 this.audioModule.setTimbre(this.timbre);
                 this.staffModule.setFontPreference(this.staffFont);
+                if (typeof this.staffModule.setDictationMode === 'function') {
+                    this.staffModule.setDictationMode(this.dictationType);
+                }
                 
                 // Update displays
                 this.scoringModule.updateScore();

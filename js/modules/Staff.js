@@ -1,11 +1,64 @@
 /**
  * Staff Module - VexFlow-backed musical staff display
  */
+
+const NOTE_MATCH = /^([A-Ga-g])([#♯bx𝄪♭b𝄫]{0,2})(-?\d)$/;
+const LETTER_TO_SEMITONE = {
+    c: 0,
+    d: 2,
+    e: 4,
+    f: 5,
+    g: 7,
+    a: 9,
+    b: 11,
+};
+
+function accidentalOffset(symbol) {
+    if (!symbol) return 0;
+    switch (symbol) {
+        case '#':
+        case '♯':
+            return 1;
+        case '##':
+        case 'x':
+        case '𝄪':
+            return 2;
+        case 'b':
+        case '♭':
+            return -1;
+        case 'bb':
+        case '𝄫':
+            return -2;
+        default:
+            return 0;
+    }
+}
+
+function estimateMidi(note) {
+    if (!note || typeof note !== 'string') return Number.NEGATIVE_INFINITY;
+    const match = NOTE_MATCH.exec(note.trim());
+    if (!match) return Number.NEGATIVE_INFINITY;
+    const letter = match[1].toLowerCase();
+    const accidental = accidentalOffset(match[2]);
+    const octave = Number.parseInt(match[3], 10);
+    if (!Number.isInteger(octave) || !(letter in LETTER_TO_SEMITONE)) {
+        return Number.NEGATIVE_INFINITY;
+    }
+    return (octave + 1) * 12 + LETTER_TO_SEMITONE[letter] + accidental;
+}
+
+function sortNotesAscending(notes) {
+    return Array.isArray(notes)
+        ? notes.slice().sort((a, b) => estimateMidi(a) - estimateMidi(b))
+        : [];
+}
+
 class StaffModule {
     constructor() {
         this.noteEntries = [];
         this.staffNotes = [];
         this.keySignature = 'C';
+        this.dictationMode = 'melodic';
         this.fontPreference = 'bravura';
         this.highlightTimeout = null;
         this.activeReplayToken = null;
@@ -152,6 +205,28 @@ class StaffModule {
     showNoteOnStaff(note) {
         if (!note) return;
         this.cancelActiveReplay();
+        if (this.dictationMode === 'harmonic') {
+            const existing = this.noteEntries[0] ? { ...this.noteEntries[0] } : null;
+            const existingNotes = Array.isArray(existing?.notes) ? existing.notes.slice() : [];
+            existingNotes.push(note);
+            const sortedNotes = sortNotesAscending(existingNotes);
+            const durationInfo = this.computeHarmonicDuration(sortedNotes.length);
+            const chordEntry = {
+                note: sortedNotes[0],
+                notes: sortedNotes,
+                state: 'user',
+                duration: durationInfo.duration,
+                dots: durationInfo.dots,
+            };
+            this.noteEntries = [chordEntry];
+            this.staffNotes = [{
+                notes: sortedNotes.slice(),
+                state: 'user',
+                element: null,
+            }];
+            this.enqueue((display) => display.setSequence(this.noteEntries));
+            return;
+        }
         const entry = { note, state: 'user' };
         this.noteEntries.push(entry);
         this.staffNotes.push({
@@ -178,9 +253,28 @@ class StaffModule {
         });
     }
 
-    updateStaffComparison(currentSequence, userSequence) {
+    updateStaffComparison(currentSequence, userSequence, options = {}) {
         if (!Array.isArray(currentSequence) || currentSequence.length === 0) return;
         const user = Array.isArray(userSequence) ? userSequence : [];
+        const mode = options.dictationMode || this.dictationMode;
+        if (mode === 'harmonic') {
+            if (this.noteEntries.length === 0) return;
+            const isCorrect = typeof options.isCorrect === 'boolean'
+                ? options.isCorrect
+                : this.compareHarmonicSequences(currentSequence, user);
+            const entry = {
+                ...this.noteEntries[0],
+                state: isCorrect ? 'correct' : 'incorrect',
+            };
+            this.noteEntries = [entry];
+            this.staffNotes = [{
+                notes: Array.isArray(entry.notes) ? entry.notes.slice() : [],
+                state: entry.state,
+                element: null,
+            }];
+            this.enqueue((display) => display.setSequence(this.noteEntries));
+            return;
+        }
         const limit = Math.min(this.noteEntries.length, currentSequence.length);
         for (let i = 0; i < limit; i += 1) {
             if (i < user.length) {
@@ -236,6 +330,45 @@ class StaffModule {
         this.enqueue((display) => display.setKeySignature(this.keySignature));
     }
 
+    setDictationMode(mode) {
+        const normalized = mode === 'harmonic' ? 'harmonic' : 'melodic';
+        if (this.dictationMode === normalized) return;
+        this.dictationMode = normalized;
+        this.clearStaffNotes();
+    }
+
+    computeHarmonicDuration(noteCount) {
+        if (!Number.isInteger(noteCount) || noteCount <= 0) {
+            return { duration: 'w', dots: 0 };
+        }
+        return { duration: 'w', dots: 0 };
+    }
+
+    compareHarmonicSequences(target, attempt) {
+        if (!Array.isArray(target) || !Array.isArray(attempt) || target.length !== attempt.length) {
+            return false;
+        }
+        const counts = new Map();
+        const normalize = (note) => (typeof note === 'string' ? note.trim().toUpperCase() : String(note));
+        target.forEach((note) => {
+            const key = normalize(note);
+            counts.set(key, (counts.get(key) || 0) + 1);
+        });
+        for (let i = 0; i < attempt.length; i += 1) {
+            const key = normalize(attempt[i]);
+            if (!counts.has(key)) {
+                return false;
+            }
+            const remaining = counts.get(key) - 1;
+            if (remaining === 0) {
+                counts.delete(key);
+            } else {
+                counts.set(key, remaining);
+            }
+        }
+        return counts.size === 0;
+    }
+
     setFontPreference(fontId) {
         if (!fontId || fontId === this.fontPreference) return;
         this.fontPreference = fontId;
@@ -260,6 +393,7 @@ class StaffModule {
             noteDuration = 700,
             gapDuration = 180,
             useTemporaryLayout = false,
+            dictationMode = this.dictationMode,
         } = options;
         const availableEntries = Array.isArray(this.noteEntries) ? this.noteEntries.length : 0;
         const shouldUseTemporary = useTemporaryLayout || availableEntries === 0;
@@ -283,6 +417,50 @@ class StaffModule {
                 : setTimeout(resolve, Math.max(0, ms));
             if (!timer && ms <= 0) resolve();
         });
+
+        if (dictationMode === 'harmonic') {
+            const sortedNotes = sortNotesAscending(sequence);
+            const durationInfo = this.computeHarmonicDuration(sortedNotes.length);
+            const chordEntry = {
+                note: sortedNotes[0],
+                notes: sortedNotes,
+                state: 'reference',
+                duration: durationInfo.duration,
+                dots: durationInfo.dots,
+            };
+            if (shouldUseTemporary) {
+                await this.enqueue((display) => display.setSequence([chordEntry]));
+            }
+            const highlightEntry = {
+                ...chordEntry,
+                state: 'highlight',
+            };
+            await this.enqueue((display) => {
+                if (shouldUseTemporary) {
+                    return display.setSequence([highlightEntry]);
+                }
+                return display.updateEntry(0, () => highlightEntry);
+            });
+            await delay(noteDuration);
+            if (this.activeReplayToken === replayToken) {
+                await this.enqueue((display) => {
+                    if (shouldUseTemporary) {
+                        return display.setSequence([chordEntry]);
+                    }
+                const base = baseEntries[0] ? { ...baseEntries[0] } : chordEntry;
+                return display.updateEntry(0, () => base);
+            });
+                await delay(gapDuration);
+                await this.enqueue(async (display) => {
+                    await display.setSequence(this.noteEntries);
+                    await display.clearHighlight();
+                });
+                if (this.activeReplayToken === replayToken) {
+                    this.activeReplayToken = null;
+                }
+            }
+            return;
+        }
 
         if (shouldUseTemporary) {
             await this.enqueue((display) => display.setSequence(baseEntries));
