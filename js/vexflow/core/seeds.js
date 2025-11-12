@@ -20,6 +20,7 @@ const DEFAULT_RENDER_STATE = Object.freeze({
     svgRect: null,
     activeStave: null,
     staffScale: null,
+    staffPack: 0.9,
     fontChoice: null,
     baseMessage: '',
     minWidth: null,

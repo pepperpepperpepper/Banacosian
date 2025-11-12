@@ -8,7 +8,8 @@ import {
   getFontChoice,
   DEFAULT_FONT_ID,
 } from '/js/modules/StaffFonts.js';
-import { keyToMidi } from '/js/vexflow/core/helpers/pitch.js';
+import { keyToMidi, ACCIDENTAL_OFFSETS } from '/js/vexflow/core/helpers/pitch.js';
+import { getKeySignatureAlteration } from '/js/modules/KeySignatures.js';
 import { parsePositiveNumber } from '/js/shared/utils.js';
 import {
   normalizeStaffSizing,
@@ -64,6 +65,19 @@ function parseNote(note) {
   const octave = Number.parseInt(match[3], 10);
   if (!Number.isFinite(octave)) return null;
   return { letter, accidental, octave };
+}
+
+// Determine which accidental symbol VexFlow should display for a spelled note in a given key.
+// - Keeps the spelled key (letter + spelled accidental) intact for the note head.
+// - Returns null when the key signature already implies the accidental.
+// - Returns 'n' when the spelled note is natural but the key signature alters that letter.
+function decideDisplayedAccidental(letter, spelledAccidental, keySig) {
+  const base = getKeySignatureAlteration((letter || 'c').toUpperCase(), keySig || 'C');
+  const spelled = ACCIDENTAL_OFFSETS[spelledAccidental || 'n'] ?? 0;
+  if (spelled === base) return null;
+  if (spelled === 0 && base !== 0) return 'n';
+  // For non-zero differences, show the spelled accidental symbol itself (supports bb/##).
+  return spelledAccidental || null;
 }
 
 function resolveStyle(entry) {
@@ -231,7 +245,9 @@ export class VexflowStaffDisplay {
         const base = `${letter}/${octave}`;
         return accidental ? `${letter}${accidental}/${octave}` : base;
       });
-      const accidentals = parsedNotes.map(({ accidental }) => accidental || null);
+      const accidentals = parsedNotes.map(({ letter, accidental }) => (
+        decideDisplayedAccidental(letter, accidental || null, this.keySignature)
+      ));
       const midis = parsedNotes.map(({ letter, accidental, octave }) => {
         const base = `${letter}/${octave}`;
         return keyToMidi(base, accidental || null);
@@ -260,7 +276,7 @@ export class VexflowStaffDisplay {
       dots: entry.dots || 0,
       clef: entry.clef || this.clef,
       keys: [key],
-      accidentals: [accidental || null],
+      accidentals: [decideDisplayedAccidental(letter, accidental || null, this.keySignature)],
       midis: [midi],
       style: resolvedStyle,
     };

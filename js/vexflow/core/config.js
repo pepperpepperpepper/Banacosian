@@ -16,9 +16,9 @@ export const DEFAULT_STAFF_SIZING = Object.freeze({
 
 export const DEFAULT_STAFF_PADDING = Object.freeze({
     horizontalRatio: 0.02,
-    verticalRatio: 0.018,
-    minHorizontal: 10,
-    minVertical: 3,
+    verticalRatio: 0.026,
+    minHorizontal: 14,
+    minVertical: 6,
 });
 
 export function normalizeStaffSizing(source = {}, defaults = DEFAULT_STAFF_SIZING) {
@@ -56,9 +56,13 @@ export function readStaffConfigFromDataset(dataset, defaults = {}) {
             ? dataset.staffScale ?? scaleDefault
             : scaleDefault,
     );
+    const pack = parsePositiveNumber(
+        dataset && typeof dataset === 'object' ? dataset.staffPack : null,
+    );
     return {
         sizing,
         scale: scale && scale > 0 ? scale : null,
+        pack: pack && pack > 0 ? pack : null,
     };
 }
 

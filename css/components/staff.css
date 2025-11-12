@@ -25,12 +25,12 @@
 
 .vexflow-display {
   position: relative;
-  min-height: 105px;
+  min-height: 140px;
   width: 100%;
   max-width: none;
-  margin: 36px auto 2px;
-  border: none;
-  border-radius: 0;
+  margin: 0 auto 2px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--app-border-radius-sm);
   background: transparent;
   backdrop-filter: none;
   overflow: hidden;

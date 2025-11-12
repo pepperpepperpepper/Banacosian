@@ -66,6 +66,9 @@ class MelodicDictation {
         this.keyboardModule.setScaleType(this.scaleType);
         this.keyboardModule.setMode(this.mode, this.tonic);
 
+        // Ensure staff spelling and key signature reflect current mode/tonic
+        this.syncStaffTonality();
+
         // Initialize the application
         this.initialize();
     }
@@ -100,6 +103,8 @@ class MelodicDictation {
                 this.uiModule.setStaffFontValue(this.staffFont);
             }
             this.staffModule.setFontPreference(this.staffFont);
+            // Re-sync staff tonality after fonts/options load
+            this.syncStaffTonality();
             // Reflect restored settings in the UI controls
             this.uiModule.setFormValues({
                 difficulty: this.sequenceLength,
@@ -175,6 +180,24 @@ class MelodicDictation {
             return note || '';
         }
         return this.musicTheory.getDisplayNoteName(note, this.mode, this.tonic) || note;
+    }
+
+    /**
+     * Keep the staff's key signature and enharmonic spelling aligned with the current mode/tonic.
+     */
+    syncStaffTonality() {
+        try {
+            // Configure a speller that maps any incoming note to the display spelling for the active mode/tonic
+            this.staffModule.setNoteSpeller((note) => (
+                this.musicTheory.getDisplayNoteLabel(note, this.mode, this.tonic, { includeOctave: true })
+            ));
+
+            // Choose the key signature to display on the stave. Use the tonic spelling from MusicTheory.
+            const keySig = this.musicTheory.getDisplayTonicName(this.mode, this.tonic) || 'C';
+            this.staffModule.setKeySignature(keySig);
+        } catch (e) {
+            console.warn('Failed to sync staff tonality:', e);
+        }
     }
 
     /**
@@ -580,6 +603,9 @@ class MelodicDictation {
             this.keyboardModule.updateKeyboardVisibility();
             this.keyboardModule.positionBlackKeys();
 
+            // Update staff spelling and key signature for new tonic
+            this.syncStaffTonality();
+
             this.uiModule.hideStatusArea();
             this.currentSequence = [];
             this.userSequence = [];
@@ -610,6 +636,8 @@ class MelodicDictation {
             this.uiModule.setTonicValue(this.tonic);
             this.keyboardModule.updateKeyboardVisibility();
             this.keyboardModule.positionBlackKeys();
+            // Update staff spelling and key signature when mode changes
+            this.syncStaffTonality();
             
             // Hide status area when mode changes
             this.uiModule.hideStatusArea();

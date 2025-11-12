@@ -127,9 +127,16 @@ export function drawStaff({
     baseHeight,
   );
   const staveWidth = Math.max(0, baseWidth - horizontalPadding * 2);
+  const defaultVerticalOffset = Math.round(Math.max(12, baseHeight * 0.22));
+  const staffVerticalOffset = Number.isFinite(renderState?.staffVerticalOffset)
+    ? renderState.staffVerticalOffset
+    : defaultVerticalOffset;
+  if (renderState && !Number.isFinite(renderState.staffVerticalOffset)) {
+    renderState.staffVerticalOffset = staffVerticalOffset;
+  }
   const spaceAboveStaffLn = Math.max(0, renderState?.spaceAboveStaffLn ?? 1.3);
   const spaceBelowStaffLn = Math.max(0, renderState?.spaceBelowStaffLn ?? 0.7);
-  const stave = new Stave(horizontalPadding, verticalPadding, staveWidth, {
+  const stave = new Stave(horizontalPadding, verticalPadding + staffVerticalOffset, staveWidth, {
     spaceAboveStaffLn,
     spaceBelowStaffLn,
   });
@@ -184,9 +191,18 @@ export function drawStaff({
 
   if (playableVoices.length > 0) {
     try {
-      const formatter = new Formatter({ align_rests: true });
+      // Use formatToStave so justification width adapts to clef/key signature width.
+      const formatter = new Formatter({ globalSoftmax: true, softmaxFactor: VexFlow.SOFTMAX_FACTOR, maxIterations: 8 });
       formatter.joinVoices(playableVoices);
-      formatter.format(playableVoices, baseWidth - 96);
+      // Optional packing ratio (<=1 packs notes tighter). Default 1.
+      const packRatio = Number.isFinite(renderState?.staffPack) && renderState.staffPack > 0 ? renderState.staffPack : 1;
+      if (packRatio === 1) {
+        formatter.formatToStave(playableVoices, stave, { alignRests: true });
+      } else {
+        const justifyWidth = stave.getNoteEndX() - stave.getNoteStartX() - Stave.defaultPadding;
+        const packedWidth = Math.max(0, justifyWidth * packRatio);
+        formatter.format(playableVoices, packedWidth, { alignRests: true, stave, context });
+      }
 
       playableVoices.forEach((voice) => voice.draw(context, stave));
 

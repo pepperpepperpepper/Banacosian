@@ -58,6 +58,7 @@ class StaffModule {
         this.noteEntries = [];
         this.staffNotes = [];
         this.keySignature = 'C';
+        this.noteSpeller = null; // optional function(note:string)->string for display spelling
         this.dictationMode = 'melodic';
         this.fontPreference = 'bravura';
         this.highlightTimeout = null;
@@ -72,6 +73,28 @@ class StaffModule {
         if (hasDocument) {
             this.initializeDisplay();
         }
+    }
+
+    // Allow external modules to control enharmonic spelling for displayed notes
+    setNoteSpeller(spellerFn) {
+        if (typeof spellerFn === 'function') {
+            this.noteSpeller = spellerFn;
+        } else {
+            this.noteSpeller = null;
+        }
+    }
+
+    spell(note) {
+        if (!note) return note;
+        try {
+            if (typeof this.noteSpeller === 'function') {
+                const out = this.noteSpeller(note);
+                return typeof out === 'string' && out ? out : note;
+            }
+        } catch (e) {
+            // Non-fatal: fall back to original note if speller throws
+        }
+        return note;
     }
 
     ensureRenderRuntime() {
@@ -139,6 +162,7 @@ class StaffModule {
                     : { sizing: { minWidth: null, maxWidth: null, targetWidth: null, baseHeight: null }, scale: null };
                 const sizing = config?.sizing || { minWidth: null, maxWidth: null, targetWidth: null, baseHeight: null };
                 const staffScale = config?.scale ?? null;
+                const staffPack = config?.pack ?? null;
                 if (runtime) {
                     runtime.update({
                         keySig: this.keySignature,
@@ -147,6 +171,7 @@ class StaffModule {
                         targetWidth: sizing.targetWidth,
                         baseHeight: sizing.baseHeight,
                         staffScale: staffScale ?? runtime.state.staffScale,
+                        staffPack: staffPack ?? runtime.state.staffPack,
                     });
                 }
                 const display = new DisplayCtor({
@@ -208,7 +233,7 @@ class StaffModule {
         if (this.dictationMode === 'harmonic') {
             const existing = this.noteEntries[0] ? { ...this.noteEntries[0] } : null;
             const existingNotes = Array.isArray(existing?.notes) ? existing.notes.slice() : [];
-            existingNotes.push(note);
+            existingNotes.push(this.spell(note));
             const sortedNotes = sortNotesAscending(existingNotes);
             const durationInfo = this.computeHarmonicDuration(sortedNotes.length);
             const chordEntry = {
@@ -227,10 +252,10 @@ class StaffModule {
             this.enqueue((display) => display.setSequence(this.noteEntries));
             return;
         }
-        const entry = { note, state: 'user' };
+        const entry = { note: this.spell(note), state: 'user' };
         this.noteEntries.push(entry);
         this.staffNotes.push({
-            note,
+            note: entry.note,
             index: this.staffNotes.length,
             state: 'user',
             element: null
@@ -401,7 +426,7 @@ class StaffModule {
         if (limit === 0) return;
         const baseEntries = shouldUseTemporary
             ? sequence.map((note) => ({
-                note,
+                note: this.spell(note),
                 state: 'reference',
                 duration: '8',
                 dots: 0,
@@ -419,7 +444,7 @@ class StaffModule {
         });
 
         if (dictationMode === 'harmonic') {
-            const sortedNotes = sortNotesAscending(sequence);
+            const sortedNotes = sortNotesAscending(sequence.map((n) => this.spell(n)));
             const durationInfo = this.computeHarmonicDuration(sortedNotes.length);
             const chordEntry = {
                 note: sortedNotes[0],
@@ -469,7 +494,7 @@ class StaffModule {
         for (let i = 0; i < limit; i += 1) {
             if (this.activeReplayToken !== replayToken) break;
 
-            const targetNote = sequence[i];
+            const targetNote = this.spell(sequence[i]);
             const originalEntry = baseEntries[i];
             if (!targetNote || !originalEntry) continue;
 
