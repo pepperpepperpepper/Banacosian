@@ -11,7 +11,7 @@
 }
 
 .data-controls {
-  margin: 20px 0;
+  margin: 12px 0;
   text-align: center;
 }
 
@@ -25,16 +25,16 @@
 
 .vexflow-display {
   position: relative;
-  min-height: 180px;
+  min-height: 120px;
   width: 100%;
   max-width: none;
-  margin: 16px auto;
+  margin: 4px auto 8px;
   border: none;
   border-radius: 0;
   background: transparent;
   backdrop-filter: none;
   overflow: hidden;
-  padding: 0;
+  padding: 2px 0 4px;
 }
 
 .vexflow-display:focus-visible {

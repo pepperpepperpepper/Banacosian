@@ -127,7 +127,12 @@ export function drawStaff({
     baseHeight,
   );
   const staveWidth = Math.max(0, baseWidth - horizontalPadding * 2);
-  const stave = new Stave(horizontalPadding, verticalPadding, staveWidth);
+  const spaceAboveStaffLn = Math.max(0, renderState?.spaceAboveStaffLn ?? 1.5);
+  const spaceBelowStaffLn = Math.max(0, renderState?.spaceBelowStaffLn ?? 1.5);
+  const stave = new Stave(horizontalPadding, verticalPadding, staveWidth, {
+    spaceAboveStaffLn,
+    spaceBelowStaffLn,
+  });
   const primaryClef = voices[0]?.clef || 'treble';
   renderState.primaryClef = primaryClef;
   stave.addClef(primaryClef);
