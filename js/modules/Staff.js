@@ -8,6 +8,7 @@ class StaffModule {
         this.keySignature = 'C';
         this.fontPreference = 'bravura';
         this.highlightTimeout = null;
+        this.activeReplayToken = null;
         this.displayPromise = null;
         this.renderRuntime = null;
         this.renderRuntimePromise = null;
@@ -150,6 +151,7 @@ class StaffModule {
 
     showNoteOnStaff(note) {
         if (!note) return;
+        this.cancelActiveReplay();
         const entry = { note, state: 'user' };
         this.noteEntries.push(entry);
         this.staffNotes.push({
@@ -162,6 +164,7 @@ class StaffModule {
     }
 
     clearStaffNotes() {
+        this.cancelActiveReplay();
         this.noteEntries = [];
         this.staffNotes = [];
         if (this.highlightTimeout) {
@@ -204,6 +207,7 @@ class StaffModule {
 
     highlightNoteOnStaff(note, duration = 600) {
         if (!note) return;
+        this.cancelActiveReplay();
         const entry = { note, state: 'highlight' };
         this.enqueue((display) => display.setHighlight(entry));
         if (this.highlightTimeout) {
@@ -236,6 +240,93 @@ class StaffModule {
         if (!fontId || fontId === this.fontPreference) return;
         this.fontPreference = fontId;
         this.enqueue((display) => display.setFont(fontId));
+    }
+
+    cancelActiveReplay() {
+        if (this.activeReplayToken === null) return;
+        this.activeReplayToken = null;
+        this.enqueue(async (display) => {
+            await display.clearHighlight();
+            await display.setSequence(this.noteEntries);
+        });
+    }
+
+    async replaySequenceOnStaff(notes, options = {}) {
+        const sequence = Array.isArray(notes) ? notes.filter((note) => typeof note === 'string' && note) : [];
+        if (sequence.length === 0) {
+            return;
+        }
+        const {
+            noteDuration = 700,
+            gapDuration = 180,
+            useTemporaryLayout = false,
+        } = options;
+        const availableEntries = Array.isArray(this.noteEntries) ? this.noteEntries.length : 0;
+        const shouldUseTemporary = useTemporaryLayout || availableEntries === 0;
+        const limit = shouldUseTemporary ? sequence.length : Math.min(sequence.length, availableEntries);
+        if (limit === 0) return;
+        const baseEntries = shouldUseTemporary
+            ? sequence.map((note) => ({
+                note,
+                state: 'reference',
+                duration: '8',
+                dots: 0,
+            }))
+            : this.noteEntries.map((entry) => ({ ...entry }));
+        this.cancelActiveReplay();
+        const replayToken = {};
+        this.activeReplayToken = replayToken;
+
+        const delay = (ms) => new Promise((resolve) => {
+            const timer = (typeof window !== 'undefined' && window.setTimeout)
+                ? window.setTimeout(resolve, Math.max(0, ms))
+                : setTimeout(resolve, Math.max(0, ms));
+            if (!timer && ms <= 0) resolve();
+        });
+
+        if (shouldUseTemporary) {
+            await this.enqueue((display) => display.setSequence(baseEntries));
+        }
+
+        for (let i = 0; i < limit; i += 1) {
+            if (this.activeReplayToken !== replayToken) break;
+
+            const targetNote = sequence[i];
+            const originalEntry = baseEntries[i];
+            if (!targetNote || !originalEntry) continue;
+
+            const highlightEntry = {
+                ...originalEntry,
+                note: targetNote,
+                state: 'highlight',
+            };
+            if (shouldUseTemporary) {
+                highlightEntry.duration = '8';
+                highlightEntry.dots = 0;
+            }
+
+            await this.enqueue((display) => display.updateEntry(i, () => highlightEntry));
+            await delay(noteDuration);
+
+            if (this.activeReplayToken !== replayToken) break;
+
+            await this.enqueue((display) => display.updateEntry(i, () => ({ ...originalEntry })));
+
+            if (this.activeReplayToken !== replayToken) break;
+
+            if (i < limit - 1) {
+                await delay(gapDuration);
+            }
+        }
+
+        await this.enqueue(async (display) => {
+            await display.setSequence(this.noteEntries);
+            await display.clearHighlight();
+        });
+
+        if (this.activeReplayToken === replayToken) {
+            this.activeReplayToken = null;
+        }
     }
 }
 

@@ -64,6 +64,11 @@ class UIModule {
         if (disabledKeysStyleSelect && typeof callbacks.onDisabledKeysStyleChange === 'function') {
             disabledKeysStyleSelect.addEventListener('change', callbacks.onDisabledKeysStyleChange);
         }
+
+        const answerRevealModeSelect = document.getElementById('answerRevealMode');
+        if (answerRevealModeSelect && typeof callbacks.onAnswerRevealModeChange === 'function') {
+            answerRevealModeSelect.addEventListener('change', callbacks.onAnswerRevealModeChange);
+        }
     }
 
     /**
@@ -445,6 +450,9 @@ class UIModule {
             staffFont: document.getElementById('staffFont') ? document.getElementById('staffFont').value : undefined,
             disabledKeysStyle: document.getElementById('disabledKeysStyle')
                 ? document.getElementById('disabledKeysStyle').value
+                : undefined,
+            answerRevealMode: document.getElementById('answerRevealMode')
+                ? document.getElementById('answerRevealMode').value
                 : undefined
         };
     }
@@ -475,11 +483,21 @@ class UIModule {
         if (values.disabledKeysStyle !== undefined) {
             this.setDisabledKeysStyleValue(values.disabledKeysStyle);
         }
+        if (values.answerRevealMode !== undefined) {
+            this.setAnswerRevealModeValue(values.answerRevealMode);
+        }
     }
 }
 
 UIModule.prototype.setDisabledKeysStyleValue = function setDisabledKeysStyleValue(value) {
     const select = document.getElementById('disabledKeysStyle');
+    if (select && value) {
+        select.value = value;
+    }
+};
+
+UIModule.prototype.setAnswerRevealModeValue = function setAnswerRevealModeValue(value) {
+    const select = document.getElementById('answerRevealMode');
     if (select && value) {
         select.value = value;
     }

@@ -140,9 +140,10 @@ class StorageModule {
      * @param {string} timbre - Current timbre id
      * @param {string} staffFont - Selected staff font id
      * @param {string} disabledKeysStyle - Disabled key rendering style
+     * @param {string} answerRevealMode - Correct answer replay preference
      * @returns {Object} Settings object
      */
-    getCurrentSettings(sequenceLength, scaleType, mode, tonic, timbre, staffFont, disabledKeysStyle) {
+    getCurrentSettings(sequenceLength, scaleType, mode, tonic, timbre, staffFont, disabledKeysStyle, answerRevealMode) {
         return {
             sequenceLength: sequenceLength,
             scaleType: scaleType,
@@ -150,7 +151,8 @@ class StorageModule {
             tonic: tonic,
             timbre: timbre,
             staffFont: staffFont,
-            disabledKeysStyle: disabledKeysStyle
+            disabledKeysStyle: disabledKeysStyle,
+            answerRevealMode: answerRevealMode
         };
     }
 }

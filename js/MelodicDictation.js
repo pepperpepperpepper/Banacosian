@@ -26,6 +26,7 @@ class MelodicDictation {
         this.tonic = this.musicTheory.getDefaultTonicLetter(this.mode);
         this.staffFont = 'bravura';
         this.disabledKeysStyle = 'hatched';
+        this.answerRevealMode = 'show';
         this.availableTonics = this.musicTheory.getAvailableTonics();
         this.availableTimbres = this.audioModule.getAvailableTimbres();
         this.timbre = this.audioModule.getCurrentTimbreId();
@@ -44,6 +45,9 @@ class MelodicDictation {
                     if (saved.staffFont) this.staffFont = saved.staffFont;
                     if (saved.disabledKeysStyle) {
                         this.disabledKeysStyle = saved.disabledKeysStyle === 'invisible' ? 'invisible' : 'hatched';
+                    }
+                    if (saved.answerRevealMode) {
+                        this.answerRevealMode = saved.answerRevealMode === 'skip' ? 'skip' : 'show';
                     }
                 }
             }
@@ -100,7 +104,8 @@ class MelodicDictation {
                 mode: this.mode,
                 timbre: this.timbre,
                 staffFont: this.staffFont,
-                disabledKeysStyle: this.disabledKeysStyle
+                disabledKeysStyle: this.disabledKeysStyle,
+                answerRevealMode: this.answerRevealMode
             });
             this.audioModule.setTimbre(this.timbre);
             
@@ -138,6 +143,19 @@ class MelodicDictation {
     }
 
     /**
+     * Optionally replay the correct sequence on the staff
+     */
+    async maybeReplayCorrectSequence() {
+        if (this.answerRevealMode !== 'show') return;
+        if (!Array.isArray(this.currentSequence) || this.currentSequence.length === 0) return;
+        try {
+            await this.staffModule.replaySequenceOnStaff(this.currentSequence);
+        } catch (error) {
+            console.warn('Unable to replay correct sequence on staff:', error);
+        }
+    }
+
+    /**
      * Convert an internal note identifier to a display label
      * @param {string} note
      * @returns {string}
@@ -167,7 +185,8 @@ class MelodicDictation {
             onModeChange: (e) => this.handleModeChange(e),
             onTimbreChange: (e) => this.handleTimbreChange(e),
             onStaffFontChange: (e) => this.handleStaffFontChange(e),
-            onDisabledKeysStyleChange: (e) => this.handleDisabledKeysStyleChange(e)
+            onDisabledKeysStyleChange: (e) => this.handleDisabledKeysStyleChange(e),
+            onAnswerRevealModeChange: (e) => this.handleAnswerRevealModeChange(e)
         });
 
         // Setup keyboard event listeners
@@ -251,17 +270,32 @@ class MelodicDictation {
         }
         
         this.uiModule.updateFeedback(`Playing reference notes (${tonicName})...`);
-        
-        // Play audio and start visual feedback simultaneously (don't wait for highlight to finish)
-        await this.audioModule.playTone(this.musicTheory.getNoteFrequency(tonic1), 0.6);
-        this.staffModule.highlightNoteOnStaff(tonic1, 600); // Don't await this
-        await this.delay(300);
-        await this.audioModule.playTone(this.musicTheory.getNoteFrequency(tonic2), 0.6);
-        this.staffModule.highlightNoteOnStaff(tonic2, 600); // Don't await this
-        await this.delay(300);
-        await this.audioModule.playTone(this.musicTheory.getNoteFrequency(tonic1), 0.6);
-        this.staffModule.highlightNoteOnStaff(tonic1, 600); // Don't await this
+
+        const referenceNotes = [tonic1, tonic2, tonic1];
+        let referencePreviewPromise = Promise.resolve();
+        try {
+            referencePreviewPromise = this.staffModule.replaySequenceOnStaff(
+                referenceNotes,
+                { noteDuration: 300, gapDuration: 0, useTemporaryLayout: true }
+            );
+        } catch (previewError) {
+            console.warn('Unable to start reference staff preview:', previewError);
+            referencePreviewPromise = Promise.resolve();
+        }
+        for (let i = 0; i < referenceNotes.length; i += 1) {
+            const refNote = referenceNotes[i];
+            await this.audioModule.playTone(this.musicTheory.getNoteFrequency(refNote), 0.6);
+            if (i < referenceNotes.length - 1) {
+                await this.delay(300);
+            }
+        }
+
         await this.delay(800); // Longer pause before sequence
+        try {
+            await referencePreviewPromise;
+        } catch (previewError) {
+            console.warn('Reference staff preview failed:', previewError);
+        }
         
         this.uiModule.updateFeedback('Now the sequence...');
         await this.delay(500);
@@ -304,7 +338,7 @@ class MelodicDictation {
         
         // Check if sequence is complete
         if (this.userSequence.length === this.currentSequence.length) {
-            this.checkSequence();
+            await this.checkSequence();
         } else {
             this.uiModule.updateFeedback(
                 `Note ${this.userSequence.length} of ${this.currentSequence.length}`
@@ -315,7 +349,7 @@ class MelodicDictation {
     /**
      * Check if the user's sequence matches the target sequence
      */
-    checkSequence() {
+    async checkSequence() {
         const result = this.scoringModule.checkSequence(this.userSequence, this.currentSequence);
         
         if (result.isCorrect) {
@@ -331,6 +365,8 @@ class MelodicDictation {
         // Show comparison
         this.uiModule.showComparison(this.userSequence, this.currentSequence);
         this.staffModule.updateStaffComparison(this.currentSequence, this.userSequence);
+
+        await this.maybeReplayCorrectSequence();
         
         // Check if round is complete
         if (this.scoringModule.isRoundComplete()) {
@@ -362,7 +398,8 @@ class MelodicDictation {
                 this.tonic,
                 this.timbre,
                 this.staffFont,
-                this.disabledKeysStyle
+                this.disabledKeysStyle,
+                this.answerRevealMode
             )
         );
         
@@ -445,6 +482,17 @@ class MelodicDictation {
     }
 
     /**
+     * Handle answer reveal mode change
+     * @param {Event} e - Change event
+     */
+    handleAnswerRevealModeChange(e) {
+        const requestedMode = e && e.target ? e.target.value : null;
+        this.answerRevealMode = requestedMode === 'skip' ? 'skip' : 'show';
+        this.uiModule.setAnswerRevealModeValue(this.answerRevealMode);
+        this.persistSettings();
+    }
+
+    /**
      * Handle tonic change
      * @param {Event} e - Change event
      */
@@ -518,7 +566,8 @@ class MelodicDictation {
                 tonic: this.tonic,
                 timbre: this.timbre,
                 staffFont: this.staffFont,
-                disabledKeysStyle: this.disabledKeysStyle
+                disabledKeysStyle: this.disabledKeysStyle,
+                answerRevealMode: this.answerRevealMode
             };
             if (window.SettingsStore && typeof window.SettingsStore.save === 'function') {
                 window.SettingsStore.save(settings);
@@ -562,7 +611,8 @@ class MelodicDictation {
                 this.tonic,
                 this.timbre,
                 this.staffFont,
-                this.disabledKeysStyle
+                this.disabledKeysStyle,
+                this.answerRevealMode
             );
             const message = await this.storageModule.saveToGoogleDrive(settings);
             this.uiModule.updateFeedback(message, 'correct');
@@ -591,6 +641,11 @@ class MelodicDictation {
                     } else {
                         this.disabledKeysStyle = 'hatched';
                     }
+                    if (result.data.settings.answerRevealMode) {
+                        this.answerRevealMode = result.data.settings.answerRevealMode === 'skip' ? 'skip' : 'show';
+                    } else {
+                        this.answerRevealMode = 'show';
+                    }
                     
                     this.uiModule.setFormValues({
                         difficulty: this.sequenceLength,
@@ -599,7 +654,8 @@ class MelodicDictation {
                         mode: this.mode,
                         timbre: this.timbre,
                         staffFont: this.staffFont,
-                        disabledKeysStyle: this.disabledKeysStyle
+                        disabledKeysStyle: this.disabledKeysStyle,
+                        answerRevealMode: this.answerRevealMode
                     });
                     
                     this.keyboardModule.setScaleType(this.scaleType);
