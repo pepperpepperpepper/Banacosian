@@ -1,7 +1,18 @@
 export function readTokens() {
   if (typeof window === 'undefined' || !window.getComputedStyle) {
     // No user styles available; do not provide visual defaults here.
-    return { stroke: undefined, fill: undefined, ledger: undefined, ledgerWidth: undefined, accent: undefined, selection: undefined };
+    return {
+      stroke: undefined,
+      fill: undefined,
+      ledger: undefined,
+      ledgerWidth: undefined,
+      accent: undefined,
+      selection: undefined,
+      correct: undefined,
+      incorrect: undefined,
+      answer: undefined,
+      correction: undefined,
+    };
   }
   const rootStyle = getComputedStyle(document.documentElement);
   const read = (names, fallback) => {
@@ -19,7 +30,11 @@ export function readTokens() {
   const ledgerWidth = ledgerWidthRaw != null && ledgerWidthRaw !== '' ? Number.parseFloat(ledgerWidthRaw) : undefined;
   const accent = read(['--notation-accent', '--color-accent'], undefined);
   const selection = read(['--notation-selection', '--staff-selection-color'], undefined);
-  return { stroke, fill, ledger, ledgerWidth, accent, selection };
+  const correct = read(['--notation-correct', '--staff-correct-color', '--app-success'], undefined);
+  const incorrect = read(['--notation-incorrect', '--staff-incorrect-color', '--app-danger'], undefined);
+  const answer = read(['--notation-answer', '--staff-answer-color', '--app-warning'], undefined);
+  const correction = read(['--notation-correction', '--staff-correction-color'], undefined);
+  return { stroke, fill, ledger, ledgerWidth, accent, selection, correct, incorrect, answer, correction };
 }
 
 export default readTokens;

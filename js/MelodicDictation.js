@@ -433,7 +433,14 @@ class MelodicDictation {
             dictationMode: this.dictationType,
             isCorrect: result.isCorrect
         });
-
+        // Persistently show the correct answer on the staff in answer color
+        try {
+            if (this.answerRevealMode === 'show') {
+                this.staffModule.showAnswerOverlay(this.currentSequence, { dictationMode: this.dictationType, userSequence: this.userSequence });
+            }
+        } catch (e) {
+            console.warn('Unable to show answer overlay:', e);
+        }
         await this.maybeReplayCorrectSequence();
         
         // Check if round is complete

@@ -882,33 +882,43 @@ class MusicTheoryModule {
 
     /**
      * Convert note string to semitone index
-     * @param {string} note - Note (e.g., 'C#4')
+     * Robust to enharmonics that cross octave boundaries (B#, E#, Cb, Fb, double-accidentals).
+     * @param {string} note - Note (e.g., 'C#4', 'B#5', 'Cb4', 'E##5')
      * @returns {number|null} Semitone index or null if invalid
      */
     noteToSemitone(note) {
-        if (!note || typeof note !== 'string') {
-            return null;
-        }
+        if (!note || typeof note !== 'string') return null;
 
-        if (this.tonalNote) {
+        // Prefer Tonal when available (authoritative and already handles enharmonics correctly)
+        if (this.tonalNote && typeof this.tonalNote.get === 'function') {
             const data = this.tonalNote.get(note);
-            if (data && typeof data.midi === 'number') {
-                return data.midi;
-            }
+            if (data && typeof data.midi === 'number') return data.midi;
         }
 
-        const octave = parseInt(note.slice(-1), 10);
-        if (Number.isNaN(octave)) {
-            return null;
-        }
+        // Fallback parser: LETTER + optional accidentals + integer octave
+        const m = /^\s*([A-Ga-g])([#x𝄪♯b♭]{0,3})(-?\d+)\s*$/.exec(note);
+        if (!m) return null;
+        const letter = m[1].toLowerCase();
+        let acc = (m[2] || '');
+        const octave = parseInt(m[3], 10);
+        if (!Number.isFinite(octave)) return null;
 
-        const noteName = note.slice(0, -1);
-        const chromaticIndex = this.noteNameToChromaticIndex(noteName);
-        if (chromaticIndex === null) {
-            return null;
-        }
+        // Normalize accidentals to canonical forms: '#', '##', '###', 'b', 'bb', 'bbb'
+        acc = acc
+            .replace(/♯/g, '#')
+            .replace(/x/g, '##')
+            .replace(/𝄪/g, '##')
+            .replace(/♭/g, 'b');
 
-        return (octave + 1) * 12 + chromaticIndex;
+        const LETTER_TO_SEMITONE = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
+        const ACCIDENTAL_OFFSETS = { '': 0, '#': 1, '##': 2, '###': 3, 'b': -1, 'bb': -2, 'bbb': -3 };
+        if (!(letter in LETTER_TO_SEMITONE)) return null;
+        if (!(acc in ACCIDENTAL_OFFSETS)) return null;
+
+        const base = LETTER_TO_SEMITONE[letter];
+        const offset = ACCIDENTAL_OFFSETS[acc];
+        // MIDI formula (C4 = 60): 12 * (octave + 1) + semitone
+        return 12 * (octave + 1) + base + offset;
     }
 
     /**

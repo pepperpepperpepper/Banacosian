@@ -167,6 +167,20 @@ export function drawStaff({
           strokeStyle: stroke ?? fill ?? undefined,
         });
       }
+      // Apply per-key styles (e.g., harmonic chord correct/incorrect coloring)
+      if (Array.isArray(spec?.keyStyles) && typeof note.setKeyStyle === 'function') {
+        for (let i = 0; i < spec.keyStyles.length; i += 1) {
+          const ks = spec.keyStyles[i];
+          if (ks && typeof ks === 'object') {
+            const kfill = ks.fillStyle ?? ks.fill ?? null;
+            const kstroke = ks.strokeStyle ?? ks.stroke ?? kfill ?? null;
+            note.setKeyStyle(i, {
+              fillStyle: kfill ?? kstroke ?? undefined,
+              strokeStyle: kstroke ?? kfill ?? undefined,
+            });
+          }
+        }
+      }
       note.__voiceIndex = voiceIndex;
       note.__noteIndex = noteIndex;
       return note;

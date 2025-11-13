@@ -9,6 +9,14 @@
   --notation-accent: #8a2be2;
   --notation-selection: #1a2fd6;
 
+  /* Answer/evaluation colors (used for correct/incorrect/answer highlight) */
+  --notation-correct: var(--app-success, #4caf50);
+  --notation-incorrect: var(--app-danger, #f44336);
+  /* Correction (static overlay of right pitches): distinct yellow */
+  --notation-correction: #ffeb3b;
+  /* Highlight (animated replay sweep): orange */
+  --notation-answer: var(--app-warning, #ff9800);
+
   /* Optional font stacks for music/text (informational; library controls actual font usage) */
   --notation-font-stack-music: "Bravura", "Academico";
   --notation-font-stack-text: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -19,4 +27,9 @@
   --staff-ledger-color: var(--notation-ledger-color);
   --staff-ledger-thickness: var(--notation-ledger-thickness);
   --staff-selection-color: var(--notation-selection);
+  /* Legacy aliases for evaluation (if referenced elsewhere) */
+  --staff-correct-color: var(--notation-correct);
+  --staff-incorrect-color: var(--notation-incorrect);
+  --staff-answer-color: var(--notation-answer);
+  --staff-correction-color: var(--notation-correction);
 }

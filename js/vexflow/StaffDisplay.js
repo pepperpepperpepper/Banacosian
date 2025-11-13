@@ -20,16 +20,31 @@ import {
 } from '/js/vexflow/core/config.js';
 import { createRenderRuntime } from '/js/vexflow/core/seeds.js';
 
-const NOTE_REGEX = /^([A-Ga-g])([#♯b♭]{0,2})(-?\d)$/;
+// Accept up to triple accidentals and multi-digit octaves in specs we receive from the app
+const NOTE_REGEX = /^([A-Ga-g])([#x𝄪♯b♭]{0,3})(-?\d+)$/;
 const DEFAULT_METER = Object.freeze({ num: 4, den: 4 });
 const DEFAULT_DURATION = 'q';
 
-const STATE_STYLES = {
-  user: { fillStyle: '#2196F3', strokeStyle: '#2196F3' },
-  correct: { fillStyle: '#4CAF50', strokeStyle: '#4CAF50' },
-  incorrect: { fillStyle: '#F44336', strokeStyle: '#F44336' },
-  highlight: { fillStyle: '#FF9800', strokeStyle: '#FF9800' },
-};
+function styleForStateFromTheme(state, theme) {
+  const choose = (primary, fallback) => (primary ? { fillStyle: primary, strokeStyle: primary } : (fallback || undefined));
+  switch (state) {
+    case 'user':
+      // Prefer selection, fall back to accent, then blue
+      return choose(theme?.selection || theme?.accent, { fillStyle: '#2196F3', strokeStyle: '#2196F3' });
+    case 'correct':
+      return choose(theme?.correct, { fillStyle: '#4CAF50', strokeStyle: '#4CAF50' });
+    case 'incorrect':
+      return choose(theme?.incorrect, { fillStyle: '#F44336', strokeStyle: '#F44336' });
+    case 'highlight':
+      // animated replay sweep (orange)
+      return choose(theme?.answer || theme?.accent, { fillStyle: '#FF9800', strokeStyle: '#FF9800' });
+    case 'answer':
+      // static correction overlay (yellow)
+      return choose(theme?.correction || theme?.answer, { fillStyle: '#FFEB3B', strokeStyle: '#FFEB3B' });
+    default:
+      return undefined;
+  }
+}
 
 function normalizeAccidental(raw) {
   if (!raw) return null;
@@ -37,16 +52,21 @@ function normalizeAccidental(raw) {
     case '#':
     case '♯':
       return '#';
-    case '##':
     case 'x':
     case '𝄪':
       return '##';
+    case '##':
+      return '##';
+    case '###':
+      return '###';
     case 'b':
     case '♭':
       return 'b';
     case 'bb':
     case '𝄫':
       return 'bb';
+    case 'bbb':
+      return 'bbb';
     case 'n':
     case '♮':
       return 'n';
@@ -80,7 +100,7 @@ function decideDisplayedAccidental(letter, spelledAccidental, keySig) {
   return spelledAccidental || null;
 }
 
-function resolveStyle(entry) {
+function resolveStyle(entry, theme) {
   if (entry?.style) {
     const source = entry.style;
     return {
@@ -88,12 +108,10 @@ function resolveStyle(entry) {
       strokeStyle: source.strokeStyle ?? source.stroke ?? source.fill ?? undefined,
     };
   }
-  const stateStyle = entry?.state ? STATE_STYLES[entry.state] : null;
-  if (!stateStyle) return undefined;
-  return {
-    fillStyle: stateStyle.fillStyle ?? stateStyle.fill ?? undefined,
-    strokeStyle: stateStyle.strokeStyle ?? stateStyle.stroke ?? stateStyle.fillStyle ?? undefined,
-  };
+  if (entry?.state) {
+    return styleForStateFromTheme(entry.state, theme);
+  }
+  return undefined;
 }
 
 export class VexflowStaffDisplay {
@@ -124,6 +142,7 @@ export class VexflowStaffDisplay {
       : { ...DEFAULT_METER };
     this.sequenceEntries = [];
     this.highlightEntry = null;
+    this.overlayEntries = null; // optional full-answer overlay
     this.widthOptions = normalizeStaffSizing({
       minWidth,
       maxWidth,
@@ -191,6 +210,16 @@ export class VexflowStaffDisplay {
     return this.render();
   }
 
+  async setOverlay(entries) {
+    this.overlayEntries = Array.isArray(entries) ? entries.slice() : null;
+    return this.render();
+  }
+
+  async clearOverlay() {
+    this.overlayEntries = null;
+    return this.render();
+  }
+
   async setWidthOptions(options = {}) {
     if (!options || typeof options !== 'object') return this.render();
     const merged = normalizeStaffSizing({ ...this.widthOptions, ...options });
@@ -235,7 +264,17 @@ export class VexflowStaffDisplay {
 
   toSpec(entry) {
     if (!entry) return null;
-    const resolvedStyle = resolveStyle(entry);
+    const theme = getStaffTheme();
+    const resolvedStyle = resolveStyle(entry, theme);
+    if (entry.isRest === true) {
+      return {
+        isRest: true,
+        duration: entry.duration || DEFAULT_DURATION,
+        dots: entry.dots || 0,
+        clef: entry.clef || this.clef,
+        style: resolvedStyle,
+      };
+    }
     if (Array.isArray(entry.notes) && entry.notes.length > 0) {
       const parsedNotes = entry.notes
         .map((note) => parseNote(note))
@@ -252,6 +291,10 @@ export class VexflowStaffDisplay {
         const base = `${letter}/${octave}`;
         return keyToMidi(base, accidental || null);
       });
+      let keyStyles = undefined;
+      if (Array.isArray(entry.perNoteStates) && entry.perNoteStates.length === parsedNotes.length) {
+        keyStyles = entry.perNoteStates.map((state) => styleForStateFromTheme(state, theme) || undefined);
+      }
       return {
         isRest: false,
         duration: entry.duration || DEFAULT_DURATION,
@@ -260,7 +303,9 @@ export class VexflowStaffDisplay {
         keys,
         accidentals,
         midis,
-        style: resolvedStyle,
+        // If per-key styles exist, avoid applying a whole-note style so heads can differ.
+        style: keyStyles ? undefined : resolvedStyle,
+        keyStyles,
       };
     }
     if (!entry.note) return null;
@@ -306,10 +351,18 @@ export class VexflowStaffDisplay {
             noteSpecs: specs,
           });
         }
+        if (Array.isArray(this.overlayEntries) && this.overlayEntries.length > 0) {
+          const overlaySpecs = this.overlayEntries
+            .map((entry) => this.toSpec({ ...entry, state: entry.state || 'answer' }))
+            .filter(Boolean);
+          if (overlaySpecs.length > 0) {
+            voices.push({ clef: this.clef, noteSpecs: overlaySpecs });
+          }
+        }
         if (this.highlightEntry) {
           const highlightSpec = this.toSpec(this.highlightEntry);
           if (highlightSpec) {
-            highlightSpec.style = resolveStyle({ state: 'highlight' });
+            highlightSpec.style = resolveStyle({ state: 'highlight' }, getStaffTheme());
             voices.push({
               clef: this.clef,
               noteSpecs: [highlightSpec],

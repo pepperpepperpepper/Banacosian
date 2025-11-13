@@ -2,7 +2,7 @@
  * Staff Module - VexFlow-backed musical staff display
  */
 
-const NOTE_MATCH = /^([A-Ga-g])([#♯bx𝄪♭b𝄫]{0,2})(-?\d)$/;
+const NOTE_MATCH = /^([A-Ga-g])([#♯x𝄪b♭b𝄫]{0,3})(-?\d+)$/;
 const LETTER_TO_SEMITONE = {
     c: 0,
     d: 2,
@@ -19,6 +19,8 @@ function accidentalOffset(symbol) {
         case '#':
         case '♯':
             return 1;
+        case '###':
+            return 3;
         case '##':
         case 'x':
         case '𝄪':
@@ -26,6 +28,8 @@ function accidentalOffset(symbol) {
         case 'b':
         case '♭':
             return -1;
+        case 'bbb':
+            return -3;
         case 'bb':
         case '𝄫':
             return -2;
@@ -274,6 +278,7 @@ class StaffModule {
         }
         this.enqueue(async (display) => {
             await display.clearHighlight();
+            await display.clearOverlay?.();
             await display.setSequence([]);
         });
     }
@@ -287,13 +292,36 @@ class StaffModule {
             const isCorrect = typeof options.isCorrect === 'boolean'
                 ? options.isCorrect
                 : this.compareHarmonicSequences(currentSequence, user);
+
+            // Build per-note correctness against the target chord (multiset logic)
+            const normalize = (n) => (typeof n === 'string' ? n.trim().toUpperCase() : String(n).toUpperCase());
+            const targetCounts = new Map();
+            const targetSpelled = currentSequence.map((n) => this.spell(n));
+            targetSpelled.forEach((n) => {
+                const key = normalize(n);
+                targetCounts.set(key, (targetCounts.get(key) || 0) + 1);
+            });
+            const existing = this.noteEntries[0] ? { ...this.noteEntries[0] } : null;
+            const chordNotes = Array.isArray(existing?.notes) ? existing.notes.slice() : [];
+            const perNoteStates = chordNotes.map((n) => {
+                const key = normalize(n);
+                const remaining = targetCounts.get(key) || 0;
+                if (remaining > 0) {
+                    targetCounts.set(key, remaining - 1);
+                    return 'correct';
+                }
+                return 'incorrect';
+            });
+
             const entry = {
-                ...this.noteEntries[0],
+                ...existing,
+                // Keep an overall state for messaging, but avoid whole-note coloring in display
                 state: isCorrect ? 'correct' : 'incorrect',
+                perNoteStates,
             };
             this.noteEntries = [entry];
             this.staffNotes = [{
-                notes: Array.isArray(entry.notes) ? entry.notes.slice() : [],
+                notes: chordNotes,
                 state: entry.state,
                 element: null,
             }];
@@ -352,7 +380,13 @@ class StaffModule {
 
     setKeySignature(keySig) {
         this.keySignature = keySig || this.keySignature;
-        this.enqueue((display) => display.setKeySignature(this.keySignature));
+        this.enqueue(async (display) => {
+            await display.setKeySignature(this.keySignature);
+            // Keep overlay consistent with new key signature
+            if (Array.isArray(this._lastOverlayEntries) && this._lastOverlayEntries.length > 0) {
+                await display.setOverlay(this._lastOverlayEntries);
+            }
+        });
     }
 
     setDictationMode(mode) {
@@ -405,6 +439,7 @@ class StaffModule {
         this.activeReplayToken = null;
         this.enqueue(async (display) => {
             await display.clearHighlight();
+            // preserve overlay while cancelling highlight
             await display.setSequence(this.noteEntries);
         });
     }
@@ -530,6 +565,73 @@ class StaffModule {
         if (this.activeReplayToken === replayToken) {
             this.activeReplayToken = null;
         }
+    }
+
+    // Show a persistent overlay of the correct answer on the staff
+    showAnswerOverlay(sequence, options = {}) {
+        const dictationMode = options.dictationMode || this.dictationMode;
+        const userSeq = Array.isArray(options.userSequence) ? options.userSequence : null;
+        const notes = Array.isArray(sequence) ? sequence.filter((n) => typeof n === 'string' && n) : [];
+        if (notes.length === 0) return;
+        if (dictationMode === 'harmonic') {
+            const spelledTarget = sortNotesAscending(notes.map((n) => this.spell(n)));
+            // Determine which target notes are missing from the user's chord
+            const userNotes = Array.isArray(this.noteEntries[0]?.notes)
+                ? this.noteEntries[0].notes.slice()
+                : (Array.isArray(userSeq) ? userSeq.slice() : []);
+            const normalize = (n) => (typeof n === 'string' ? this.spell(n).trim().toUpperCase() : String(n).toUpperCase());
+            const targetCounts = new Map();
+            spelledTarget.forEach((n) => {
+                const key = normalize(n);
+                targetCounts.set(key, (targetCounts.get(key) || 0) + 1);
+            });
+            const userCounts = new Map();
+            userNotes.map((n) => this.spell(n)).forEach((n) => {
+                const key = normalize(n);
+                userCounts.set(key, (userCounts.get(key) || 0) + 1);
+            });
+            const missing = [];
+            spelledTarget.forEach((n) => {
+                const key = normalize(n);
+                const need = targetCounts.get(key) || 0;
+                const have = userCounts.get(key) || 0;
+                if (have < need) {
+                    missing.push(n);
+                    userCounts.set(key, have + 1); // virtually account to avoid duplicating
+                }
+            });
+            const sorted = sortNotesAscending(missing);
+            const durationInfo = this.computeHarmonicDuration(sorted.length);
+            const overlay = sorted.length > 0
+                ? [{
+                    note: sorted[0],
+                    notes: sorted,
+                    state: 'answer',
+                    duration: durationInfo.duration,
+                    dots: durationInfo.dots,
+                }]
+                : [];
+            this._lastOverlayEntries = overlay;
+            this.enqueue((display) => display.setOverlay(overlay));
+            return;
+        }
+        const spelled = notes.map((n) => this.spell(n));
+        const userSpelled = Array.isArray(userSeq) && userSeq.length === spelled.length
+            ? userSeq.map((n) => this.spell(n))
+            : (this.noteEntries.length === spelled.length ? this.noteEntries.map((e) => e?.note || '?') : null);
+        const overlay = [];
+        for (let i = 0; i < spelled.length; i += 1) {
+            const target = spelled[i];
+            const userNote = Array.isArray(userSpelled) ? userSpelled[i] : null;
+            if (userNote && userNote === target) {
+                // keep place with invisible rest to preserve alignment
+                overlay.push({ isRest: true, duration: 'q', state: 'answer', style: { fillStyle: 'transparent', strokeStyle: 'transparent' } });
+            } else {
+                overlay.push({ note: target, state: 'answer' });
+            }
+        }
+        this._lastOverlayEntries = overlay;
+        this.enqueue((display) => display.setOverlay(overlay));
     }
 }
 

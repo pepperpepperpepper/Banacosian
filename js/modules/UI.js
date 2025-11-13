@@ -50,15 +50,27 @@ class UIModule {
         const settingsToggle = document.getElementById('settingsToggle');
         const settingsPanel = document.getElementById('settingsPanel');
         if (settingsToggle && settingsPanel) {
+            // Toggle panel visibility and keep aria-expanded in sync
             settingsToggle.addEventListener('click', () => {
-                const isHidden = settingsPanel.hasAttribute('hidden');
-                if (isHidden) {
+                const wasHidden = settingsPanel.hasAttribute('hidden');
+                if (wasHidden) {
                     settingsPanel.removeAttribute('hidden');
                 } else {
                     settingsPanel.setAttribute('hidden', '');
                 }
-                settingsToggle.setAttribute('aria-expanded', (!isHidden).toString());
+                // When it was hidden, we just opened it => expanded=true; when visible, we just closed => expanded=false
+                settingsToggle.setAttribute('aria-expanded', String(wasHidden));
             });
+
+            // Provide immediate "pressed" feedback while clicking/pressing
+            const setPressed = (pressed) => {
+                if (pressed) settingsToggle.setAttribute('data-pressed', 'true');
+                else settingsToggle.removeAttribute('data-pressed');
+            };
+            settingsToggle.addEventListener('pointerdown', () => setPressed(true));
+            settingsToggle.addEventListener('pointerup', () => setPressed(false));
+            settingsToggle.addEventListener('pointercancel', () => setPressed(false));
+            settingsToggle.addEventListener('blur', () => setPressed(false));
         }
         
         // Settings event listeners
