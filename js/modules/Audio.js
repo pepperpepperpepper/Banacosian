@@ -41,6 +41,11 @@ class AudioModule {
             await this.audioContext.resume();
         }
 
+        if (typeof frequency !== 'number' || !Number.isFinite(frequency)) {
+            console.warn('[AudioModule] Skipping tone with invalid frequency:', frequency);
+            return;
+        }
+
         const oscillator = this.audioContext.createOscillator();
         const gainNode = this.audioContext.createGain();
 
@@ -51,7 +56,6 @@ class AudioModule {
         oscillator.connect(gainNode);
         gainNode.connect(this.audioContext.destination);
 
-        console.log('Frequency value:', frequency, 'Type:', typeof frequency, 'Is finite:', isFinite(frequency));
         oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
         oscillator.type = waveform;
 

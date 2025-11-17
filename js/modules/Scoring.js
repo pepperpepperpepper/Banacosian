@@ -2,7 +2,7 @@
  * Scoring Module - Handles score tracking and round management
  */
 class ScoringModule {
-    constructor() {
+  constructor() {
         // Overall score tracking
         this.score = { correct: 0, total: 0 };
         
@@ -11,6 +11,32 @@ class ScoringModule {
         this.roundHistory = [];
         this.timerInterval = null;
         this.sequenceStartTime = null;
+        // Pause accounting for per-sequence timer
+        this.sequencePauseStart = null; // timestamp when pause began
+        this.sequencePausedTotal = 0;   // total ms spent paused in this sequence
+        this.isPaused = false;
+    }
+
+    /**
+     * Explicitly start a new round.
+     * Resets round counters and timer display, but leaves overall score untouched.
+     */
+    startNewRound() {
+        // Clear any ticking timer and per-sequence timer reference
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+        this.sequenceStartTime = null;
+        this.sequencePauseStart = null;
+        this.sequencePausedTotal = 0;
+        this.isPaused = false;
+        this.currentRound = { correct: 0, total: 0, startTime: null };
+        // Reset timer + current accuracy UI
+        const timerEl = typeof document !== 'undefined' ? document.getElementById('timer') : null;
+        if (timerEl) timerEl.textContent = '00:00';
+        const accEl = typeof document !== 'undefined' ? document.getElementById('currentAccuracy') : null;
+        if (accEl) accEl.textContent = '0%';
     }
 
     /**
@@ -25,6 +51,9 @@ class ScoringModule {
         
         // Start fresh timer for this sequence
         this.sequenceStartTime = Date.now();
+        this.sequencePausedTotal = 0;
+        this.sequencePauseStart = null;
+        this.isPaused = false;
         this.startSequenceTimer();
         
         // Track round start if this is the first sequence
@@ -46,8 +75,8 @@ class ScoringModule {
             this.timerInterval = null;
         }
         
-        // Calculate sequence completion time
-        const sequenceTime = this.sequenceStartTime ? Date.now() - this.sequenceStartTime : 0;
+        // Calculate sequence completion time (exclude paused time)
+        const sequenceTime = this.getElapsedMs();
         
         this.score.total++;
         this.currentRound.total++;
@@ -147,10 +176,11 @@ class ScoringModule {
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
         }
-        
-        this.timerInterval = setInterval(() => {
-            this.updateTimer();
-        }, 1000);
+        if (this.sequenceStartTime && !this.isPaused) {
+            this.timerInterval = setInterval(() => {
+                this.updateTimer();
+            }, 1000);
+        }
     }
 
     /**
@@ -158,8 +188,7 @@ class ScoringModule {
      */
     updateTimer() {
         if (!this.sequenceStartTime) return;
-        
-        const elapsed = Date.now() - this.sequenceStartTime;
+        const elapsed = this.getElapsedMs();
         const minutes = Math.floor(elapsed / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
         
@@ -167,6 +196,45 @@ class ScoringModule {
         if (timerElement) {
             timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
+    }
+
+    /** Pause the current sequence timer (idempotent). */
+    pauseSequenceTimer() {
+        if (!this.sequenceStartTime || this.isPaused) return;
+        this.isPaused = true;
+        this.sequencePauseStart = Date.now();
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+        // Update once to freeze display at current value
+        this.updateTimer();
+    }
+
+    /** Resume the current sequence timer if paused. */
+    resumeSequenceTimer() {
+        if (!this.sequenceStartTime || !this.isPaused) return;
+        const now = Date.now();
+        if (this.sequencePauseStart) {
+            this.sequencePausedTotal += (now - this.sequencePauseStart);
+        }
+        this.sequencePauseStart = null;
+        this.isPaused = false;
+        this.startSequenceTimer();
+        this.updateTimer();
+    }
+
+    /** Returns true if the per-sequence timer is actively running. */
+    isTimerRunning() {
+        return !!(this.sequenceStartTime && !this.isPaused && this.timerInterval);
+    }
+
+    /** Compute elapsed ms for current sequence excluding paused time. */
+    getElapsedMs() {
+        if (!this.sequenceStartTime) return 0;
+        const base = Date.now() - this.sequenceStartTime;
+        const paused = this.sequencePausedTotal + (this.isPaused && this.sequencePauseStart ? (Date.now() - this.sequencePauseStart) : 0);
+        return Math.max(0, base - paused);
     }
 
     /**

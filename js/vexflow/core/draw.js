@@ -241,7 +241,9 @@ export function drawStaff({
   const warningSuffix = warnings.length ? ` — ${warnings.length} warning${warnings.length === 1 ? '' : 's'} (see console)` : '';
   const fontSuffix = fontChoice?.label ? ` using ${fontChoice.label}` : '';
   const keySuffix = keySig ? ` Key: ${keySig}.` : '';
-  const baseMessage = `VexFlow rendered ${totalElements} element${totalElements === 1 ? '' : 's'} across ${voices.length} voice${voices.length === 1 ? '' : 's'}${fontSuffix}.${warningSuffix}${keySuffix}`;
+  const baseMessage = totalElements > 0
+    ? `VexFlow rendered ${totalElements} element${totalElements === 1 ? '' : 's'} across ${voices.length} voice${voices.length === 1 ? '' : 's'}${fontSuffix}.${warningSuffix}${keySuffix}`
+    : '';
 
   if (typeof applyTheme === 'function') {
     applyTheme(container, theme);

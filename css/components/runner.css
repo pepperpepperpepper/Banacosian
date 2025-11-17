@@ -1,0 +1,30 @@
+.runner-stage-wrap { position: relative; }
+#runnerCanvas {
+  width: 100%;
+  height: auto;
+  background: linear-gradient(180deg, #0d0f1a 0%, #0c1222 38%, #0a0f1a 38%, #0a0f1a 100%);
+  border-radius: var(--app-border-radius-lg, 16px);
+  border: 2px solid var(--app-interactive-border);
+  box-shadow: 0 10px 30px rgba(0,0,0,.35) inset;
+}
+.runner-overlay {
+  position: absolute; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center;
+  color: var(--app-text-primary); font-weight: 700; font-size: 1.35rem; text-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+.runner-overlay.is-clickable { pointer-events: auto; cursor: pointer; }
+.runner-msg { padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--app-info, #4aa8ff) 25%, transparent); }
+.runner-msg.err { background: color-mix(in srgb, var(--app-danger, #ff6a6a) 25%, transparent); }
+.runner-msg.ok { background: color-mix(in srgb, var(--app-success, #5bd597) 25%, transparent); }
+
+/* gate label chip */
+.gate-chip {
+  background: color-mix(in srgb, var(--notation-accent, #88f) 35%, transparent);
+  color: var(--app-text-primary);
+  border: 2px solid var(--notation-accent, #88f);
+  padding: 2px 6px; border-radius: 10px; font-weight: 700; font-size: 12px;
+}
+
+/* interval enable grid */
+.interval-set { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-items: center; }
+.interval-set label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 12px; border: 1px solid var(--app-interactive-border); background: var(--app-interactive-surface); font-size: 0.9em; }
+.interval-set input[type="checkbox"] { accent-color: var(--notation-accent, #88f); }

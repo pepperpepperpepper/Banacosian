@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interval Runner — Ear Training</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/components/runner.css" />
+</head>
+<body>
+  <div class="container ui-card">
+    <h1>🏃 Interval Runner</h1>
+
+    <div class="game-controls">
+      <div class="main-action-row">
+        <button class="control-btn ui-pill" id="runnerStartBtn">Start</button>
+        <button class="control-btn ui-pill" id="runnerPauseBtn" disabled>Pause</button>
+        <button class="control-btn ui-pill" id="runnerSettingsBtn" aria-haspopup="true" aria-expanded="false" aria-controls="runnerSettingsPanel">Settings</button>
+      </div>
+      <div class="settings-row" id="runnerSettingsPanel" hidden>
+        <select id="runnerType" class="select-pill ui-pill" aria-label="Playback type">
+          <option value="melodic" selected>Melodic</option>
+          <option value="harmonic">Harmonic</option>
+        </select>
+        <select id="runnerDirection" class="select-pill ui-pill" aria-label="Direction">
+          <option value="random" selected>Random dir</option>
+          <option value="up">Always up</option>
+          <option value="down">Always down</option>
+        </select>
+        <select id="runnerTimbre" class="select-pill ui-pill" aria-label="Timbre"></select>
+
+        <select id="runnerStartMode" class="select-pill ui-pill" aria-label="Start mode">
+          <option value="chromatic" selected>Chromatic start (random root)</option>
+          <option value="anchored">Anchored start (fixed root)</option>
+        </select>
+        <select id="runnerAnchorSelect" class="select-pill ui-pill" aria-label="Anchor note"></select>
+      </div>
+
+      <div class="settings-row" aria-label="Enabled intervals">
+        <div id="runnerIntervalSet" class="interval-set" role="group" aria-label="Enable intervals"></div>
+      </div>
+    </div>
+
+    <div class="timer-display">
+      <div class="timer" id="timer">00:00</div>
+      <div class="round-progress">
+        Cleared: <span id="cleared">0</span>
+        &nbsp; Speed: <span id="speed">0.0x</span>
+      </div>
+      <div class="round-accuracy">
+        Best Cleared: <span id="best">0</span>
+      </div>
+    </div>
+
+    <div class="runner-stage-wrap">
+      <canvas id="runnerCanvas" width="900" height="260" aria-label="Interval runner stage" role="img"></canvas>
+      <div id="runnerOverlay" class="runner-overlay" aria-live="polite"></div>
+    </div>
+
+    <div id="runnerChoices" class="main-action-row" role="radiogroup" aria-label="Choose the interval to jump"></div>
+
+    <!-- Staff is optional for this mode; we keep a tiny hidden one for future expansion -->
+    <div id="staff-vexflow" class="vexflow-display" aria-hidden="true" hidden></div>
+  </div>
+
+  <script src="/js/modules/MusicTheory.js"></script>
+  <script src="/js/modules/Audio.js"></script>
+  <script src="/js/modules/Staff.js"></script>
+  <script src="/js/modules/Scoring.js"></script>
+  <script src="/js/IntervalRunner.js"></script>
+</body>
+</html>

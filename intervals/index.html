@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intervals — Ear Training</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="container ui-card">
+    <h1>🎧 Intervals</h1>
+
+    <div class="game-controls">
+      <div class="main-action-row">
+        <button class="control-btn ui-pill" id="intervalStartBtn">Start Round</button>
+        <button class="control-btn ui-pill" id="intervalPlayBtn" disabled>Replay</button>
+        <button class="control-btn ui-pill" id="intervalRevealBtn" disabled>Reveal</button>
+        <button class="control-btn ui-pill" id="settingsToggle" aria-haspopup="true" aria-expanded="false" aria-controls="intervalSettingsPanel">Settings</button>
+      </div>
+      <div class="settings-row" id="intervalSettingsPanel" hidden>
+        <select id="intervalType" class="select-pill ui-pill" aria-label="Interval playback type">
+          <option value="melodic" selected>Melodic (sequential)</option>
+          <option value="harmonic">Harmonic (together)</option>
+        </select>
+        <select id="intervalDirection" class="select-pill ui-pill" aria-label="Interval direction">
+          <option value="random" selected>Direction: Random</option>
+          <option value="up">Direction: Up</option>
+          <option value="down">Direction: Down</option>
+        </select>
+        <select id="intervalTimbre" class="select-pill ui-pill" aria-label="Timbre"></select>
+        <label class="ui-pill" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="intervalShowAnswer" checked />
+          <span>Show right answer</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="timer-display">
+      <div class="timer" id="timer">00:00</div>
+      <div class="round-progress">
+        Score: <span id="correct">0</span> / <span id="total">0</span>
+        (<span id="percentage">0</span>%)
+      </div>
+      <div class="round-accuracy">
+        Current Accuracy: <span id="currentAccuracy">0%</span>
+      </div>
+    </div>
+
+    <div class="status-area">
+      <div class="feedback" id="intervalsFeedback"></div>
+    </div>
+
+    <div id="intervalChoices" class="main-action-row" role="radiogroup" aria-label="Choose the interval" style="margin-bottom:12px;"></div>
+
+    <div id="staff-vexflow"
+         class="vexflow-display"
+         role="img"
+         aria-label="Rendered musical staff for intervals"
+         data-staff-min-width="240"
+         data-staff-base-height="120"
+         data-staff-scale="3"
+    ></div>
+    <div id="staff-status" class="sequence-display" aria-live="polite"></div>
+  </div>
+
+  <script src="/js/modules/MusicTheory.js"></script>
+  <script src="/js/modules/Audio.js"></script>
+  <script src="/js/modules/Staff.js"></script>
+  <script src="/js/modules/Scoring.js"></script>
+  <script src="/js/Intervals.js"></script>
+</body>
+</html>

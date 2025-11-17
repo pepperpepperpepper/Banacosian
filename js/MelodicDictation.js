@@ -245,6 +245,8 @@ class MelodicDictation {
         
         // Start new sequence in scoring module
         this.scoringModule.startNewSequence();
+        // Pause timer until all example audio/preview is finished
+        try { if (typeof this.scoringModule.pauseSequenceTimer === 'function') this.scoringModule.pauseSequenceTimer(); } catch {}
         
         // Clear sequences
         this.currentSequence = [];
@@ -277,6 +279,8 @@ class MelodicDictation {
         
         this.audioModule.setIsPlaying(true);
         this.uiModule.setPlayButtonState(true);
+        // Ensure timer is paused while examples play
+        try { if (typeof this.scoringModule.pauseSequenceTimer === 'function') this.scoringModule.pauseSequenceTimer(); } catch {}
         
         // First play the reference: tonic notes of current mode
         const currentRange = this.musicTheory.getModeRange(this.mode, this.tonic);
@@ -378,6 +382,8 @@ class MelodicDictation {
         
         this.audioModule.setIsPlaying(false);
         this.uiModule.setPlayButtonState(false);
+        // Resume timer after playback so user thinking time is measured
+        try { if (typeof this.scoringModule.resumeSequenceTimer === 'function') this.scoringModule.resumeSequenceTimer(); } catch {}
         
         if (this.userSequence.length === 0) {
             this.uiModule.updateFeedback('Now play it back on the keyboard!');
@@ -411,6 +417,7 @@ class MelodicDictation {
      * Check if the user's sequence matches the target sequence
      */
     async checkSequence() {
+        // Stop and record timer immediately at grading
         const result = this.scoringModule.checkSequence(
             this.userSequence,
             this.currentSequence,
@@ -427,13 +434,18 @@ class MelodicDictation {
         this.scoringModule.updateScore();
         this.scoringModule.updateRoundDisplay();
         
-        // Show comparison
+        // Show comparison (timer is already stopped)
         this.uiModule.showComparison(this.userSequence, this.currentSequence, { dictationType: this.dictationType });
         this.staffModule.updateStaffComparison(this.currentSequence, this.userSequence, {
             dictationMode: this.dictationType,
             isCorrect: result.isCorrect
         });
         // Persistently show the correct answer on the staff in answer color
+        // Pause timer while revealing answer, then resume only if it was running (it shouldn't be now).
+        const wasRunning = (typeof this.scoringModule.isTimerRunning === 'function') && this.scoringModule.isTimerRunning();
+        if (wasRunning && typeof this.scoringModule.pauseSequenceTimer === 'function') {
+            this.scoringModule.pauseSequenceTimer();
+        }
         try {
             if (this.answerRevealMode === 'show') {
                 this.staffModule.showAnswerOverlay(this.currentSequence, { dictationMode: this.dictationType, userSequence: this.userSequence });
@@ -442,6 +454,9 @@ class MelodicDictation {
             console.warn('Unable to show answer overlay:', e);
         }
         await this.maybeReplayCorrectSequence();
+        if (wasRunning && typeof this.scoringModule.resumeSequenceTimer === 'function') {
+            this.scoringModule.resumeSequenceTimer();
+        }
         
         // Check if round is complete
         if (this.scoringModule.isRoundComplete()) {

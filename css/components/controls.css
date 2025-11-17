@@ -31,6 +31,44 @@
   transform: none;
 }
 
+/* Interval choice visual states */
+.interval-choice[aria-pressed="true"] {
+  box-shadow: inset 0 3px 8px rgba(0,0,0,0.3);
+}
+.interval-choice.is-selected {
+  border-color: var(--notation-accent, var(--app-focus, #88f));
+}
+.interval-choice.is-wrong {
+  background: color-mix(in srgb, var(--app-danger, #ff6a6a) 70%, transparent);
+  border-color: var(--app-danger, #ff6a6a);
+}
+.interval-choice.is-correct {
+  background: color-mix(in srgb, var(--app-success, #5bd597) 70%, transparent);
+  border-color: var(--app-success, #5bd597);
+  color: #112;
+}
+
+/* Ripple + press animation */
+.interval-choice {
+  position: relative;
+  overflow: hidden; /* contain ripple */
+}
+.interval-choice:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+.interval-choice .ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  pointer-events: none;
+  opacity: 0.35;
+  background: currentColor;
+  animation: interval-ripple 550ms ease-out;
+}
+@keyframes interval-ripple {
+  to { transform: scale(12); opacity: 0; }
+}
+
 .control-btn {
   font-weight: 600;
   letter-spacing: 0.02em;
