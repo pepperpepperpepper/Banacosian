@@ -58,26 +58,14 @@
     // Optional: allow providing a custom sprite via data-sprite on the canvas, URL, or localStorage
     let spriteImg = null; let spriteReady = false; let wantProceduralLegs = false; let spriteScale = 1.0;
     (function initSpriteFromPrefs(){
+      // Always use the sprite declared on the canvas dataset; no picker/URL/localStorage overrides.
+      // Keep spriteScale support (dataset value or stored scale) for layout flexibility.
       try {
-        const params = new URLSearchParams(window.location.search);
-        const urlSprite = params.get('sprite');
-        const stored = localStorage.getItem('runnerSprite');
-        // sprite scale: URL param has highest priority, then dataset, then stored, else 1.0
-        const paramScale = params.get('spriteScale');
-        if (paramScale && !Number.isNaN(Number(paramScale))) {
-          spriteScale = Math.max(0.5, Math.min(4.0, Number(paramScale)));
-          try { localStorage.setItem('runnerSpriteScale', String(spriteScale)); } catch {}
-        } else if ($canvas?.dataset?.spriteScale && !Number.isNaN(Number($canvas.dataset.spriteScale))) {
+        if ($canvas?.dataset?.spriteScale && !Number.isNaN(Number($canvas.dataset.spriteScale))) {
           spriteScale = Math.max(0.5, Math.min(4.0, Number($canvas.dataset.spriteScale)));
         } else {
           const storedScale = Number(localStorage.getItem('runnerSpriteScale'));
           if (!Number.isNaN(storedScale) && storedScale) spriteScale = storedScale;
-        }
-        if (urlSprite) {
-          $canvas.dataset.sprite = urlSprite;
-          try { localStorage.setItem('runnerSprite', urlSprite); } catch {}
-        } else if (stored && !$canvas.dataset.sprite) {
-          $canvas.dataset.sprite = stored;
         }
       } catch {}
       if ($canvas && $canvas.dataset && $canvas.dataset.sprite) {
@@ -85,22 +73,13 @@
         spriteImg.onload = () => {
           spriteReady = true;
           console.log('[RunnerSprite] loaded', $canvas.dataset.sprite, 'scale=', spriteScale);
-          // Ensure the resting screen shows the new sprite immediately
           try { if (!state.running) draw(); } catch {}
         };
         spriteImg.onerror = () => { console.error('[RunnerSprite] failed to load', $canvas.dataset.sprite); spriteImg = null; spriteReady = false; };
-        // Persist chosen sprite so HTML changes propagate across reloads without query params
-        try { localStorage.setItem('runnerSprite', $canvas.dataset.sprite); } catch {}
         spriteImg.src = $canvas.dataset.sprite;
       }
-      // legs preference: dataset or query (?legs=on/off)
-      try {
-        const params2 = new URLSearchParams(window.location.search);
-        const legsQ = params2.get('legs');
-        if ($canvas?.dataset?.legs) wantProceduralLegs = $canvas.dataset.legs !== 'off';
-        if (legsQ === 'on') wantProceduralLegs = true;
-        if (legsQ === 'off') wantProceduralLegs = false;
-      } catch {}
+      // legs preference from dataset only
+      wantProceduralLegs = !!($canvas?.dataset?.legs && $canvas.dataset.legs !== 'off');
     })();
     let lastTs = 0;
 
