@@ -999,18 +999,20 @@ class MusicTheoryModule {
 
     /**
      * Get note frequency
+     * Robust across the full MIDI range we use (C3..C7) and all enharmonics.
+     * Falls back to equal-temperament formula if lookup/tonal are unavailable.
      * @param {string} note - Note name (e.g., 'C4')
-     * @returns {number} Frequency in Hz
+     * @returns {number|undefined} Frequency in Hz
      */
     getNoteFrequency(note) {
-        if (!note) {
-            return undefined;
-        }
+        if (!note) return undefined;
 
+        // 1) Fast table path for a subset of notes (common range)
         if (Object.prototype.hasOwnProperty.call(this.noteFrequencies, note)) {
             return this.noteFrequencies[note];
         }
 
+        // 2) Tonal if present
         if (this.tonalNote && typeof this.tonalNote.freq === 'function') {
             const frequency = this.tonalNote.freq(note);
             if (typeof frequency === 'number' && Number.isFinite(frequency)) {
@@ -1018,11 +1020,19 @@ class MusicTheoryModule {
             }
         }
 
-        const enharmonic = note.replace('b', '#');
-        if (Object.prototype.hasOwnProperty.call(this.noteFrequencies, enharmonic)) {
-            return this.noteFrequencies[enharmonic];
+        // 3) Formula fallback: derive MIDI from the note and compute frequency
+        // A4 (MIDI 69) = 440Hz; f = 440 * 2^((midi-69)/12)
+        try {
+            const midi = this.noteToSemitone(note);
+            if (typeof midi === 'number' && Number.isFinite(midi)) {
+                const freq = 440 * Math.pow(2, (midi - 69) / 12);
+                return freq;
+            }
+        } catch (e) {
+            // swallow and continue to final undefined
         }
 
+        // No reliable mapping available
         return undefined;
     }
 
