@@ -1,0 +1,64 @@
+{
+  "items": [
+    {
+      "file": "/img/generated/ear/ear_openai_01.png",
+      "prompt": "A clean, minimalist mascot logo of a human ear wearing dark sunglasses, side profile, simple vector shapes, flat colors, no text, high contrast, centered, white background"
+    },
+    {
+      "file": "/img/generated/ear/ear_openai_02.png",
+      "prompt": "Stylized cartoon ear with sunglasses, charming and bold logo mark, smooth curves, vector flat design, no text, centered, white background"
+    },
+    {
+      "file": "/img/generated/ear/ear_openai_03.png",
+      "prompt": "Kawaii cute ear mascot with black sunglasses, bold outline, flat vector colors, side profile, no text, centered, white background"
+    },
+    {
+      "file": "/img/generated/ear/ear_only_04.png",
+      "prompt": "A clean, minimalist mascot logo of a human ear (no sunglasses), side profile, simple vector shapes, flat colors, no text, high contrast, centered, white background"
+    },
+    {
+      "file": "/img/generated/ear/ear_only_05.png",
+      "prompt": "Stylized cartoon ear (without sunglasses), charming and bold logo mark, smooth curves, vector flat design, no text, centered, white background"
+    },
+    {
+      "file": "/img/generated/ear/ear_only_06.png",
+      "prompt": "Kawaii cute ear mascot only, bold outline, flat vector colors, side profile, no text, centered, white background"
+    },
+    {
+      "file": "/intervals-runner/image2vector_with_legs.svg",
+      "prompt": "image2vector (with legs)"
+    },
+    {
+      "file": "/intervals-runner/image2vector_clean.svg",
+      "prompt": "image2vector (clean; animated legs)"
+    },
+    {
+      "file": "/img/generated/ear/svg/ear_runner_wayfarer.svg",
+      "prompt": "vector ear with sunglasses (wayfarer)"
+    },
+    {
+      "file": "/img/generated/ear/svg/ear_runner_round.svg",
+      "prompt": "vector ear with sunglasses (round)"
+    },
+    {
+      "file": "/img/generated/ear/svg/ear_runner_aviator.svg",
+      "prompt": "vector ear with sunglasses (aviator)"
+    },
+    {
+      "file": "/img/generated/ear/svg/ear_0_1_with_legs.svg",
+      "prompt": "custom: ear with legs (vectorized from ~/0_1.svg)"
+    },
+    {
+      "file": "/img/generated/ear/svg/ear_0_1_clean.svg",
+      "prompt": "custom: ear (cleaned; no legs)"
+    },
+    {
+      "file": "/img/generated/ear/svg/ear_0_1_clipped.svg",
+      "prompt": "custom: ear (auto background clip; no legs)"
+    },
+    {
+      "file": "/img/generated/ear/svg/ear_0_1_clipstrong.svg",
+      "prompt": "custom: ear (contrast/otsu clip; no legs)"
+    }
+  ]
+}

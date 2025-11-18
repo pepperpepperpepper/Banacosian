@@ -402,6 +402,13 @@ class MelodicDictation {
         
         this.userSequence.push(actualNote);
         this.uiModule.updateUserSequenceDisplay(this.userSequence, this.currentSequence, { dictationType: this.dictationType });
+        // Provide immediate correctness feedback on the staff for the notes entered so far
+        try {
+            this.staffModule.updateStaffComparison(this.currentSequence, this.userSequence, { dictationMode: this.dictationType });
+        } catch (e) {
+            // Non-fatal: if comparison rendering fails, keep interaction responsive
+            console.warn('Live staff comparison failed:', e);
+        }
         
         // Check if sequence is complete
         if (this.userSequence.length === this.currentSequence.length) {

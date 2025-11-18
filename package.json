@@ -10,7 +10,17 @@
     "dev:open:lan": "live-server --port=8080 --host=0.0.0.0 --open",
     "build": "echo 'No build step needed for static site'",
     "serve": "python3 -m http.server 8080",
-    "lint:css": "stylelint \"css/**/*.css\" \"www/staff/**/*.css\""
+    "lint:css": "stylelint \"css/**/*.css\" \"www/staff/**/*.css\"",
+    "sprites:generate": "node scripts/generate_ear_sprites.js",
+    "sprites:generate:openai": "node scripts/generate_ear_sprites_openai.js",
+    "sprites:generate:ear": "node scripts/generate_ear_only_sprites_openai.js",
+    "sprites:vectorize": "node scripts/vectorize_sprites.js",
+    "sprite:build:runner": "node scripts/vectorize_and_augment.js",
+    "sprite:build:glasses": "node scripts/build_glasses_variants.js",
+    "sprite:gen-glasses": "node scripts/generate_glasses_openai.js",
+    "sprite:vec-glasses": "node scripts/vectorize_glasses.js",
+    "sprite:overlay-glasses": "node scripts/overlay_glasses.js"
+    ,"sprite:add-legs": "node scripts/add_legs.js"
   },
   "keywords": [
     "ear-training",
@@ -21,7 +31,11 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@neplex/vectorizer": "^0.0.5",
+    "jimp": "^1.6.0",
     "live-server": "^1.2.2",
+    "potrace": "^2.1.8",
+    "sharp": "^0.34.5",
     "stylelint": "^16.25.0",
     "stylelint-config-standard": "^39.0.1"
   },

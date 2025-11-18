@@ -42,6 +42,66 @@
     const $intervalSet = document.getElementById('runnerIntervalSet');
 
     const ctx = $canvas.getContext('2d');
+
+    // Runner preference persistence
+    const RUNNER_SETTINGS_KEY = 'runner:settings:v1';
+    function loadRunnerSettings() {
+      try { const raw = localStorage.getItem(RUNNER_SETTINGS_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
+    }
+    function saveRunnerSettings(partial) {
+      try {
+        const prev = loadRunnerSettings() || {};
+        const next = { ...prev, ...partial, _meta: { v: 1, updatedAt: new Date().toISOString() } };
+        localStorage.setItem(RUNNER_SETTINGS_KEY, JSON.stringify(next));
+      } catch {}
+    }
+    // Optional: allow providing a custom sprite via data-sprite on the canvas, URL, or localStorage
+    let spriteImg = null; let spriteReady = false; let wantProceduralLegs = false; let spriteScale = 1.0;
+    (function initSpriteFromPrefs(){
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const urlSprite = params.get('sprite');
+        const stored = localStorage.getItem('runnerSprite');
+        // sprite scale: URL param has highest priority, then dataset, then stored, else 1.0
+        const paramScale = params.get('spriteScale');
+        if (paramScale && !Number.isNaN(Number(paramScale))) {
+          spriteScale = Math.max(0.5, Math.min(4.0, Number(paramScale)));
+          try { localStorage.setItem('runnerSpriteScale', String(spriteScale)); } catch {}
+        } else if ($canvas?.dataset?.spriteScale && !Number.isNaN(Number($canvas.dataset.spriteScale))) {
+          spriteScale = Math.max(0.5, Math.min(4.0, Number($canvas.dataset.spriteScale)));
+        } else {
+          const storedScale = Number(localStorage.getItem('runnerSpriteScale'));
+          if (!Number.isNaN(storedScale) && storedScale) spriteScale = storedScale;
+        }
+        if (urlSprite) {
+          $canvas.dataset.sprite = urlSprite;
+          try { localStorage.setItem('runnerSprite', urlSprite); } catch {}
+        } else if (stored && !$canvas.dataset.sprite) {
+          $canvas.dataset.sprite = stored;
+        }
+      } catch {}
+      if ($canvas && $canvas.dataset && $canvas.dataset.sprite) {
+        spriteImg = new Image();
+        spriteImg.onload = () => {
+          spriteReady = true;
+          console.log('[RunnerSprite] loaded', $canvas.dataset.sprite, 'scale=', spriteScale);
+          // Ensure the resting screen shows the new sprite immediately
+          try { if (!state.running) draw(); } catch {}
+        };
+        spriteImg.onerror = () => { console.error('[RunnerSprite] failed to load', $canvas.dataset.sprite); spriteImg = null; spriteReady = false; };
+        // Persist chosen sprite so HTML changes propagate across reloads without query params
+        try { localStorage.setItem('runnerSprite', $canvas.dataset.sprite); } catch {}
+        spriteImg.src = $canvas.dataset.sprite;
+      }
+      // legs preference: dataset or query (?legs=on/off)
+      try {
+        const params2 = new URLSearchParams(window.location.search);
+        const legsQ = params2.get('legs');
+        if ($canvas?.dataset?.legs) wantProceduralLegs = $canvas.dataset.legs !== 'off';
+        if (legsQ === 'on') wantProceduralLegs = true;
+        if (legsQ === 'off') wantProceduralLegs = false;
+      } catch {}
+    })();
     let lastTs = 0;
 
     const state = {
@@ -52,7 +112,7 @@
       speedMult: 1.0,
       gravity: 1700,
       groundY: $canvas.height - 42,
-      player: { x: 90, y: 0, vy: 0, w: 26, h: 36, onGround: true, jumpQueued: false },
+      player: { x: 90, y: 0, vy: 0, w: 28, h: 38, onGround: true, jumpQueued: false, runPhase: 0 },
       gates: [],
       nextSpawnIn: 0, // seconds
       minSpawn: 1.5,
@@ -66,6 +126,10 @@
       anchorNote: 'C4',
       anchorMidi: null,
       enabledIntervals: new Set([1,2,3,4,5,6,7,8,9,10,11,12]),
+      showGlasses: false,
+      useProceduralLegs: wantProceduralLegs,
+      hitMarker: null,
+      spawnedCount: 0,
     };
 
     // Populate timbres
@@ -76,7 +140,12 @@
         const o = document.createElement('option');
         o.value = id; o.textContent = label; if (id === audio.getCurrentTimbreId()) o.selected = true; $timbre.appendChild(o);
       });
-      $timbre.addEventListener('change', () => audio.setTimbre($timbre.value));
+      // Restore saved timbre if present
+      const saved0 = loadRunnerSettings();
+      if (saved0?.timbre && $timbre.querySelector(`option[value="${saved0.timbre}"]`)) {
+        $timbre.value = saved0.timbre; audio.setTimbre(saved0.timbre);
+      }
+      $timbre.addEventListener('change', () => { audio.setTimbre($timbre.value); saveRunnerSettings({ timbre: $timbre.value }); });
     }
 
     // Settings collapsible
@@ -93,12 +162,22 @@
       });
     }
 
+    // Restore and bind basic prefs
+    (function restoreBasicPrefs(){
+      const saved = loadRunnerSettings();
+      if (saved) {
+        if ($type && saved.type && $type.querySelector(`option[value="${saved.type}"]`)) $type.value = saved.type;
+        if ($dir && saved.direction && $dir.querySelector(`option[value="${saved.direction}"]`)) $dir.value = saved.direction;
+        if ($startMode && saved.startMode && $startMode.querySelector(`option[value="${saved.startMode}"]`)) $startMode.value = saved.startMode;
+      }
+    })();
+
     state.type = ($type?.value === 'harmonic') ? 'harmonic' : 'melodic';
     state.direction = ($dir?.value === 'up' || $dir?.value === 'down') ? $dir.value : 'random';
     state.startMode = ($startMode?.value === 'anchored') ? 'anchored' : 'chromatic';
-    $type?.addEventListener('change', () => { state.type = ($type.value === 'harmonic') ? 'harmonic' : 'melodic'; });
-    $dir?.addEventListener('change', () => { state.direction = ($dir.value === 'up' || $dir.value === 'down') ? $dir.value : 'random'; });
-    $startMode?.addEventListener('change', () => { state.startMode = ($startMode.value === 'anchored') ? 'anchored' : 'chromatic'; });
+    $type?.addEventListener('change', () => { state.type = ($type.value === 'harmonic') ? 'harmonic' : 'melodic'; saveRunnerSettings({ type: state.type }); });
+    $dir?.addEventListener('change', () => { state.direction = ($dir.value === 'up' || $dir.value === 'down') ? $dir.value : 'random'; saveRunnerSettings({ direction: state.direction }); });
+    $startMode?.addEventListener('change', () => { state.startMode = ($startMode.value === 'anchored') ? 'anchored' : 'chromatic'; saveRunnerSettings({ startMode: state.startMode }); });
 
     // Build interval choices (filtered to enabled set)
     function renderChoiceButtonsFromEnabled() {
@@ -115,20 +194,31 @@
       if (!$intervalSet) return;
       const labels = {1:'m2',2:'M2',3:'m3',4:'M3',5:'P4',6:'TT',7:'P5',8:'m6',9:'M6',10:'m7',11:'M7',12:'P8'};
       $intervalSet.textContent = '';
+      const saved = loadRunnerSettings();
+      let enabledSaved = null;
+      if (saved && Array.isArray(saved.enabledIntervals) && saved.enabledIntervals.length) {
+        enabledSaved = new Set(saved.enabledIntervals.map(Number));
+        state.enabledIntervals = new Set(enabledSaved);
+      }
       for (let n=1; n<=12; n+=1) {
         const id = `runner-int-${n}`;
         const lab = document.createElement('label'); lab.setAttribute('for', id); lab.title = `Enable ${labels[n]}`;
         const cb = document.createElement('input'); cb.type='checkbox'; cb.id=id; cb.checked = true; cb.dataset.semitones=String(n);
+        if (enabledSaved) cb.checked = enabledSaved.has(n);
         const span = document.createElement('span'); span.textContent = labels[n];
         cb.addEventListener('change', () => {
           if (cb.checked) state.enabledIntervals.add(n); else state.enabledIntervals.delete(n);
           if (state.enabledIntervals.size === 0) { state.enabledIntervals.add(n); cb.checked = true; }
           renderChoiceButtonsFromEnabled();
           filterPendingDisabledGates();
+          saveRunnerSettings({ enabledIntervals: Array.from(state.enabledIntervals) });
         });
         lab.appendChild(cb); lab.appendChild(span); $intervalSet.appendChild(lab);
       }
     })();
+
+    // Re-render choices in case saved intervals changed the set
+    renderChoiceButtonsFromEnabled();
 
     // Populate anchor select with a comfortable range (C3..C6)
     (function populateAnchorSelect() {
@@ -144,8 +234,9 @@
         opt.textContent = label;
         $anchorSelect.appendChild(opt);
       }
-      // Default to C4 (60) if present
-      const def = 60;
+      // Default to saved anchor or C4 (60) if present
+      const saved = loadRunnerSettings();
+      const def = (saved && Number.isFinite(saved.anchorMidi)) ? Number(saved.anchorMidi) : 60;
       const defOpt = $anchorSelect.querySelector(`option[value="${def}"]`);
       if (defOpt) defOpt.selected = true;
       state.anchorMidi = def;
@@ -155,6 +246,7 @@
         if (Number.isFinite(midi)) {
           state.anchorMidi = midi;
           state.anchorNote = toNote(midi) || `MIDI ${midi}`;
+          saveRunnerSettings({ anchorMidi: midi });
         }
       });
     })();
@@ -200,12 +292,25 @@
       requestAnimationFrame(frame);
     }
 
+    // Idle animation so legs move on the resting screen
+    let idleRAF = 0; let lastIdle = 0;
+    function idle(ts){
+      if (state.running) { idleRAF = 0; return; }
+      const dt = Math.min(0.033, (ts - lastIdle)/1000 || 0);
+      lastIdle = ts;
+      state.player.runPhase += dt * 2.5 * Math.PI * 2; // gentle pace
+      draw();
+      idleRAF = requestAnimationFrame(idle);
+    }
+
     function reset() {
       state.cleared = 0; updateHud();
       state.speed = 220; state.speedMult = 1.0;
       state.gates = []; state.nextSpawnIn = 0.5 + RAND(0,0.4);
       state.activeSemitones = null; state.activeGateId = null;
       state.player.y = state.groundY - state.player.h; state.player.vy = 0; state.player.onGround = true; state.player.jumpQueued=false;
+      state.hitMarker = null;
+      state.spawnedCount = 0;
       scoring.startNewRound();
       showOverlay('');
     }
@@ -214,6 +319,17 @@
       reset();
       state.running = true; state.paused = false;
       scoring.startNewSequence();
+      // Snapshot current preferences on each start
+      try {
+        saveRunnerSettings({
+          type: state.type,
+          direction: state.direction,
+          startMode: state.startMode,
+          anchorMidi: state.anchorMidi,
+          enabledIntervals: Array.from(state.enabledIntervals),
+          timbre: $timbre ? $timbre.value : undefined,
+        });
+      } catch {}
       lastTs = performance.now();
       $pause.disabled = false; $start.textContent = 'Restart';
       requestAnimationFrame(frame);
@@ -249,7 +365,16 @@
 
       // Move gates
       const speed = state.speed * state.speedMult;
-      state.gates.forEach(g => { g.x -= speed * dt; });
+      state.gates.forEach(g => {
+        g.x -= speed * dt;
+        // Update crumble animation / fragments
+        if (g.crumbling) {
+          g.crumbleT = (g.crumbleT || 0) + dt * 2.6;
+          if (Array.isArray(g.fragments)) {
+            g.fragments.forEach(fr => { fr.x += fr.vx * dt; fr.y += fr.vy * dt; fr.vy += 900 * dt; });
+          }
+        }
+      });
       // Remove off-screen
       state.gates = state.gates.filter(g => g.x + g.w > -40);
 
@@ -266,6 +391,11 @@
       p.vy += state.gravity * dt;
       p.y += p.vy * dt;
       if (p.y >= state.groundY - p.h) { p.y = state.groundY - p.h; p.vy = 0; p.onGround = true; }
+      else { p.onGround = false; }
+      // advance running animation phase (faster as speed ramps). When airborne, slow it slightly
+      const baseHz = 6.0; // cycles per second at 1.0x
+      const mult = p.onGround ? 1.0 : 0.6;
+      state.player.runPhase += dt * baseHz * (0.85 + 0.3 * state.speedMult) * mult * Math.PI * 2;
       // Auto-jump if queued and close to active gate
       if (p.onGround && p.jumpQueued && state.activeGateId) {
         const g = state.gates.find(x => x.id === state.activeGateId);
@@ -274,6 +404,12 @@
 
       // Collision / clear detection
       for (const g of state.gates) {
+        // For brick walls: if answered correctly and we're above the top while overlapping horizontally, mark cleared
+        if (g.style === 'brick' && g.answeredCorrect && !g.cleared) {
+          const overlapXNow = (g.x < p.x + p.w) && (g.x + g.w > p.x);
+          const aboveTop = (p.y + p.h) <= (state.groundY - g.h);
+          if (overlapXNow && aboveTop) { g.cleared = true; }
+        }
         // If passed player x fully, count as cleared only if g.cleared flag
         if (!g.past && g.x + g.w < p.x) {
           g.past = true;
@@ -284,6 +420,8 @@
         const overlapX = (g.x < p.x + p.w) && (g.x + g.w > p.x);
         const overlapY = (p.y + p.h) > (state.groundY - g.h);
         if (overlapX && overlapY && !g.cleared) {
+          const name = INTERVAL_NAMES[g.semitones] || String(g.semitones);
+          state.hitMarker = { x: g.x, yTop: state.groundY - g.h, w: g.w, label: name };
           return gameOver('Hit obstacle');
         }
       }
@@ -310,18 +448,43 @@
     function draw() {
       const w = $canvas.width, h = $canvas.height;
       ctx.clearRect(0,0,w,h);
-      // Ground
-      ctx.fillStyle = '#173141'; ctx.fillRect(0, state.groundY, w, 4);
-      ctx.fillStyle = '#0d2230'; ctx.fillRect(0, state.groundY+4, w, h - state.groundY - 4);
+      // Sky
+      ctx.fillStyle = '#a7d8ff'; // light sky blue
+      ctx.fillRect(0, 0, w, state.groundY);
+      // Ground (grass)
+      const grassTopH = 6;
+      const grassTop = ctx.createLinearGradient(0, state.groundY - grassTopH, 0, state.groundY);
+      grassTop.addColorStop(0, '#3bc063'); // bright tip
+      grassTop.addColorStop(1, '#2aa555'); // base
+      ctx.fillStyle = grassTop; ctx.fillRect(0, state.groundY - grassTopH, w, grassTopH);
+      const grassBody = ctx.createLinearGradient(0, state.groundY, 0, h);
+      grassBody.addColorStop(0, '#1f7a3e');
+      grassBody.addColorStop(1, '#145c2c');
+      ctx.fillStyle = grassBody; ctx.fillRect(0, state.groundY, w, h - state.groundY);
+      // Simple blades along the top edge
+      ctx.fillStyle = '#1a6d36';
+      for (let x = 0; x < w; x += 12) {
+        const k = (x * 37) % 9; // deterministic variation
+        const bh = 3 + (k % 6); // blade height 3..8
+        ctx.beginPath();
+        ctx.moveTo(x, state.groundY);
+        ctx.lineTo(x + 4, state.groundY);
+        ctx.lineTo(x + 2, state.groundY - bh);
+        ctx.closePath();
+        ctx.fill();
+      }
       // Player
       const p = state.player;
-      ctx.fillStyle = 'rgba(255,255,255,0.95)';
-      roundedRect(ctx, p.x, p.y, p.w, p.h, 6); ctx.fill();
-      // simple face
-      ctx.fillStyle = '#0a0f1a'; ctx.beginPath(); ctx.arc(p.x + p.w*0.65, p.y + p.h*0.35, 2.2, 0, TWO_PI); ctx.fill();
+      drawPlayer(ctx, p, state);
 
       // Gates
       state.gates.forEach(g => drawGate(g));
+
+      // Draw interval label above the last hit obstacle (if any)
+      if (state.hitMarker) {
+        const { x, yTop, w, label } = state.hitMarker;
+        drawIntervalLabel(x + w/2, yTop - 10, label);
+      }
     }
 
     function roundedRect(c, x,y,w,h,r) {
@@ -332,16 +495,269 @@
       c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
     }
 
+    // Draw the runner as an ear with sunglasses and animated legs
+    function drawPlayer(c, p, state) {
+      const phase = state.player.runPhase;
+      const gnd = state.groundY;
+      // Draw body first, then legs on top so legs are always visible
+      if (spriteImg && spriteReady) {
+        // Draw provided sprite larger than the player box while keeping leg size constant.
+        // Anchor the bottom of the sprite to the player's feet so alignment looks natural.
+        const scale = spriteScale || 1.0;
+        const destW = (p.w + 4) * scale;
+        const destH = (p.h + 4) * scale;
+        const dx = p.x - 2 + (p.w + 4 - destW) / 2; // center horizontally over player
+        const dy = p.y - 2 + (p.h + 4 - destH);     // bottom-align to feet
+        c.save();
+        c.imageSmoothingEnabled = true;
+        c.drawImage(spriteImg, dx, dy, destW, destH);
+        c.restore();
+      } else {
+        // fallback vector ear + glasses
+        drawEarBody(c, p);
+        if (state.showGlasses) drawSunglasses(c, p);
+      }
+      if (state.useProceduralLegs) drawLegs(c, p, gnd, phase, state);
+    }
+
+    function drawLegs(c, p, groundY, phase, state) {
+      // Stable ground-anchored rig with body-lift offset so legs jump with the sprite.
+      const hipX = p.x + p.w * 0.50;
+      const legLen = 24;
+      const baseHipY = groundY - legLen - 6; // where hips sit when on ground
+      const bodyLift = Math.max(0, (groundY - p.h) - p.y); // 0 on ground, >0 when jumping
+      const hipY = baseHipY - bodyLift;
+      const stepA = Math.sin(phase);
+      const stepB = Math.sin(phase + Math.PI);
+      const stride = 12;
+      const lift = 8;
+
+      const legs = [
+        { t: stepA, color: '#0e222f' },
+        { t: stepB, color: '#152a39' },
+      ];
+      c.lineCap = 'round';
+      c.lineJoin = 'round';
+      c.lineWidth = 5;
+      legs.forEach((leg) => {
+        const t = leg.t;
+        const kneeX = hipX + t * 5;
+        const kneeY = hipY + 10 + Math.max(0, -t) * lift;
+        const footX = hipX + t * stride;
+        // Feet rest on ground; when jumping, shift up by bodyLift
+        const footGround = groundY - 2;
+        const footY = Math.min(footGround, footGround - bodyLift);
+
+        c.strokeStyle = leg.color;
+        // Thigh
+        c.beginPath(); c.moveTo(hipX, hipY); c.lineTo(kneeX, kneeY); c.stroke();
+        // Shin
+        c.beginPath(); c.moveTo(kneeX, kneeY); c.lineTo(footX, footY - 2); c.stroke();
+        // Shoe
+        c.fillStyle = '#4aa8ff';
+        c.beginPath(); c.ellipse(footX, footY, 9.0, 3.8, 0, 0, TWO_PI); c.fill();
+        c.strokeStyle = '#0b4ea3'; c.lineWidth = 1.4; c.stroke();
+        c.lineWidth = 5;
+      });
+    }
+
+    function drawEarBody(c, p) {
+      const x = p.x, y = p.y, w = p.w, h = p.h;
+      c.save();
+      // gradient fill for more depth
+      const grad = c.createLinearGradient(x, y, x, y + h);
+      grad.addColorStop(0, '#f8d1b3');
+      grad.addColorStop(1, '#e3ad8a');
+      c.fillStyle = grad;
+      c.strokeStyle = '#c68f6f';
+      c.lineWidth = 1.6;
+
+      // Outer helix/lobe silhouette with distinct notch near the tragus
+      c.beginPath();
+      c.moveTo(x + 0.40*w, y + 0.06*h);                    // upper inner start
+      c.quadraticCurveTo(x + 0.96*w, y + 0.08*h, x + 0.95*w, y + 0.42*h);   // top bulge
+      c.quadraticCurveTo(x + 0.94*w, y + 0.90*h, x + 0.54*w, y + 0.98*h);   // lobe
+      c.quadraticCurveTo(x + 0.24*w, y + 0.95*h, x + 0.18*w, y + 0.60*h);   // back edge
+      c.quadraticCurveTo(x + 0.16*w, y + 0.38*h, x + 0.28*w, y + 0.30*h);   // rise to notch
+      c.quadraticCurveTo(x + 0.36*w, y + 0.27*h, x + 0.36*w, y + 0.33*h);
+      c.quadraticCurveTo(x + 0.33*w, y + 0.50*h, x + 0.44*w, y + 0.48*h);   // notch inward
+      c.quadraticCurveTo(x + 0.48*w, y + 0.46*h, x + 0.40*w, y + 0.06*h);   // close towards start
+      c.closePath(); c.fill(); c.stroke();
+
+      // Inner helix trace (rim inside the outer edge)
+      c.strokeStyle = '#deae8f'; c.lineWidth = 1.2;
+      c.beginPath();
+      c.moveTo(x + 0.64*w, y + 0.20*h);
+      c.quadraticCurveTo(x + 0.82*w, y + 0.34*h, x + 0.64*w, y + 0.60*h);
+      c.quadraticCurveTo(x + 0.50*w, y + 0.78*h, x + 0.40*w, y + 0.70*h);
+      c.stroke();
+
+      // Antihelix (Y-shape)
+      c.beginPath();
+      c.moveTo(x + 0.52*w, y + 0.44*h);
+      c.quadraticCurveTo(x + 0.60*w, y + 0.50*h, x + 0.48*w, y + 0.66*h);
+      c.moveTo(x + 0.52*w, y + 0.44*h);
+      c.quadraticCurveTo(x + 0.56*w, y + 0.40*h, x + 0.58*w, y + 0.34*h);
+      c.stroke();
+
+      // Tragus accent
+      c.beginPath();
+      c.moveTo(x + 0.38*w, y + 0.54*h);
+      c.quadraticCurveTo(x + 0.34*w, y + 0.50*h, x + 0.38*w, y + 0.46*h);
+      c.stroke();
+
+      // Ear canal shadow for readability
+      c.fillStyle = 'rgba(0,0,0,0.12)';
+      c.beginPath(); c.ellipse(x + 0.50*w, y + 0.56*h, 0.07*w, 0.05*h, 0, 0, TWO_PI); c.fill();
+
+      c.restore();
+    }
+
+    function drawSunglasses(c, p) {
+      const x = p.x, y = p.y, w = p.w, h = p.h;
+      const bridgeY = y + 0.33*h;
+      const lensW = 0.24*w, lensH = 0.18*h, r = 2.5;
+      c.save();
+      // strap
+      c.strokeStyle = 'rgba(0,0,0,0.9)'; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(x + 0.08*w, bridgeY); c.lineTo(x + 0.92*w, bridgeY); c.stroke();
+      // left lens
+      c.fillStyle = '#0b0e12';
+      roundedRect(c, x + 0.22*w, bridgeY - lensH/2, lensW, lensH, r); c.fill();
+      // right lens (slightly overlapping the edge for style)
+      roundedRect(c, x + 0.22*w + lensW + 4, bridgeY - lensH/2, lensW, lensH, r); c.fill();
+      // small highlight
+      c.fillStyle = 'rgba(255,255,255,0.14)';
+      c.beginPath(); c.ellipse(x + 0.22*w + 6, bridgeY - 2, 4, 2, -0.6, 0, TWO_PI); c.fill();
+      c.restore();
+    }
+
     function drawGate(g) {
       const baseY = state.groundY;
-      // post
-      ctx.fillStyle = 'rgba(136,170,255,0.8)';
-      ctx.fillRect(g.x, baseY - g.h, g.w, g.h);
-      // top cap (no interval text — purely visual)
-      ctx.fillStyle = 'rgba(90,120,200,0.6)';
-      roundedRect(ctx, g.x - 2, baseY - g.h - 10, g.w + 4, 8, 4); ctx.fill();
-      // cleared tint
+      if (g.style === 'greek') {
+        drawGreekColumn(g, baseY);
+      } else if (g.style === 'brick') {
+        drawBrickWall(g, baseY);
+      } else {
+        // default to greek to honor "only columns or brick walls"
+        drawGreekColumn(g, baseY);
+      }
+      // cleared tint overlay for both types
       if (g.cleared) { ctx.fillStyle = 'rgba(91,213,151,0.35)'; ctx.fillRect(g.x, baseY - g.h, g.w, g.h); }
+    }
+
+    function drawGreekColumn(g, baseY) {
+      const x = g.x; const w = g.w; const h0 = g.h; let h = h0; let y;
+      const f = Math.min(1, Math.max(0, g.crumbleT || 0));
+      if (f > 0) {
+        // shrink visible height as it crumbles
+        h = Math.max(0, h0 * (1 - f * 1.1));
+      }
+      y = baseY - h;
+      const capH = Math.max(6, Math.round(h * 0.18));
+      const baseH = Math.max(6, Math.round(h * 0.18));
+      const shaftH = Math.max(6, h - capH - baseH);
+      const shaftY = y + capH;
+
+      // Column base (plinth)
+      const baseGrad = ctx.createLinearGradient(x, baseY - baseH, x, baseY);
+      baseGrad.addColorStop(0, '#bfc6cc');
+      baseGrad.addColorStop(1, '#aeb5ba');
+      ctx.fillStyle = baseGrad;
+      ctx.fillRect(x, baseY - baseH, w, baseH);
+
+      // Shaft background
+      const shaftGrad = ctx.createLinearGradient(x, shaftY, x + w, shaftY);
+      shaftGrad.addColorStop(0, '#e5e8ea');
+      shaftGrad.addColorStop(0.5, '#f4f6f7');
+      shaftGrad.addColorStop(1, '#d6dbdf');
+      ctx.fillStyle = shaftGrad;
+      ctx.fillRect(x, shaftY, w, shaftH);
+
+      // Flutes (vertical grooves)
+      const inset = 3;
+      const fluteSpan = Math.max(4, w - inset * 2);
+      const fluteCount = Math.max(3, Math.floor(fluteSpan / 3));
+      const spacing = fluteSpan / (fluteCount + 1);
+      for (let i = 1; i <= fluteCount; i++) {
+        const fx = Math.round(x + inset + i * spacing);
+        // shadow
+        ctx.strokeStyle = 'rgba(160,168,176,0.9)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(fx, shaftY + 1); ctx.lineTo(fx, shaftY + shaftH - 1); ctx.stroke();
+        // highlight slightly to the right
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.beginPath(); ctx.moveTo(fx + 1, shaftY + 1); ctx.lineTo(fx + 1, shaftY + shaftH - 1); ctx.stroke();
+      }
+
+      // Capital (simple Doric: echinus + abacus)
+      const capY = y;
+      // Echinus (curved look using rounded rect)
+      ctx.fillStyle = '#cdd3d8';
+      roundedRect(ctx, x - 1, capY + 1, w + 2, Math.max(4, capH - 3), 3); ctx.fill();
+      // Abacus (top slab)
+      ctx.fillStyle = '#b7bec4';
+      ctx.fillRect(x - 2, capY - 4, w + 4, 4);
+
+      // Debris pieces if crumbling
+      if (f > 0 && Array.isArray(g.fragments)) {
+        g.fragments.forEach(fr => {
+          ctx.fillStyle = fr.color;
+          ctx.fillRect(fr.x, fr.y, fr.w, fr.h);
+        });
+      }
+    }
+
+    function drawIntervalLabel(cx, cy, text) {
+      if (!text) return;
+      ctx.save();
+      ctx.font = 'bold 14px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      const padX = 6, padY = 4;
+      const metrics = ctx.measureText(text);
+      const tw = metrics.width;
+      const th = 16; // approx line height
+      const rx = cx - tw/2 - padX;
+      const ry = cy - th - padY;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      roundedRect(ctx, rx, ry, tw + padX*2, th + padY*2, 6); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(text, cx, cy - 4);
+      ctx.restore();
+    }
+
+    function drawBrickWall(g, baseY) {
+      const x = g.x; const w = g.w; const h = g.h; const y = baseY - h;
+      // Base wall fill with slight vertical gradient
+      const grad = ctx.createLinearGradient(0, y, 0, baseY);
+      grad.addColorStop(0, '#c55340');
+      grad.addColorStop(1, '#a84436');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, y, w, h);
+
+      // Mortar pattern
+      const brickH = 6;            // brick row height
+      const brickW = 10;           // nominal brick width
+      ctx.fillStyle = '#e9e4da';   // mortar color
+      // Horizontal mortar lines
+      for (let yy = y; yy <= baseY; yy += brickH) {
+        ctx.fillRect(x, Math.round(yy), w, 1);
+      }
+      // Vertical mortar lines (staggered every other row)
+      let row = 0;
+      for (let yy = y; yy < baseY; yy += brickH) {
+        const offset = (row % 2 === 0) ? 0 : Math.floor(brickW / 2);
+        for (let xx = x + offset; xx < x + w; xx += brickW) {
+          ctx.fillRect(Math.round(xx), Math.round(yy), 1, Math.min(brickH, baseY - yy));
+        }
+        row++;
+      }
+      // Slight bevel on edges
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.fillRect(x + w - 1, y, 1, h);
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.fillRect(x, y, 1, h);
     }
 
     function chooseDirection() {
@@ -435,7 +851,16 @@
       }
 
       const id = Math.random().toString(36).slice(2);
-      state.gates.push({ id, x: $canvas.width + 30, w: 18, h: 36, cued: false, cleared: false, past: false, semitones, dir, root, other });
+      // Only columns or brick walls. Ensure the run starts with 10 columns (no early brick walls).
+      let style;
+      if (state.spawnedCount < 10) {
+        style = 'greek';
+      } else {
+        style = Math.random() < 0.5 ? 'greek' : 'brick';
+      }
+      const w = style === 'greek' ? 22 : 26;
+      state.gates.push({ id, x: $canvas.width + 30, w, h: 36, style, cued: false, cleared: false, past: false, semitones, dir, root, other });
+      state.spawnedCount += 1;
     }
 
     async function playInterval(gate) {
@@ -503,12 +928,36 @@
       const correct = (n === upcoming.semitones);
       if (correct) {
         btn.classList.add('is-correct');
-        // mark gate cleared and queue jump
-        upcoming.cleared = true;
         state.activeGateId = upcoming.id; state.activeSemitones = n;
-        state.player.jumpQueued = true; doJump();
+        if (upcoming.style === 'greek') {
+          // Columns crumble immediately; no jump required
+          upcoming.cleared = true;
+          upcoming.crumbling = true; upcoming.crumbleT = 0;
+          if (!upcoming.fragments) {
+            upcoming.fragments = [];
+            const baseY = state.groundY; const yTop = baseY - upcoming.h;
+            for (let i=0;i<8;i++) {
+              const fw = 2 + Math.random()*3, fh = 2 + Math.random()*3;
+              const fx = upcoming.x + Math.random()*upcoming.w;
+              const fy = yTop + Math.random()*(upcoming.h*0.5);
+              const vx = (Math.random()*2 - 1) * 40; const vy = -Math.random()*80;
+              upcoming.fragments.push({ x: fx, y: fy, w: fw, h: fh, vx, vy, color: '#cfd6db' });
+            }
+          }
+          // cancel any queued jump
+          state.player.jumpQueued = false;
+        } else {
+          // Brick wall: must jump over; do not mark cleared yet
+          upcoming.answeredCorrect = true;
+          state.player.jumpQueued = true; doJump();
+        }
       } else {
         btn.classList.add('is-wrong');
+        // If it's a column, show the correct interval above it before ending
+        if (upcoming.style === 'greek') {
+          const name = INTERVAL_NAMES[upcoming.semitones] || String(upcoming.semitones);
+          state.hitMarker = { x: upcoming.x, yTop: state.groundY - upcoming.h, w: upcoming.w, label: name };
+        }
         gameOver('Wrong interval');
       }
     }
@@ -519,11 +968,16 @@
       const prevBest = getBestCleared();
       if (state.cleared > prevBest) setBestCleared(state.cleared);
       updateHud();
-      showOverlay(`${reason}. Game Over — Cleared ${state.cleared}`,'err');
+      const hitText = state.hitMarker?.label ? ` — ${state.hitMarker.label}` : '';
+      showOverlay(`${reason}${hitText}. Game Over — Cleared ${state.cleared}`,'err');
+      // restart idle loop for resting animation
+      if (!idleRAF) requestAnimationFrame((t)=>{ lastIdle=t; idle(t); });
     }
 
     // Initial paint
     reset(); draw(); showOverlay('Press Start to run');
+    // kick off idle animation so legs move before start
+    requestAnimationFrame((t)=>{ lastIdle = t; idle(t); });
   }
 
   if (document.readyState === 'loading') {

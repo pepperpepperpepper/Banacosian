@@ -16,6 +16,7 @@
         <button class="control-btn ui-pill" id="runnerStartBtn">Start</button>
         <button class="control-btn ui-pill" id="runnerPauseBtn" disabled>Pause</button>
         <button class="control-btn ui-pill" id="runnerSettingsBtn" aria-haspopup="true" aria-expanded="false" aria-controls="runnerSettingsPanel">Settings</button>
+        <a class="control-btn ui-pill" href="/intervals-runner/sprite-picker.html" target="_blank" rel="noopener">Choose Sprite</a>
       </div>
       <div class="settings-row" id="runnerSettingsPanel" hidden>
         <select id="runnerType" class="select-pill ui-pill" aria-label="Playback type">
@@ -53,7 +54,7 @@
     </div>
 
     <div class="runner-stage-wrap">
-      <canvas id="runnerCanvas" width="900" height="260" aria-label="Interval runner stage" role="img"></canvas>
+      <canvas id="runnerCanvas" width="900" height="260" aria-label="Interval runner stage" role="img" data-sprite="/intervals-runner/image2vector_clean.svg" data-sprite-scale="2.8" data-legs="on"></canvas>
       <div id="runnerOverlay" class="runner-overlay" aria-live="polite"></div>
     </div>
 
