@@ -97,6 +97,11 @@
       minSpawn: 1.5,
       maxSpawn: 2.7,
       cueDistance: 360, // play sound when within this x distance from player
+      // When true, the next spawn cycle produces a blank (no obstacle) to space bricks
+      deferBlankAfter: false,
+      // Defer the very first brick to ensure a blank precedes it
+      deferredFirstBrick: null,
+      firstBrickSpawned: false,
       activeSemitones: null,
       activeGateId: null,
       type: 'melodic',
@@ -107,6 +112,8 @@
       enabledIntervals: new Set([1,2,3,4,5,6,7,8,9,10,11,12]),
       showGlasses: false,
       useProceduralLegs: wantProceduralLegs,
+      // Remember last anchored (interval,direction) to avoid immediate repeats in fixed root mode
+      lastAnchoredPair: null,
       hitMarker: null,
       spawnedCount: 0,
     };
@@ -286,6 +293,9 @@
       state.cleared = 0; updateHud();
       state.speed = 220; state.speedMult = 1.0;
       state.gates = []; state.nextSpawnIn = 0.5 + RAND(0,0.4);
+      state.deferBlankAfter = false;
+      state.deferredFirstBrick = null;
+      state.firstBrickSpawned = false;
       state.activeSemitones = null; state.activeGateId = null;
       state.player.y = state.groundY - state.player.h; state.player.vy = 0; state.player.onGround = true; state.player.jumpQueued=false;
       state.hitMarker = null;
@@ -335,11 +345,17 @@
       // Spawn logic
       state.nextSpawnIn -= dt;
       if (state.nextSpawnIn <= 0) {
-        spawnGate();
         // spawn cadence tightens over time
         const base = CLAMP(1.2 - (state.cleared * 0.01), 0.55, 1.2);
         const jitter = RAND(0.2, 0.7);
-        state.nextSpawnIn = base + jitter;
+        if (state.deferBlankAfter && state.cleared < 50) {
+          // Produce a blank space after a brick wall when score < 50
+          state.deferBlankAfter = false;
+          state.nextSpawnIn = base + jitter; // skip this cycle — no spawn
+        } else {
+          spawnGate();
+          state.nextSpawnIn = base + jitter;
+        }
       }
 
       // Move gates
@@ -375,10 +391,12 @@
       const baseHz = 6.0; // cycles per second at 1.0x
       const mult = p.onGround ? 1.0 : 0.6;
       state.player.runPhase += dt * baseHz * (0.85 + 0.3 * state.speedMult) * mult * Math.PI * 2;
-      // Auto-jump if queued and close to active gate
-      if (p.onGround && p.jumpQueued && state.activeGateId) {
-        const g = state.gates.find(x => x.id === state.activeGateId);
-        if (g && (g.x - p.x) < 60) doJump();
+      // Auto-jump if queued and we are approaching any answered brick
+      if (p.onGround && p.jumpQueued) {
+        const targetBrick = state.gates
+          .filter(x => x.style === 'brick' && x.answeredCorrect && !x.cleared && (x.x + x.w) >= p.x)
+          .sort((a,b) => a.x - b.x)[0];
+        if (targetBrick && (targetBrick.x - p.x) < 60) doJump();
       }
 
       // Collision / clear detection
@@ -393,7 +411,12 @@
         if (!g.past && g.x + g.w < p.x) {
           g.past = true;
           if (g.cleared) { onCleared(g); }
-          else { return gameOver('Missed interval'); }
+          else {
+            const msg = (g.style === 'brick' && g.answeredCorrect)
+              ? 'Jump timing off'
+              : 'Missed interval';
+            return gameOver(msg);
+          }
         }
         // If overlapping horizontally near feet height, collision if not cleared
         const overlapX = (g.x < p.x + p.w) && (g.x + g.w > p.x);
@@ -401,7 +424,10 @@
         if (overlapX && overlapY && !g.cleared) {
           const name = INTERVAL_NAMES[g.semitones] || String(g.semitones);
           state.hitMarker = { x: g.x, yTop: state.groundY - g.h, w: g.w, label: name };
-          return gameOver('Hit obstacle');
+          const msg = (g.style === 'brick' && g.answeredCorrect)
+            ? 'Jump timing off'
+            : 'Hit obstacle';
+          return gameOver(msg);
         }
       }
     }
@@ -750,7 +776,9 @@
     }
 
     function computeOther(rootMidi, semitones, direction) {
-      const delta = direction === 'down' ? -semitones : semitones; return CLAMP(rootMidi + delta, 48, 96);
+      // Assume callers have constrained root so the result is in-bounds; do not clamp here
+      const delta = direction === 'down' ? -semitones : semitones;
+      return rootMidi + delta;
     }
 
     function parseNoteToMidi(noteStr) {
@@ -785,7 +813,64 @@
       return null;
     }
 
+    function shuffled(arr) { return arr.slice().sort(() => Math.random() - 0.5); }
+
+    // In anchored (fixed root) mode, avoid repeating the same (interval,direction)
+    // consecutively when possible, given bounds and enabled intervals.
+    function pickAnchoredPairAvoidRepeat(anchorMidi) {
+      const lo = 48, hi = 96;
+      const pool = getEnabledSemis();
+      if (!pool.length) return null;
+      const last = state.lastAnchoredPair;
+
+      function allowedDirsFor(semi) {
+        const dirs = [];
+        const upOK = (anchorMidi + semi) <= hi;
+        const downOK = (anchorMidi - semi) >= lo;
+        if (state.direction === 'up') return upOK ? ['up'] : [];
+        if (state.direction === 'down') return downOK ? ['down'] : [];
+        if (upOK) dirs.push('up'); if (downOK) dirs.push('down');
+        return dirs;
+      }
+
+      // First pass: exclude last pair
+      const semiOrder = shuffled(pool);
+      for (const s of semiOrder) {
+        const dirOrder = shuffled(allowedDirsFor(s));
+        for (const d of dirOrder) {
+          if (last && last.s === s && last.d === d) continue; // avoid immediate repeat
+          const other = anchorMidi + (d === 'down' ? -s : s);
+          if (other >= lo && other <= hi) return { s, d, o: other };
+        }
+      }
+
+      // Second pass: allow last pair if nothing else fits
+      for (const s of semiOrder) {
+        const dirOrder = shuffled(allowedDirsFor(s));
+        for (const d of dirOrder) {
+          const other = anchorMidi + (d === 'down' ? -s : s);
+          if (other >= lo && other <= hi) return { s, d, o: other };
+        }
+      }
+      return null;
+    }
+
     function spawnGate() {
+      // If we deferred the first brick to insert a blank, spawn it now
+      if (state.deferredFirstBrick && !state.firstBrickSpawned) {
+        const spec = state.deferredFirstBrick; state.deferredFirstBrick = null;
+        const id = Math.random().toString(36).slice(2);
+        const style = 'brick'; const w = 26;
+        const { semitones, dir, root, other } = spec;
+        const gate = { id, x: $canvas.width + 30, w, h: 36, style, cued: false, cleared: false, past: false, semitones, dir, root, other };
+        state.gates.push(gate);
+        state.spawnedCount += 1;
+        state.firstBrickSpawned = true;
+        if (state.cleared < 50) state.deferBlankAfter = true;
+        if (state.startMode === 'anchored') state.lastAnchoredPair = { s: semitones, d: dir };
+        return;
+      }
+
       let semitones = pickEnabledSemi();
       let dir = chooseDirection();
       let root = pickRoot(55, 76);
@@ -794,18 +879,15 @@
       if (state.startMode === 'anchored') {
         if (state.anchorMidi == null) state.anchorMidi = parseNoteToMidi(state.anchorNote) ?? parseNoteToMidi('C4');
         const anchor = state.anchorMidi ?? 60; // C4 fallback
-        // Try to find a fit compatible with bounds
-        let picked = null;
-        const attempts = 30;
-        for (let i=0; i<attempts; i+=1) {
-          const s = pickEnabledSemi();
-          const d = pickDirectionFitting(anchor, s);
-          if (!d) continue;
-          const o = anchor + (d === 'down' ? -s : s);
-          if (o >= 48 && o <= 96) { picked = { s, d, o }; break; }
-        }
+        // Prefer a pair different from the last one; fall back if no alternative fits
+        const picked = pickAnchoredPairAvoidRepeat(anchor);
         if (picked) {
           semitones = picked.s; dir = picked.d; root = anchor; other = picked.o;
+          // Safety guard
+          const hi = 96, lo = 48;
+          if (other < lo || other > hi) {
+            other = computeOther(root, semitones, dir);
+          }
         } else {
           console.warn('[RunnerSpawn] Anchor constraints produced no valid gate; falling back to chromatic.', { anchor: state.anchorNote, anchorMidi: state.anchorMidi });
           semitones = pickEnabledSemi(); dir = chooseDirection();
@@ -827,6 +909,9 @@
         if (hiPref < loPref) { loPref = lo + semitones; hiPref = hi - semitones; }
         root = pickRoot(loPref, hiPref);
         other = computeOther(root, semitones, dir);
+        // Safety: if still out of bounds for any reason, correct deterministically
+        if (other < lo) { root = lo + semitones; other = root - semitones; }
+        if (other > hi) { root = hi - semitones; other = root + semitones; }
       }
 
       const id = Math.random().toString(36).slice(2);
@@ -837,29 +922,71 @@
       } else {
         style = Math.random() < 0.5 ? 'greek' : 'brick';
       }
+      // If this would be the first brick in the run, defer it and insert a blank this cycle
+      if (style === 'brick' && !state.firstBrickSpawned) {
+        state.deferredFirstBrick = { semitones, dir, root, other };
+        return; // create blank before first brick
+      }
       const w = style === 'greek' ? 22 : 26;
-      state.gates.push({ id, x: $canvas.width + 30, w, h: 36, style, cued: false, cleared: false, past: false, semitones, dir, root, other });
+      const gate = { id, x: $canvas.width + 30, w, h: 36, style, cued: false, cleared: false, past: false, semitones, dir, root, other };
+      state.gates.push(gate);
+      // Spacing rule: if score < 50 and three brick walls would be consecutive,
+      // remove the middle one; if the middle has already been cued, convert the new
+      // one to a column instead (to avoid removing a cued obstacle).
+      if (state.cleared < 50) {
+        const upcoming = state.gates.filter(g => !g.past).sort((a,b)=> a.x - b.x);
+        if (upcoming.length >= 3) {
+          const a = upcoming[upcoming.length - 3];
+          const b = upcoming[upcoming.length - 2];
+          const c = upcoming[upcoming.length - 1];
+          if (a.style === 'brick' && b.style === 'brick' && c.style === 'brick') {
+            if (!b.cued) {
+              // Remove the middle brick entirely
+              state.gates = state.gates.filter(g => g !== b);
+            } else {
+              // Middle already cued: convert the newly spawned one to a column instead
+              gate.style = 'greek';
+              gate.w = 22;
+            }
+          }
+        }
+      }
+      // After each brick wall, schedule a blank spawn on the next cycle while under 50
+      if (gate.style === 'brick') {
+        state.firstBrickSpawned = true;
+        if (state.cleared < 50) state.deferBlankAfter = true;
+      }
+      // Remember last anchored pair so we can avoid immediate repeats next time
+      if (state.startMode === 'anchored') {
+        state.lastAnchoredPair = { s: semitones, d: dir };
+      }
       state.spawnedCount += 1;
     }
 
     async function playInterval(gate) {
       const toNote = (m) => theory?.semitoneToNote ? theory.semitoneToNote(m) : null;
-      const toFreq = (n) => theory?.getNoteFrequency ? theory.getNoteFrequency(n) : null;
+      const midiToHz = (m) => (typeof m === 'number' && Number.isFinite(m)) ? 440 * Math.pow(2, (m - 69) / 12) : undefined;
       const fmt = (x) => (typeof x === 'number' && Number.isFinite(x)) ? x.toFixed(2) + 'Hz' : '—';
       try {
         const a = toNote(gate.root), b = toNote(gate.other);
-        const fa = a ? toFreq(a) : undefined;
-        const fb = b ? toFreq(b) : undefined;
+        // Derive freqs directly from MIDI to avoid parsing/naming issues
+        let fa = midiToHz(gate.root);
+        let fb = midiToHz(gate.other);
+        // Sanity: ensure the interval size matches the declared semitones; if not, correct 'other'
+        const diff = (typeof gate.root === 'number' && typeof gate.other === 'number') ? Math.abs(gate.other - gate.root) : null;
+        if (diff !== null && diff !== gate.semitones) {
+          const adjustedOther = gate.root + (gate.dir === 'down' ? -gate.semitones : gate.semitones);
+          fb = midiToHz(adjustedOther);
+          // Also patch the gate so subsequent logic is consistent
+          gate.other = adjustedOther;
+        }
         // Log exactly when the cue fires
         const name = INTERVAL_NAMES[gate.semitones] || `${gate.semitones}`;
         console.log(
           `[RunnerCue] id=${gate.id} type=${state.type} dir=${gate.dir} semitones=${gate.semitones}(${name})` +
           ` notes=${a || '?'}→${b || '?'} freqs=${fmt(fa)}→${fmt(fb)}`
         );
-        if (!a || !b) {
-          console.warn('[RunnerCue] Missing note for cue', { gate, a, b });
-          return;
-        }
+        // Don’t require note-name mapping to exist, as we play from MIDI
         scoring.pauseSequenceTimer?.();
         if (state.type === 'harmonic') {
           const f = [fa, fb].filter(x => typeof x === 'number' && Number.isFinite(x));
@@ -894,9 +1021,20 @@
 
     function handleChoose(n, btn) {
       if (!state.running || state.paused) return;
-      // Find the nearest upcoming gate in front of player
+      // Find the nearest upcoming, answerable gate in front of player
       const p = state.player;
-      const upcoming = state.gates.filter(g => (g.x + g.w) >= p.x).sort((a,b)=> a.x-b.x)[0];
+      const candidates = state.gates
+        .filter(g => (g.x + g.w) >= p.x)
+        .sort((a,b)=> a.x - b.x);
+      let upcoming = null;
+      for (const g of candidates) {
+        // Pop columns that have already been correctly answered (crumbling/cleared)
+        if (g.consumed || (g.style === 'greek' && g.cleared)) continue;
+        // Skip brick walls that were already answered correctly; they still require a jump,
+        // but should not consume another interval input.
+        if (g.style === 'brick' && g.answeredCorrect) continue;
+        upcoming = g; break;
+      }
       if (!upcoming) return;
 
       // Visual button state
@@ -912,6 +1050,9 @@
           // Columns crumble immediately; no jump required
           upcoming.cleared = true;
           upcoming.crumbling = true; upcoming.crumbleT = 0;
+          // Mark as consumed for input targeting so the next selection aims at the next gate
+          // while allowing the crumble animation to continue visually.
+          upcoming.consumed = true;
           if (!upcoming.fragments) {
             upcoming.fragments = [];
             const baseY = state.groundY; const yTop = baseY - upcoming.h;
@@ -923,20 +1064,19 @@
               upcoming.fragments.push({ x: fx, y: fy, w: fw, h: fh, vx, vy, color: '#cfd6db' });
             }
           }
-          // cancel any queued jump
-          state.player.jumpQueued = false;
+          // Do not cancel a queued jump for a previously answered brick
         } else {
           // Brick wall: must jump over; do not mark cleared yet
           upcoming.answeredCorrect = true;
-          state.player.jumpQueued = true; doJump();
+          // Immediate jump on correct answer; if timed poorly, player will collide
+          doJump();
+          state.player.jumpQueued = false;
         }
       } else {
         btn.classList.add('is-wrong');
-        // If it's a column, show the correct interval above it before ending
-        if (upcoming.style === 'greek') {
-          const name = INTERVAL_NAMES[upcoming.semitones] || String(upcoming.semitones);
-          state.hitMarker = { x: upcoming.x, yTop: state.groundY - upcoming.h, w: upcoming.w, label: name };
-        }
+        // Always show the correct interval label above the obstacle we just answered for
+        const name = INTERVAL_NAMES[upcoming.semitones] || String(upcoming.semitones);
+        state.hitMarker = { x: upcoming.x, yTop: state.groundY - upcoming.h, w: upcoming.w, label: name };
         gameOver('Wrong interval');
       }
     }
