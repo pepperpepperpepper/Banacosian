@@ -184,6 +184,35 @@ class MusicTheoryModule {
     }
 
     /**
+     * Merge a preferred display spelling with the octave from a raw note.
+     * Ensures the resulting note preserves the original pitch (MIDI value).
+     * @param {string} rawNote - Source note including octave (e.g., 'Db4')
+     * @param {string} displayName - Preferred spelling without octave (e.g., 'C#')
+     * @returns {string} Note string using the preferred spelling when feasible
+     */
+    applyDisplaySpelling(rawNote, displayName) {
+        if (!rawNote || typeof rawNote !== 'string') {
+            return rawNote;
+        }
+        const octaveMatch = rawNote.match(/(-?\d+)$/);
+        if (!octaveMatch) {
+            return rawNote;
+        }
+        const preferred = this.standardizeNoteName(displayName);
+        if (!preferred) {
+            return rawNote;
+        }
+        const octave = octaveMatch[1];
+        const candidate = `${preferred}${octave}`;
+        const rawMidi = this.noteToSemitone ? this.noteToSemitone(rawNote) : null;
+        const candidateMidi = this.noteToSemitone ? this.noteToSemitone(candidate) : null;
+        if (rawMidi === null || candidateMidi === null) {
+            return candidate;
+        }
+        return rawMidi === candidateMidi ? candidate : rawNote;
+    }
+
+    /**
      * Normalize a full note spelling (letter, accidentals, octave) without altering pitch.
      * @param {string} note - Raw note string (e.g., ' c♯4 ')
      * @returns {string} Normalized note (e.g., 'C#4')
@@ -783,10 +812,11 @@ class MusicTheoryModule {
             const rawNote = this.semitoneToNote(midi);
             const label = this.getDisplayNoteLabel(rawNote, normalizedMode, normalizedTarget, { includeOctave: true });
             const displayName = this.getDisplayNoteName(rawNote, normalizedMode, normalizedTarget);
+            const spelledNote = this.applyDisplaySpelling(rawNote, displayName);
             return {
                 midi,
                 rawNote,
-                note: rawNote,
+                note: spelledNote,
                 displayLabel: label,
                 displayName
             };
@@ -798,12 +828,13 @@ class MusicTheoryModule {
             const rawNote = this.semitoneToNote(midi);
             const label = this.getDisplayNoteLabel(rawNote, normalizedMode, normalizedTarget, { includeOctave: true });
             const displayName = this.getDisplayNoteName(rawNote, normalizedMode, normalizedTarget);
+            const spelledNote = this.applyDisplaySpelling(rawNote, displayName);
             const chroma = ((midi % 12) + 12) % 12;
             const isWhite = this.naturalChromas.has(chroma);
             orderedKeys.push({
                 midi,
                 rawNote,
-                note: rawNote,
+                note: spelledNote,
                 displayLabel: label,
                 displayName,
                 isWhite,
@@ -822,7 +853,7 @@ class MusicTheoryModule {
                 whiteKeyDetails.push({
                     midi: entry.midi,
                     rawNote: entry.rawNote,
-                    note: entry.rawNote,
+                    note: entry.note,
                     displayName: entry.displayName,
                     displayLabel: entry.displayLabel,
                     orderedIndex: entry.orderedIndex,
@@ -878,7 +909,7 @@ class MusicTheoryModule {
             blackKeyDetails.push({
                 midi: entry.midi,
                 rawNote: entry.rawNote,
-                note: entry.rawNote,
+                note: entry.note,
                 displayName: entry.displayName,
                 displayLabel: entry.displayLabel,
                 precedingIndex,
@@ -891,7 +922,12 @@ class MusicTheoryModule {
 
         const mapping = {};
         orderedKeys.forEach((entry) => {
-            mapping[entry.note] = entry.note;
+            if (entry.note) {
+                mapping[entry.note] = entry.note;
+            }
+            if (entry.rawNote && entry.rawNote !== entry.note) {
+                mapping[entry.rawNote] = entry.note;
+            }
         });
 
         if (!mapping[tonicNote]) {
@@ -919,15 +955,16 @@ class MusicTheoryModule {
                 return;
             }
             const entry = orderedKeys[offset];
-            if (!entry || !entry.rawNote || seenDiatonic.has(entry.rawNote)) {
+            const keyId = entry && (entry.note || entry.rawNote);
+            if (!entry || !keyId || seenDiatonic.has(keyId)) {
                 return;
             }
-            seenDiatonic.add(entry.rawNote);
-            diatonicKeys.push(entry.rawNote);
+            seenDiatonic.add(keyId);
+            diatonicKeys.push(entry.note || entry.rawNote);
             diatonicKeyDetails.push({
                 midi: entry.midi,
                 rawNote: entry.rawNote,
-                note: entry.rawNote,
+                note: entry.note || entry.rawNote,
                 displayName: entry.displayName,
                 displayLabel: entry.displayLabel,
                 orderedIndex: entry.orderedIndex,
@@ -937,10 +974,18 @@ class MusicTheoryModule {
 
         if (diatonicKeys.length === 0) {
             primaryKeys.forEach((key) => {
-                if (!key || !key.note || seenDiatonic.has(key.note)) {
+                if (!key || !key.note) {
                     return;
                 }
-                const matchingEntry = orderedKeys.find((entry) => entry.rawNote === key.note);
+                const seenKey = key.note || key.rawNote;
+                if (seenDiatonic.has(seenKey)) {
+                    return;
+                }
+                const matchingEntry = orderedKeys.find((entry) => (
+                    entry.note === key.note
+                    || entry.rawNote === key.note
+                    || (key.rawNote && entry.rawNote === key.rawNote)
+                ));
                 const detail = matchingEntry || {
                     midi: key.midi,
                     rawNote: key.rawNote,
@@ -950,7 +995,7 @@ class MusicTheoryModule {
                     orderedIndex: matchingEntry ? matchingEntry.orderedIndex : null,
                     isWhite: matchingEntry ? matchingEntry.isWhite : true
                 };
-                seenDiatonic.add(detail.note);
+                seenDiatonic.add(seenKey);
                 diatonicKeys.push(detail.note);
                 diatonicKeyDetails.push({
                     midi: detail.midi,
