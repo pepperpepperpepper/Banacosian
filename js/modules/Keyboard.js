@@ -32,6 +32,8 @@ class KeyboardModule {
         this.hasTrailingBlack = false;
         this.updateMetricsHandle = null;
         this.handleResize = this.handleResize.bind(this);
+        this.chromaticPreference = null;
+        this.displayTonicForLabels = null;
         // Sustain support
         this.sustainCounts = new Map(); // note -> refcount
         this.pointerNoteMap = new Map(); // pointerId -> note
@@ -125,6 +127,33 @@ class KeyboardModule {
         }
         this.applyModeLayout();
         this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
+    }
+
+    setChromaticPreference(preference) {
+        const normalized = (preference === 'flat' || preference === 'sharp') ? preference : null;
+        if (this.chromaticPreference === normalized) {
+            return;
+        }
+        this.chromaticPreference = normalized;
+        this.updateKeyboardVisibility();
+    }
+
+    setDisplayTonicForLabels(tonicLetter) {
+        if (!tonicLetter) {
+            if (this.displayTonicForLabels !== null) {
+                this.displayTonicForLabels = null;
+                this.updateKeyboardVisibility();
+            }
+            return;
+        }
+        const normalized = (this.musicTheory && typeof this.musicTheory.normalizeTonic === 'function')
+            ? this.musicTheory.normalizeTonic(tonicLetter)
+            : tonicLetter;
+        if (this.displayTonicForLabels === normalized) {
+            return;
+        }
+        this.displayTonicForLabels = normalized;
+        this.updateKeyboardVisibility();
     }
 
     /**
@@ -573,6 +602,9 @@ class KeyboardModule {
         const activeNotes = new Set(this.diatonicNotes);
 
         const keys = document.querySelectorAll('.white-key, .black-key');
+        const includeOctave = this.labelIncludesOctave;
+        const labelTonic = this.displayTonicForLabels || this.tonicLetter;
+        const preferChromatic = showAllNotes ? this.chromaticPreference : null;
 
         keys.forEach(key => {
             const actualNote = key.dataset.note;
@@ -585,12 +617,16 @@ class KeyboardModule {
                 key.classList.add('disabled');
                 return;
             }
-
-            const noteLabel = (this.musicTheory && typeof this.musicTheory.getDisplayNoteLabel === 'function')
-                ? this.musicTheory.getDisplayNoteLabel(actualNote, this.mode, this.tonicLetter, { includeOctave: this.labelIncludesOctave })
-                : (this.musicTheory && typeof this.musicTheory.getDisplayNoteName === 'function'
-                    ? this.musicTheory.getDisplayNoteName(actualNote, this.mode, this.tonicLetter)
-                    : actualNote);
+            let noteLabel;
+            if (preferChromatic && this.musicTheory && typeof this.musicTheory.getChromaticDisplayLabel === 'function') {
+                noteLabel = this.musicTheory.getChromaticDisplayLabel(actualNote, preferChromatic, { includeOctave });
+            } else if (this.musicTheory && typeof this.musicTheory.getDisplayNoteLabel === 'function') {
+                noteLabel = this.musicTheory.getDisplayNoteLabel(actualNote, this.mode, labelTonic, { includeOctave });
+            } else if (this.musicTheory && typeof this.musicTheory.getDisplayNoteName === 'function') {
+                noteLabel = this.musicTheory.getDisplayNoteName(actualNote, this.mode, labelTonic);
+            } else {
+                noteLabel = actualNote;
+            }
             const labelEl = key.querySelector('.key-label') || (() => {
                 const created = document.createElement('span');
                 created.className = 'key-label';

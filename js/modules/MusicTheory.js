@@ -597,6 +597,37 @@ class MusicTheoryModule {
         return `${displayName}${octave}`;
     }
 
+    getChromaticDisplayName(note, preference = 'sharp') {
+        if (!note || typeof note !== 'string') {
+            return '';
+        }
+        const midi = this.noteToSemitone(note);
+        if (midi === null) {
+            const fallback = note.replace(/[0-9]/g, '');
+            return this.standardizeNoteName(fallback) || fallback;
+        }
+        const chroma = ((midi % 12) + 12) % 12;
+        const normalizedPref = (typeof preference === 'string') ? preference.toLowerCase() : 'sharp';
+        if (normalizedPref === 'flat') {
+            return this.flatNoteNames[chroma];
+        }
+        return this.sharpNoteNames[chroma];
+    }
+
+    getChromaticDisplayLabel(note, preference = 'sharp', options = {}) {
+        const { includeOctave = false } = options;
+        const name = this.getChromaticDisplayName(note, preference);
+        if (!includeOctave) {
+            return name;
+        }
+        if (!note || typeof note !== 'string') {
+            return name;
+        }
+        const match = note.match(/(-?\d+)$/);
+        const octave = match ? match[1] : '';
+        return `${name}${octave}`;
+    }
+
     /**
      * Get the display name for the current tonic based on key signature preference
      * @param {string} mode - Mode name
@@ -784,22 +815,42 @@ class MusicTheoryModule {
 
         const normalizedTarget = this.normalizeTonic(tonicLetter) || this.extractNoteLetter(defaultTonicNote);
         const fallbackLetter = this.extractNoteLetter(defaultTonicNote);
-        const { displayTonic } = this.getKeySignatureContext(normalizedMode, normalizedTarget || fallbackLetter);
+        const displayOverride = options && typeof options.displayTonicOverride === 'string'
+            ? this.standardizeNoteName(options.displayTonicOverride)
+            : null;
+        const normalizedPreference = (options && typeof options.chromaticPreference === 'string')
+            ? options.chromaticPreference.toLowerCase()
+            : null;
+        const chromaticPreference = (normalizedMode === 'chromatic'
+            && (normalizedPreference === 'flat' || normalizedPreference === 'sharp'))
+            ? normalizedPreference
+            : null;
 
-        const resolvedTonicCandidate = this.resolveChromaticTonicNote(defaultTonicNote, normalizedTarget) ||
-            this.resolveChromaticTonicNote(defaultTonicNote, fallbackLetter) ||
-            defaultTonicNote;
+        const displaySeed = displayOverride || normalizedTarget || fallbackLetter;
+        const { displayTonic } = this.getKeySignatureContext(normalizedMode, displaySeed || fallbackLetter);
+        const fallbackDisplayBase = this.standardizeNoteName(displaySeed) || fallbackLetter;
+        const displayContextTonic = displayTonic || fallbackDisplayBase;
+
+        const resolvedTonicCandidate = this.resolveChromaticTonicNote(defaultTonicNote, normalizedTarget)
+            || this.resolveChromaticTonicNote(defaultTonicNote, fallbackLetter)
+            || defaultTonicNote;
 
         const tonicOctaveMatch = resolvedTonicCandidate.match(/(-?\d+)$/);
-        const tonicOctave = tonicOctaveMatch ? parseInt(tonicOctaveMatch[1], 10) : parseInt(defaultTonicNote.slice(-1), 10) || 4;
-        const tonicDisplayBase = displayTonic || this.standardizeNoteName(normalizedTarget) || fallbackLetter;
+        const tonicOctave = tonicOctaveMatch
+            ? parseInt(tonicOctaveMatch[1], 10)
+            : parseInt(defaultTonicNote.slice(-1), 10) || 4;
+
+        const preferenceDisplayBase = chromaticPreference === 'flat'
+            ? 'Cb'
+            : (chromaticPreference === 'sharp' ? 'C#' : null);
+        const tonicDisplayBase = preferenceDisplayBase || displayContextTonic || fallbackDisplayBase || fallbackLetter;
         const tonicNote = `${tonicDisplayBase}${tonicOctave}`;
 
+        const startMidiCandidate = this.noteToSemitone(resolvedTonicCandidate);
         const tonicMidiCandidate = this.noteToSemitone(tonicNote);
-        const fallbackMidi = this.noteToSemitone(resolvedTonicCandidate);
-        let effectiveStartMidi = typeof tonicMidiCandidate === 'number'
-            ? tonicMidiCandidate
-            : (typeof fallbackMidi === 'number' ? fallbackMidi : this.baseStartMidi);
+        let effectiveStartMidi = Number.isFinite(startMidiCandidate)
+            ? startMidiCandidate
+            : (Number.isFinite(tonicMidiCandidate) ? tonicMidiCandidate : this.baseStartMidi);
         // Optional octave/start overrides for callers that want to shift the visible range
         if (options && typeof options.startMidi === 'number' && Number.isFinite(options.startMidi)) {
             effectiveStartMidi = options.startMidi;
@@ -807,11 +858,20 @@ class MusicTheoryModule {
             effectiveStartMidi += Math.trunc(options.octaveOffset) * 12;
         }
 
+        const labelContextTonic = displayContextTonic || fallbackDisplayBase || fallbackLetter;
+
         const primaryKeys = this.whiteKeyOffsets.map(offset => {
             const midi = effectiveStartMidi + offset;
             const rawNote = this.semitoneToNote(midi);
-            const label = this.getDisplayNoteLabel(rawNote, normalizedMode, normalizedTarget, { includeOctave: true });
-            const displayName = this.getDisplayNoteName(rawNote, normalizedMode, normalizedTarget);
+            let label;
+            let displayName;
+            if (chromaticPreference) {
+                label = this.getChromaticDisplayLabel(rawNote, chromaticPreference, { includeOctave: true });
+                displayName = this.getChromaticDisplayName(rawNote, chromaticPreference);
+            } else {
+                label = this.getDisplayNoteLabel(rawNote, normalizedMode, labelContextTonic, { includeOctave: true });
+                displayName = this.getDisplayNoteName(rawNote, normalizedMode, labelContextTonic);
+            }
             const spelledNote = this.applyDisplaySpelling(rawNote, displayName);
             return {
                 midi,
@@ -826,8 +886,15 @@ class MusicTheoryModule {
         for (let step = 0; step <= this.baseMidiSpan; step += 1) {
             const midi = effectiveStartMidi + step;
             const rawNote = this.semitoneToNote(midi);
-            const label = this.getDisplayNoteLabel(rawNote, normalizedMode, normalizedTarget, { includeOctave: true });
-            const displayName = this.getDisplayNoteName(rawNote, normalizedMode, normalizedTarget);
+            let label;
+            let displayName;
+            if (chromaticPreference) {
+                label = this.getChromaticDisplayLabel(rawNote, chromaticPreference, { includeOctave: true });
+                displayName = this.getChromaticDisplayName(rawNote, chromaticPreference);
+            } else {
+                label = this.getDisplayNoteLabel(rawNote, normalizedMode, labelContextTonic, { includeOctave: true });
+                displayName = this.getDisplayNoteName(rawNote, normalizedMode, labelContextTonic);
+            }
             const spelledNote = this.applyDisplaySpelling(rawNote, displayName);
             const chroma = ((midi % 12) + 12) % 12;
             const isWhite = this.naturalChromas.has(chroma);

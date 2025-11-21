@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keyboard — Ear Training</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/shared/blockContextMenu.js"></script>
+</head>
+<body>
+  <div class="container ui-card">
+    <h1>🎹 Keyboard</h1>
+
+    <div class="game-controls" style="margin-bottom: 10px;">
+      <div class="main-action-row" style="gap: 8px; align-items: center;">
+        <button id="rangeLeft" class="control-btn ui-pill" data-allow-click="true" title="Shift left (←)">◀</button>
+        <div id="rangeLabel" class="status-chip ui-pill" aria-live="polite">Range: —</div>
+        <button id="rangeRight" class="control-btn ui-pill" data-allow-click="true" title="Shift right (→)">▶</button>
+        <button id="clearStaff" class="control-btn ui-pill" data-allow-click="true" title="Clear staff">Clear</button>
+        <button id="keyboardSettingsToggle" class="control-btn ui-pill" aria-haspopup="true" aria-expanded="false" aria-controls="keyboardSettingsPanel" data-allow-click="true">Settings</button>
+      </div>
+      <div class="settings-row" id="keyboardSettingsPanel" hidden>
+        <select id="keyboardTimbre" class="select-pill ui-pill" aria-label="Select timbre" data-allow-click="true"></select>
+        <select id="keyboardKeySignature" class="select-pill ui-pill" aria-label="Select key signature" data-allow-click="true">
+          <option value="">Loading key signatures…</option>
+        </select>
+        <select id="keyboardChromaticPref" class="select-pill ui-pill" aria-label="Chromatic spelling preference" data-allow-click="true">
+          <option value="sharp" selected>Chromatic: Prefer sharps</option>
+          <option value="flat">Chromatic: Prefer flats</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="status-area" style="margin-bottom: 8px;">
+      <div class="feedback" id="noteReadout" aria-live="polite">Play a note…</div>
+    </div>
+
+    <div
+      id="staff-vexflow"
+      class="vexflow-display"
+      role="img"
+      aria-label="Rendered musical staff"
+      data-staff-min-width="240"
+      data-staff-base-height="110"
+      data-staff-scale="3"
+    ></div>
+
+    <div class="piano" style="margin-top: 12px;">
+      <div class="piano-keys" aria-label="Interactive piano keyboard"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tonal@4.14.2/browser/tonal.min.js"></script>
+  <script src="/js/modules/Audio.js"></script>
+  <script src="/js/modules/MusicTheory.js"></script>
+  <script src="/js/modules/Keyboard.js"></script>
+  <script src="/js/modules/Staff.js"></script>
+  <script src="/js/KeyboardPage.js"></script>
+</body>
+<style>
+  /* Small helper styles specific to /keyboard */
+  .status-chip { font-weight: 600; }
+</style>
+</html>
