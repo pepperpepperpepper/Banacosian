@@ -30,13 +30,13 @@
     const $canvas = document.getElementById('runnerCanvas');
     const $overlay = document.getElementById('runnerOverlay');
     const $choices = document.getElementById('runnerChoices');
-    const $start = document.getElementById('runnerStartBtn');
     const $pause = document.getElementById('runnerPauseBtn');
     const $settingsBtn = document.getElementById('runnerSettingsBtn');
     const $settingsPanel = document.getElementById('runnerSettingsPanel');
     const $type = document.getElementById('runnerType');
     const $dir = document.getElementById('runnerDirection');
     const $timbre = document.getElementById('runnerTimbre');
+    const $speedSetting = document.getElementById('runnerGameSpeed');
     const $startMode = document.getElementById('runnerStartMode');
     const $anchorSelect = document.getElementById('runnerAnchorSelect');
     const $intervalSet = document.getElementById('runnerIntervalSet');
@@ -116,7 +116,140 @@
       lastAnchoredPair: null,
       hitMarker: null,
       spawnedCount: 0,
+      speedSetting: 'normal',
     };
+
+    // Keyboard answer shortcuts: map visible interval choices to physical keyboard rows.
+    // First visual row -> home row (ASDFGHJKL;), centered on G/H.
+    // Second visual row -> bottom row (ZXCVBNM,./), centered on B/N.
+    // Third visual row -> top row (QWERTYUIOP), centered on T/Y.
+    const CHOICE_ROW_KEY_PAIR_SETS = [
+      [
+        ['g', 'h'],
+        ['f', 'j'],
+        ['d', 'k'],
+        ['s', 'l'],
+        ['a', ';'],
+      ],
+      [
+        ['b', 'n'],
+        ['v', 'm'],
+        ['c', ','],
+        ['x', '.'],
+        ['z', '/'],
+      ],
+      [
+        ['t', 'y'],
+        ['r', 'u'],
+        ['e', 'i'],
+        ['w', 'o'],
+        ['q', 'p'],
+      ],
+    ];
+
+    let choiceKeyMap = new Map();
+    let keyMapRaf = 0;
+
+    function rebuildChoiceKeyMap() {
+      choiceKeyMap.clear();
+      if (!$choices) return;
+      const buttons = Array.from($choices.querySelectorAll('.interval-choice')).filter((btn) => !btn.disabled);
+      if (!buttons.length) return;
+
+      // Sort by layout position: top-to-bottom, then left-to-right.
+      const sorted = buttons.slice().sort((a, b) => {
+        const topDiff = a.offsetTop - b.offsetTop;
+        if (Math.abs(topDiff) > 4) return topDiff;
+        return a.offsetLeft - b.offsetLeft;
+      });
+
+      // Group into visual rows based on offsetTop.
+      const rows = [];
+      let currentRowTop = null;
+      let currentRow = null;
+      const rowThreshold = 20;
+      sorted.forEach((btn) => {
+        const top = btn.offsetTop;
+        if (currentRowTop === null || Math.abs(top - currentRowTop) > rowThreshold) {
+          currentRowTop = top;
+          currentRow = [];
+          rows.push(currentRow);
+        }
+        currentRow.push(btn);
+      });
+
+      rows.forEach((row, rowIndex) => {
+        const pairSet =
+          CHOICE_ROW_KEY_PAIR_SETS[rowIndex] ||
+          CHOICE_ROW_KEY_PAIR_SETS[CHOICE_ROW_KEY_PAIR_SETS.length - 1];
+        if (!pairSet || !pairSet.length) return;
+        const N = row.length;
+        row.sort((a, b) => a.offsetLeft - b.offsetLeft);
+        const indexToKey = new Map();
+        const midLeft = Math.floor((N - 1) / 2);
+        const midRight = midLeft + 1;
+
+        for (let level = 0; level < pairSet.length; level += 1) {
+          const pair = pairSet[level];
+          if (!pair || pair.length < 2) continue;
+          const leftKey = pair[0];
+          const rightKey = pair[1];
+          const li = midLeft - level;
+          const ri = midRight + level;
+          if (li < 0 && ri >= N) break;
+          if (li >= 0 && li < N && !indexToKey.has(li)) indexToKey.set(li, leftKey);
+          if (ri >= 0 && ri < N && !indexToKey.has(ri)) indexToKey.set(ri, rightKey);
+        }
+
+        if (N === 1 && !indexToKey.has(0)) {
+          const firstPair = pairSet[0];
+          if (firstPair && firstPair[0]) indexToKey.set(0, firstPair[0]);
+        }
+
+        indexToKey.forEach((key, index) => {
+          const btn = row[index];
+          if (btn && key && !choiceKeyMap.has(key)) {
+            choiceKeyMap.set(key, btn);
+          }
+        });
+      });
+    }
+
+    function scheduleRebuildChoiceKeyMap() {
+      if (keyMapRaf) cancelAnimationFrame(keyMapRaf);
+      keyMapRaf = requestAnimationFrame(() => {
+        keyMapRaf = 0;
+        try {
+          rebuildChoiceKeyMap();
+        } catch (err) {
+          console.warn('[Runner] Failed to rebuild choice key map', err);
+        }
+      });
+    }
+
+    function handleChoiceKeydown(e) {
+      if (!state.running || state.paused) return;
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+      if (e.altKey || e.metaKey || e.ctrlKey) return;
+      const key = typeof e.key === 'string' ? e.key.toLowerCase() : '';
+      if (!key || key.length !== 1) return;
+      const btn = choiceKeyMap.get(key);
+      if (!btn || btn.disabled) return;
+      e.preventDefault();
+      btn.click();
+    }
+
+    document.addEventListener('keydown', handleChoiceKeydown);
+    window.addEventListener('resize', scheduleRebuildChoiceKeyMap);
+
+    function getGameSpeedFactor() {
+      switch (state.speedSetting) {
+        case 'slow': return 0.7;
+        case 'fast': return 1.4;
+        default: return 1.0;
+      }
+    }
 
     // Populate timbres
     if ($timbre && typeof audio.getAvailableTimbres === 'function') {
@@ -155,19 +288,31 @@
         if ($type && saved.type && $type.querySelector(`option[value="${saved.type}"]`)) $type.value = saved.type;
         if ($dir && saved.direction && $dir.querySelector(`option[value="${saved.direction}"]`)) $dir.value = saved.direction;
         if ($startMode && saved.startMode && $startMode.querySelector(`option[value="${saved.startMode}"]`)) $startMode.value = saved.startMode;
+        if ($speedSetting && saved.speedSetting && ['slow','normal','fast'].includes(saved.speedSetting)) {
+          $speedSetting.value = saved.speedSetting;
+        }
       }
     })();
 
     state.type = ($type?.value === 'harmonic') ? 'harmonic' : 'melodic';
     state.direction = ($dir?.value === 'up' || $dir?.value === 'down') ? $dir.value : 'random';
     state.startMode = ($startMode?.value === 'anchored') ? 'anchored' : 'chromatic';
+    state.speedSetting = ($speedSetting?.value === 'slow' || $speedSetting?.value === 'fast' || $speedSetting?.value === 'normal')
+      ? $speedSetting.value
+      : 'normal';
     $type?.addEventListener('change', () => { state.type = ($type.value === 'harmonic') ? 'harmonic' : 'melodic'; saveRunnerSettings({ type: state.type }); });
     $dir?.addEventListener('change', () => { state.direction = ($dir.value === 'up' || $dir.value === 'down') ? $dir.value : 'random'; saveRunnerSettings({ direction: state.direction }); });
     $startMode?.addEventListener('change', () => { state.startMode = ($startMode.value === 'anchored') ? 'anchored' : 'chromatic'; saveRunnerSettings({ startMode: state.startMode }); });
+    $speedSetting?.addEventListener('change', () => {
+      const v = $speedSetting.value;
+      state.speedSetting = (v === 'slow' || v === 'fast' || v === 'normal') ? v : 'normal';
+      saveRunnerSettings({ speedSetting: state.speedSetting });
+    });
 
     // Build interval choices (filtered to enabled set)
     function renderChoiceButtonsFromEnabled() {
       buildChoices($choices, handleChoose, state.enabledIntervals);
+      scheduleRebuildChoiceKeyMap();
     }
     function filterPendingDisabledGates() {
       // Remove any upcoming, not-yet-cued gates that are now disabled
@@ -304,7 +449,32 @@
       showOverlay('');
     }
 
+    // Ensure the AudioContext is created and unlocked from a direct user gesture
+    function unlockAudioIfNeeded() {
+      try {
+        if (!audio || typeof audio.getAudioContext !== 'function') return;
+        let ctx = audio.getAudioContext();
+        // Lazily create the context if it doesn't exist yet
+        if (!ctx && typeof audio.initializeAudio === 'function') {
+          // initializeAudio is synchronous aside from returning a Promise,
+          // so this will set audio.audioContext immediately.
+          audio.initializeAudio();
+          ctx = audio.getAudioContext();
+        }
+        // On many browsers, resume() must be invoked from a user gesture
+        if (ctx && ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+          ctx.resume().catch(() => {});
+        }
+      } catch (err) {
+        // Failing to unlock audio should never break the game loop
+        console.warn('[RunnerAudio] Failed to unlock audio context', err);
+      }
+    }
+
     function start() {
+      // Unlock audio before the first interval cue so the initial pair
+      // plays with the same timing behavior as subsequent intervals.
+      unlockAudioIfNeeded();
       reset();
       state.running = true; state.paused = false;
       scoring.startNewSequence();
@@ -320,7 +490,7 @@
         });
       } catch {}
       lastTs = performance.now();
-      $pause.disabled = false; $start.textContent = 'Restart';
+      $pause.disabled = false;
       requestAnimationFrame(frame);
     }
 
@@ -331,13 +501,14 @@
       else { scoring.resumeSequenceTimer(); showOverlay(''); $pause.textContent = 'Pause'; }
     }
 
-    $start.addEventListener('click', start);
     if ($overlay) {
       $overlay.addEventListener('click', () => { if (!state.running) start(); });
       $overlay.addEventListener('keydown', (e) => {
         if (!state.running && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); start(); }
       });
     }
+    // Also allow clicking the canvas to start
+    $canvas.addEventListener('click', () => { if (!state.running) start(); });
     $pause.addEventListener('click', pauseToggle);
 
     // Core update
@@ -345,9 +516,11 @@
       // Spawn logic
       state.nextSpawnIn -= dt;
       if (state.nextSpawnIn <= 0) {
-        // spawn cadence tightens over time
-        const base = CLAMP(1.2 - (state.cleared * 0.01), 0.55, 1.2);
-        const jitter = RAND(0.2, 0.7);
+        // spawn cadence tightens over time; adjust by game speed factor
+        const speedFactor = getGameSpeedFactor();
+        const baseRaw = CLAMP(1.2 - (state.cleared * 0.01), 0.55, 1.2);
+        const base = baseRaw / speedFactor;
+        const jitter = RAND(0.2, 0.7) / speedFactor;
         if (state.deferBlankAfter && state.cleared < 50) {
           // Produce a blank space after a brick wall when score < 50
           state.deferBlankAfter = false;
@@ -358,8 +531,8 @@
         }
       }
 
-      // Move gates
-      const speed = state.speed * state.speedMult;
+      // Move gates (world speed)
+      const speed = state.speed * state.speedMult * getGameSpeedFactor();
       state.gates.forEach(g => {
         g.x -= speed * dt;
         // Update crumble animation / fragments
@@ -446,7 +619,7 @@
     }
     function updateHud() {
       const c = document.getElementById('cleared'); if (c) c.textContent = String(state.cleared);
-      const s = document.getElementById('speed'); if (s) s.textContent = (state.speedMult).toFixed(1) + 'x';
+      const s = document.getElementById('speed'); if (s) s.textContent = (state.speedMult * getGameSpeedFactor()).toFixed(1) + 'x';
       const b = document.getElementById('best'); if (b) b.textContent = String(getBestCleared());
     }
 
@@ -995,16 +1168,31 @@
           }
           if (f.length) await audio.playChord(f, 0.7);
         } else {
+          const freqs = [];
           if (!(typeof fa === 'number' && Number.isFinite(fa))) {
             console.warn('[RunnerCue] Invalid first frequency', { a, fa });
           } else {
-            await audio.playTone(fa, 0.55);
+            freqs.push(fa);
           }
-          await new Promise(r => setTimeout(r, 140));
           if (!(typeof fb === 'number' && Number.isFinite(fb))) {
             console.warn('[RunnerCue] Invalid second frequency', { b, fb });
           } else {
-            await audio.playTone(fb, 0.55);
+            freqs.push(fb);
+          }
+          if (freqs.length) {
+            if (typeof audio.playToneSequence === 'function') {
+              // Slightly tighter than the original 140ms gap
+              await audio.playToneSequence(freqs, 0.55, 0.12);
+            } else {
+              // Fallback: preserve previous behavior if sequence helper is unavailable
+              if (freqs[0] != null) {
+                await audio.playTone(freqs[0], 0.55);
+              }
+              if (freqs.length > 1) {
+                await new Promise(r => setTimeout(r, 120));
+                await audio.playTone(freqs[1], 0.55);
+              }
+            }
           }
         }
       } catch (err) {
@@ -1094,7 +1282,7 @@
     }
 
     // Initial paint
-    reset(); draw(); showOverlay('Press Start to run');
+    reset(); draw(); showOverlay('Click or tap anywhere to start');
     // kick off idle animation so legs move before start
     requestAnimationFrame((t)=>{ lastIdle = t; idle(t); });
   }

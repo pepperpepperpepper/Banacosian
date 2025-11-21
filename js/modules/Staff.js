@@ -62,6 +62,7 @@ class StaffModule {
         this.noteEntries = [];
         this.staffNotes = [];
         this.keySignature = 'C';
+        this.clef = 'treble';
         this.noteSpeller = null; // optional function(note:string)->string for display spelling
         this.dictationMode = 'melodic';
         this.fontPreference = 'bravura';
@@ -77,6 +78,11 @@ class StaffModule {
         if (hasDocument) {
             this.initializeDisplay();
         }
+    }
+
+    shouldStemless(mode = this.dictationMode) {
+        const resolvedMode = mode || this.dictationMode;
+        return resolvedMode === 'melodic';
     }
 
     // Allow external modules to control enharmonic spelling for displayed notes
@@ -181,6 +187,7 @@ class StaffModule {
                 const display = new DisplayCtor({
                     container: this.containerEl,
                     statusEl: this.statusEl,
+                    clef: this.clef,
                     keySignature: this.keySignature,
                     fontId: this.fontPreference,
                     minWidth: sizing.minWidth ?? undefined,
@@ -212,6 +219,24 @@ class StaffModule {
         if (!this.fontIndicatorEl || !display) return;
         const label = display.getFontLabel();
         this.fontIndicatorEl.textContent = label ? `Font: ${label}` : '';
+    }
+
+    /**
+     * Update the active clef and trigger a re-render.
+     * @param {('treble'|'bass'|'alto'|'tenor')} clef
+     */
+    setClef(clef) {
+        const next = (clef || '').toString().toLowerCase();
+        if (!next || next === this.clef) return;
+        this.clef = next;
+        this.enqueue(async (display) => {
+            if (typeof display.setClef === 'function') {
+                await display.setClef(next);
+            } else {
+                display.clef = next;
+                await display.render?.();
+            }
+        });
     }
 
     enqueue(task) {
@@ -256,7 +281,11 @@ class StaffModule {
             this.enqueue((display) => display.setSequence(this.noteEntries));
             return;
         }
-        const entry = { note: this.spell(note), state: 'user' };
+        const entry = {
+            note: this.spell(note),
+            state: 'user',
+            ...(this.shouldStemless() ? { stemless: true } : {}),
+        };
         this.noteEntries.push(entry);
         this.staffNotes.push({
             note: entry.note,
@@ -265,6 +294,71 @@ class StaffModule {
             element: null
         });
         this.enqueue((display) => display.setSequence(this.noteEntries));
+    }
+
+    /**
+     * Append a note to the staff, trimming older notes so that at most `maxVisible`
+     * melodic notes remain. This creates a leftward "scroll" effect when crowded.
+     * Only applies to melodic mode; harmonic mode falls back to showNoteOnStaff.
+     * @param {string} note
+     * @param {number} maxVisible - maximum number of visible notes (default 10)
+     */
+    showNoteOnStaffWithLimit(note, maxVisible = 10) {
+        if (!note) return;
+        if (this.dictationMode === 'harmonic') {
+            this.showNoteOnStaff(note);
+            return;
+        }
+        if (Array.isArray(note)) {
+            // Treat as chord entry when an array of notes is provided
+            const spelled = note.map((n) => this.spell(n)).filter(Boolean);
+            const chordNotes = sortNotesAscending(spelled);
+            if (chordNotes.length === 0) return;
+            const chordEntry = {
+                note: chordNotes[0],
+                notes: chordNotes,
+                state: 'user',
+                ...(this.shouldStemless() ? { stemless: true } : {}),
+            };
+            this.noteEntries.push(chordEntry);
+            this.staffNotes.push({
+                notes: chordNotes.slice(),
+                state: 'user',
+                element: null,
+            });
+        } else {
+            const entry = {
+                note: this.spell(note),
+                state: 'user',
+                ...(this.shouldStemless() ? { stemless: true } : {}),
+            };
+            this.noteEntries.push(entry);
+            this.staffNotes.push({
+                note: entry.note,
+                index: this.staffNotes.length,
+                state: 'user',
+                element: null,
+            });
+        }
+
+        const limit = Math.max(1, Number(maxVisible) || 10);
+        if (this.noteEntries.length > limit) {
+            const drop = this.noteEntries.length - limit;
+            this.noteEntries.splice(0, drop);
+            this.staffNotes.splice(0, drop);
+            // Reindex remaining
+            for (let i = 0; i < this.staffNotes.length; i += 1) {
+                if (this.staffNotes[i]) this.staffNotes[i].index = i;
+            }
+        }
+
+        this.enqueue((display) => display.setSequence(this.noteEntries));
+    }
+
+    /** Append a chord explicitly (notes array). Obeys maxVisible window. */
+    showChordOnStaffWithLimit(notes, maxVisible = 10) {
+        if (!Array.isArray(notes) || notes.length === 0) return;
+        return this.showNoteOnStaffWithLimit(notes, maxVisible);
     }
 
     clearStaffNotes() {
@@ -355,7 +449,11 @@ class StaffModule {
     highlightNoteOnStaff(note, duration = 600) {
         if (!note) return;
         this.cancelActiveReplay();
-        const entry = { note, state: 'highlight' };
+        const entry = {
+            note,
+            state: 'highlight',
+            ...(this.shouldStemless() ? { stemless: true } : {}),
+        };
         this.enqueue((display) => display.setHighlight(entry));
         if (this.highlightTimeout) {
             const clearFn = typeof window !== 'undefined' ? window.clearTimeout : clearTimeout;
@@ -444,6 +542,11 @@ class StaffModule {
         });
     }
 
+    // Back-compat alias used by some callers
+    async replayOnStaff(notes, options = {}) {
+        return this.replaySequenceOnStaff(notes, options);
+    }
+
     async replaySequenceOnStaff(notes, options = {}) {
         const sequence = Array.isArray(notes) ? notes.filter((note) => typeof note === 'string' && note) : [];
         if (sequence.length === 0) {
@@ -465,6 +568,8 @@ class StaffModule {
                 state: 'reference',
                 duration: '8',
                 dots: 0,
+                // Intro/reference notes should be stemless for clarity
+                stemless: true,
             }))
             : this.noteEntries.map((entry) => ({ ...entry }));
         this.cancelActiveReplay();
@@ -494,6 +599,7 @@ class StaffModule {
             const highlightEntry = {
                 ...chordEntry,
                 state: 'highlight',
+                stemless: true,
             };
             await this.enqueue((display) => {
                 if (shouldUseTemporary) {
@@ -537,6 +643,7 @@ class StaffModule {
                 ...originalEntry,
                 note: targetNote,
                 state: 'highlight',
+                stemless: true,
             };
             if (shouldUseTemporary) {
                 highlightEntry.duration = '8';
@@ -620,6 +727,7 @@ class StaffModule {
             ? userSeq.map((n) => this.spell(n))
             : (this.noteEntries.length === spelled.length ? this.noteEntries.map((e) => e?.note || '?') : null);
         const overlay = [];
+        const stemless = this.shouldStemless(dictationMode);
         for (let i = 0; i < spelled.length; i += 1) {
             const target = spelled[i];
             const userNote = Array.isArray(userSpelled) ? userSpelled[i] : null;
@@ -627,7 +735,11 @@ class StaffModule {
                 // keep place with invisible rest to preserve alignment
                 overlay.push({ isRest: true, duration: 'q', state: 'answer', style: { fillStyle: 'transparent', strokeStyle: 'transparent' } });
             } else {
-                overlay.push({ note: target, state: 'answer' });
+                overlay.push({
+                    note: target,
+                    state: 'answer',
+                    ...(stemless ? { stemless: true } : {}),
+                });
             }
         }
         this._lastOverlayEntries = overlay;

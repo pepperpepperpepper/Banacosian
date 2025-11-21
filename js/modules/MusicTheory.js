@@ -63,6 +63,21 @@ class MusicTheoryModule {
             'E', 'F', 'F#', 'Gb', 'G', 'G#',
             'Ab', 'A', 'A#', 'Bb', 'B'
         ];
+        this.naturalPitchClassMap = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+        this.majorScaleSemitoneSteps = [0, 2, 4, 5, 7, 9, 11];
+        this.modeDegreeIndex = {
+            'ionian': 0,
+            'dorian': 1,
+            'phrygian': 2,
+            'lydian': 3,
+            'mixolydian': 4,
+            'aeolian': 5,
+            'locrian': 6
+        };
+        this.majorKeySpellings = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+        this.majorPitchTraversal = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5];
+        this.modeTonicOptionCache = new Map();
+        this.majorScaleCache = new Map();
         this.whiteKeyCount = 14;
         this.whiteKeyUnitWidth = 1;
         this.blackKeyUnitWidth = 0.64;
@@ -169,6 +184,101 @@ class MusicTheoryModule {
     }
 
     /**
+     * Normalize a full note spelling (letter, accidentals, octave) without altering pitch.
+     * @param {string} note - Raw note string (e.g., ' c♯4 ')
+     * @returns {string} Normalized note (e.g., 'C#4')
+     */
+    normalizeNoteSpelling(note) {
+        if (!note || typeof note !== 'string') {
+            return '';
+        }
+        const match = /^\s*([A-Ga-g])([#x𝄪♯b♭𝄫n♮]{0,4})(-?\d+)\s*$/.exec(note);
+        if (!match) {
+            return note.trim();
+        }
+        const letter = match[1].toUpperCase();
+        let accidental = match[2] || '';
+        accidental = accidental
+            .replace(/♯/g, '#')
+            .replace(/𝄪/g, '##')
+            .replace(/x/g, '##')
+            .replace(/♭/g, 'b')
+            .replace(/𝄫/g, 'bb')
+            .replace(/♮/g, '')
+            .replace(/n/g, '');
+        if (accidental.length > 3) {
+            accidental = accidental.slice(0, 3);
+        }
+        const octave = match[3];
+        return `${letter}${accidental}${octave}`;
+    }
+
+    /**
+     * Determine whether a note string includes an explicit accidental mark.
+     * @param {string} note
+     * @returns {boolean}
+     */
+    noteHasExplicitAccidental(note) {
+        if (!note || typeof note !== 'string') {
+            return false;
+        }
+        return /[#x𝄪♯b♭𝄫]/.test(note);
+    }
+
+    /**
+     * Spell a note for staff rendering while respecting mode/tonic preference.
+     * Notes with explicit accidentals are preserved; naturals are re-spelled using the preference map.
+     * @param {string} note
+     * @param {string} mode
+     * @param {string} tonic
+     * @returns {string}
+     */
+    spellNoteForStaff(note, mode, tonic) {
+        if (!note || typeof note !== 'string') {
+            return note;
+        }
+        const normalized = this.normalizeNoteSpelling(note);
+        const midi = this.noteToSemitone(normalized);
+        if (midi === null) {
+            return normalized;
+        }
+        if (this.noteHasExplicitAccidental(normalized)) {
+            return normalized;
+        }
+        const displayName = this.getDisplayNoteName(normalized, mode, tonic);
+        const spelledName = this.standardizeNoteName(displayName);
+        if (!spelledName) {
+            return normalized;
+        }
+        const normalizedName = this.standardizeNoteName(normalized);
+        if (normalizedName && normalizedName.toUpperCase() === spelledName.toUpperCase()) {
+            return normalized;
+        }
+        const pitchClass = this.noteNameToChromaticIndex(spelledName);
+        if (pitchClass === null || !Number.isFinite(pitchClass)) {
+            return normalized;
+        }
+        const match = /^\s*([A-G])([#b]{0,3})(-?\d+)\s*$/i.exec(normalized);
+        const originalOctave = match ? Number.parseInt(match[3], 10) : null;
+        if (Number.isInteger(originalOctave)) {
+            for (let delta = -2; delta <= 2; delta += 1) {
+                const candidateOctave = originalOctave + delta;
+                if (!Number.isInteger(candidateOctave)) continue;
+                const candidate = `${spelledName}${candidateOctave}`;
+                if (this.noteToSemitone(candidate) === midi) {
+                    return candidate;
+                }
+            }
+        }
+        const roughOctave = Math.round((midi - pitchClass) / 12) - 1;
+        const fallback = `${spelledName}${roughOctave}`;
+        if (this.noteToSemitone(fallback) === midi) {
+            return fallback;
+        }
+        return normalized;
+    }
+
+    /**
      * Convert a note name (without octave) to chromatic index (0-11)
      * @param {string} noteName - Standardized note name
      * @returns {number|null} Chromatic index or null if invalid
@@ -188,6 +298,103 @@ class MusicTheoryModule {
             }
         }
         return null;
+    }
+
+    /**
+     * Build a major scale spelling when Tonal data is unavailable.
+     * Uses basic interval math to derive accidentals for each degree.
+     * @param {string} tonic - Canonical tonic (e.g., 'Db')
+     * @returns {Array<string>|null} list of degree spellings without octave
+     */
+    buildMajorScaleFallback(tonic) {
+        const normalized = this.standardizeNoteName(tonic);
+        if (!normalized) return null;
+        const tonicIndex = this.noteNameToChromaticIndex(normalized);
+        if (tonicIndex === null) return null;
+        const tonicLetter = normalized.charAt(0);
+        const naturalIndex = this.naturalNotes.indexOf(tonicLetter);
+        if (naturalIndex === -1) return null;
+        const notes = [];
+        for (let degree = 0; degree < this.majorScaleSemitoneSteps.length; degree += 1) {
+            const targetPitch = (tonicIndex + this.majorScaleSemitoneSteps[degree]) % 12;
+            const letterIndex = (naturalIndex + degree) % this.naturalNotes.length;
+            const letter = this.naturalNotes[letterIndex];
+            const naturalPitch = this.naturalPitchClassMap[letter];
+            let delta = targetPitch - naturalPitch;
+            if (delta > 6) delta -= 12;
+            if (delta < -6) delta += 12;
+            let accidental = '';
+            if (delta > 0) {
+                accidental = '#'.repeat(delta);
+            } else if (delta < 0) {
+                accidental = 'b'.repeat(-delta);
+            }
+            notes.push(`${letter}${accidental}`);
+        }
+        return notes;
+    }
+
+    /**
+     * Retrieve (and cache) canonical major scale spellings for a tonic.
+     * @param {string} tonic
+     * @returns {Array<string>|null}
+     */
+    getMajorScaleNotes(tonic) {
+        const normalized = this.standardizeNoteName(tonic);
+        if (!normalized) return null;
+        if (this.majorScaleCache.has(normalized)) {
+            const cached = this.majorScaleCache.get(normalized);
+            return cached ? cached.slice() : null;
+        }
+        let notes = null;
+        if (this.tonalScale && typeof this.tonalScale.get === 'function') {
+            try {
+                const scale = this.tonalScale.get(`${normalized} major`);
+                if (scale && Array.isArray(scale.notes) && scale.notes.length >= 7) {
+                    notes = scale.notes.map((note) => this.standardizeNoteName(note));
+                }
+            } catch (error) {
+                // Ignore Tonal failure and fall back to our builder
+                notes = null;
+            }
+        }
+        if (!notes) {
+            notes = this.buildMajorScaleFallback(normalized);
+        }
+        if (!notes) {
+            return null;
+        }
+        this.majorScaleCache.set(normalized, notes);
+        return notes.slice();
+    }
+
+    /**
+     * Derive canonical spelling + key preference for a mode given a pitch class.
+     * @param {string} mode - normalized mode name
+     * @param {number} pitchClass - 0-11 chromatic index for the mode's tonic
+     * @returns {{preference:string, displayTonic:string, majorTonic:string}|null}
+     */
+    deriveModeSignatureForPitchClass(mode, pitchClass) {
+        const degreeIndex = this.modeDegreeIndex[mode];
+        if (!Number.isInteger(degreeIndex)) {
+            return null;
+        }
+        const normalizedPitch = ((pitchClass % 12) + 12) % 12;
+        const stepFromMajor = this.majorScaleSemitoneSteps[degreeIndex] || 0;
+        const majorPitchClass = (normalizedPitch - stepFromMajor + 12) % 12;
+        const majorLabel = this.majorKeySpellings[majorPitchClass] || this.sharpNoteNames[majorPitchClass];
+        const scaleNotes = this.getMajorScaleNotes(majorLabel);
+        const displayTonic = (scaleNotes && scaleNotes[degreeIndex])
+            ? this.standardizeNoteName(scaleNotes[degreeIndex])
+            : this.sharpNoteNames[normalizedPitch];
+        const preference = this.getPreferenceForTonic(majorLabel);
+        return {
+            preference,
+            displayTonic,
+            majorTonic: majorLabel,
+            majorPitchClass,
+            modePitchClass: normalizedPitch
+        };
     }
 
     /**
@@ -259,18 +466,27 @@ class MusicTheoryModule {
 
         const normalizedMode = (mode || 'ionian').toLowerCase();
         const normalizedTonic = this.standardizeNoteName(tonic) || this.getDefaultTonicLetter(normalizedMode);
-        const preference = this.getPreferenceForTonic(normalizedTonic);
         const tonicIndex = this.noteNameToChromaticIndex(normalizedTonic);
-        let displayTonic = normalizedTonic;
+        let resolvedSignature = null;
         if (tonicIndex !== null) {
-            if (preference === 'flat') {
-                displayTonic = this.flatNoteNames[tonicIndex];
-            } else if (preference === 'sharp') {
-                displayTonic = this.sharpNoteNames[tonicIndex];
-            } else if (this.naturalNotes.includes(this.sharpNoteNames[tonicIndex])) {
-                displayTonic = this.sharpNoteNames[tonicIndex];
+            resolvedSignature = this.deriveModeSignatureForPitchClass(normalizedMode, tonicIndex);
+        }
+
+        let preference;
+        let displayTonic;
+        if (resolvedSignature) {
+            preference = resolvedSignature.preference;
+            displayTonic = resolvedSignature.displayTonic;
+        } else {
+            preference = this.getPreferenceForTonic(normalizedTonic);
+            if (tonicIndex !== null) {
+                if (preference === 'flat') {
+                    displayTonic = this.flatNoteNames[tonicIndex];
+                } else {
+                    displayTonic = this.sharpNoteNames[tonicIndex];
+                }
             } else {
-                displayTonic = this.sharpNoteNames[tonicIndex];
+                displayTonic = normalizedTonic;
             }
         }
 
@@ -511,8 +727,7 @@ class MusicTheoryModule {
             const config = this.modeConfigs[mode];
             if (!config) return;
 
-            const defaultLetter = this.extractNoteLetter(config.tonic);
-            this.defaultTonicLetters[mode] = defaultLetter;
+            const defaultLetter = this.getDefaultTonicLetter(mode);
 
             const layout = this.buildKeyboardLayout(mode, defaultLetter);
             const cacheKey = this.getLayoutCacheKey(mode, defaultLetter);
@@ -533,7 +748,7 @@ class MusicTheoryModule {
      * @param {{tonic: string, whiteKeyCount?: number}} config - Mode configuration
      * @returns {{whiteKeys: string[], blackKeys: Array, mapping: Object}}
      */
-    buildKeyboardLayout(mode, tonicLetter) {
+    buildKeyboardLayout(mode, tonicLetter, options = {}) {
         const normalizedMode = (mode || 'ionian').toLowerCase();
         const config = this.modeConfigs[normalizedMode] || this.modeConfigs['ionian'];
         const defaultTonicNote = config.tonic;
@@ -553,9 +768,15 @@ class MusicTheoryModule {
 
         const tonicMidiCandidate = this.noteToSemitone(tonicNote);
         const fallbackMidi = this.noteToSemitone(resolvedTonicCandidate);
-        const effectiveStartMidi = typeof tonicMidiCandidate === 'number'
+        let effectiveStartMidi = typeof tonicMidiCandidate === 'number'
             ? tonicMidiCandidate
             : (typeof fallbackMidi === 'number' ? fallbackMidi : this.baseStartMidi);
+        // Optional octave/start overrides for callers that want to shift the visible range
+        if (options && typeof options.startMidi === 'number' && Number.isFinite(options.startMidi)) {
+            effectiveStartMidi = options.startMidi;
+        } else if (options && Number.isFinite(options.octaveOffset)) {
+            effectiveStartMidi += Math.trunc(options.octaveOffset) * 12;
+        }
 
         const primaryKeys = this.whiteKeyOffsets.map(offset => {
             const midi = effectiveStartMidi + offset;
@@ -789,6 +1010,26 @@ class MusicTheoryModule {
      */
     normalizeTonic(tonic) {
         return this.standardizeNoteName(tonic);
+    }
+
+    /**
+     * Normalize tonic for a specific mode, returning the canonical spelling for that pitch class.
+     * @param {string} mode
+     * @param {string} tonic
+     * @returns {string}
+     */
+    normalizeTonicForMode(mode, tonic) {
+        const normalizedMode = (mode || 'ionian').toLowerCase();
+        const standardized = this.standardizeNoteName(tonic);
+        const pitchClass = standardized ? this.noteNameToChromaticIndex(standardized) : null;
+        if (pitchClass === null) {
+            return standardized || this.getDefaultTonicLetter(normalizedMode);
+        }
+        const signature = this.deriveModeSignatureForPitchClass(normalizedMode, pitchClass);
+        if (signature && signature.displayTonic) {
+            return signature.displayTonic;
+        }
+        return standardized || this.getDefaultTonicLetter(normalizedMode);
     }
 
     /**
@@ -1063,15 +1304,56 @@ class MusicTheoryModule {
      */
     getDefaultTonicLetter(mode) {
         const normalizedMode = (mode || 'ionian').toLowerCase();
-        return this.defaultTonicLetters[normalizedMode] || 'C';
+        if (this.defaultTonicLetters[normalizedMode]) {
+            return this.defaultTonicLetters[normalizedMode];
+        }
+        const options = this.getAvailableTonicsForMode(normalizedMode);
+        const fallback = options.length > 0 ? options[0] : 'C';
+        this.defaultTonicLetters[normalizedMode] = fallback;
+        return fallback;
     }
 
     /**
-     * Get available tonic options
-     * @returns {Array<string>} tonics
+     * Compute (or retrieve cached) tonic options for a mode.
+     * @param {string} mode
+     * @returns {Array<string>}
+     */
+    getAvailableTonicsForMode(mode) {
+        const normalizedMode = (mode || 'ionian').toLowerCase();
+        if (this.modeTonicOptionCache.has(normalizedMode)) {
+            return this.modeTonicOptionCache.get(normalizedMode).slice();
+        }
+        const degreeIndex = this.modeDegreeIndex[normalizedMode];
+        const options = [];
+        const seen = new Set();
+        if (Number.isInteger(degreeIndex)) {
+            this.majorPitchTraversal.forEach((majorPitch) => {
+                const modePitch = (majorPitch + (this.majorScaleSemitoneSteps[degreeIndex] || 0)) % 12;
+                const signature = this.deriveModeSignatureForPitchClass(normalizedMode, modePitch);
+                if (signature && signature.displayTonic && !seen.has(signature.displayTonic)) {
+                    options.push(signature.displayTonic);
+                    seen.add(signature.displayTonic);
+                }
+            });
+        }
+        if (options.length === 0) {
+            this.availableTonics.forEach((tonic) => {
+                if (!seen.has(tonic)) {
+                    options.push(tonic);
+                    seen.add(tonic);
+                }
+            });
+        }
+        this.modeTonicOptionCache.set(normalizedMode, options);
+        return options.slice();
+    }
+
+    /**
+     * Backwards-compatible access to tonic options (defaults to Ionian).
+     * @returns {Array<string>}
      */
     getAvailableTonics() {
-        return this.availableTonics.slice();
+        return this.getAvailableTonicsForMode('ionian');
     }
 
     /**

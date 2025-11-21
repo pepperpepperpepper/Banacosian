@@ -23,13 +23,23 @@
   flex-wrap: wrap;
 }
 
+/* Make footer/data buttons slightly larger without stretching full width */
+.data-row .control-btn.ui-pill {
+  --ui-padding-block: 14px;
+  --ui-padding-inline: 26px;
+  --ui-font-size: 1.05em;
+  width: auto;
+  max-width: max-content;
+  flex: 0 0 auto;
+ }
+
 .vexflow-display {
   position: relative;
-  min-height: 140px;
+  min-height: 132px;
   width: 100%;
   max-width: none;
   margin: 0 auto 2px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: none; /* remove 1px boundary */
   border-radius: var(--app-border-radius-sm);
   background: transparent;
   backdrop-filter: none;

@@ -205,6 +205,14 @@ export class VexflowStaffDisplay {
     return this.render();
   }
 
+  async setClef(clef) {
+    const next = (clef || '').toString().toLowerCase();
+    if (!next) return this.render();
+    if (next === this.clef) return this.render();
+    this.clef = next;
+    return this.render();
+  }
+
   async setSequence(entries) {
     this.sequenceEntries = Array.isArray(entries) ? entries.slice() : [];
     return this.render();
@@ -306,6 +314,7 @@ export class VexflowStaffDisplay {
         // If per-key styles exist, avoid applying a whole-note style so heads can differ.
         style: keyStyles ? undefined : resolvedStyle,
         keyStyles,
+        stemless: entry.stemless === true,
       };
     }
     if (!entry.note) return null;
@@ -324,6 +333,7 @@ export class VexflowStaffDisplay {
       accidentals: [decideDisplayedAccidental(letter, accidental || null, this.keySignature)],
       midis: [midi],
       style: resolvedStyle,
+      stemless: entry.stemless === true,
     };
   }
 

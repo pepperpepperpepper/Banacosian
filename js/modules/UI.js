@@ -39,13 +39,36 @@ class UIModule {
      * @param {Object} callbacks - Callback functions for various events
      */
     setupEventListeners(callbacks) {
-        // Button event listeners
-        document.getElementById('newSequenceBtn').addEventListener('click', callbacks.onNewSequence);
-        document.getElementById('playSequenceBtn').addEventListener('click', callbacks.onPlaySequence);
-        document.getElementById('showHistoryBtn').addEventListener('click', callbacks.onShowHistory);
-        document.getElementById('closeHistoryBtn').addEventListener('click', callbacks.onHideHistory);
-        document.getElementById('saveDataBtn').addEventListener('click', callbacks.onSaveData);
-        document.getElementById('loadDataBtn').addEventListener('click', callbacks.onLoadData);
+        // Button event listeners (guard against optional/missing controls)
+        const newSequenceBtn = document.getElementById('newSequenceBtn');
+        if (newSequenceBtn && typeof callbacks.onNewSequence === 'function') {
+            newSequenceBtn.addEventListener('click', callbacks.onNewSequence);
+        }
+
+        const playSequenceBtn = document.getElementById('playSequenceBtn');
+        if (playSequenceBtn && typeof callbacks.onPlaySequence === 'function') {
+            playSequenceBtn.addEventListener('click', callbacks.onPlaySequence);
+        }
+
+        const showHistoryBtn = document.getElementById('showHistoryBtn');
+        if (showHistoryBtn && typeof callbacks.onShowHistory === 'function') {
+            showHistoryBtn.addEventListener('click', callbacks.onShowHistory);
+        }
+
+        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+        if (closeHistoryBtn && typeof callbacks.onHideHistory === 'function') {
+            closeHistoryBtn.addEventListener('click', callbacks.onHideHistory);
+        }
+
+        const saveDataBtn = document.getElementById('saveDataBtn');
+        if (saveDataBtn && typeof callbacks.onSaveData === 'function') {
+            saveDataBtn.addEventListener('click', callbacks.onSaveData);
+        }
+
+        const loadDataBtn = document.getElementById('loadDataBtn');
+        if (loadDataBtn && typeof callbacks.onLoadData === 'function') {
+            loadDataBtn.addEventListener('click', callbacks.onLoadData);
+        }
 
         const settingsToggle = document.getElementById('settingsToggle');
         const settingsPanel = document.getElementById('settingsPanel');

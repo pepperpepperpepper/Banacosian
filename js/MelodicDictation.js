@@ -28,7 +28,9 @@ class MelodicDictation {
         this.staffFont = 'bravura';
         this.disabledKeysStyle = 'hatched';
         this.answerRevealMode = 'show';
-        this.availableTonics = this.musicTheory.getAvailableTonics();
+        this.availableTonics = this.musicTheory.getAvailableTonicsForMode
+            ? this.musicTheory.getAvailableTonicsForMode(this.mode)
+            : this.musicTheory.getAvailableTonics();
         this.availableTimbres = this.audioModule.getAvailableTimbres();
         this.timbre = this.audioModule.getCurrentTimbreId();
         this.autoPlayNext = false;
@@ -59,6 +61,8 @@ class MelodicDictation {
             console.warn('Failed to load saved settings:', e);
         }
 
+        this.synchronizeTonicOptions({ updateUI: false });
+
         this.staffModule.setFontPreference(this.staffFont);
         this.keyboardModule.setDisabledKeysStyle(this.disabledKeysStyle);
 
@@ -83,7 +87,7 @@ class MelodicDictation {
             
             // Setup event listeners
             this.setupEventListeners();
-            this.uiModule.populateTonicOptions(this.availableTonics, this.tonic);
+            this.synchronizeTonicOptions();
             this.uiModule.populateTimbreOptions(this.availableTimbres, this.timbre);
             let staffFontOptions = [];
             try {
@@ -183,13 +187,36 @@ class MelodicDictation {
     }
 
     /**
+     * Ensure tonic options + current selection align with the active mode.
+     * @param {{updateUI?:boolean}} options
+     */
+    synchronizeTonicOptions(options = {}) {
+        const { updateUI = true } = options;
+        if (typeof this.musicTheory.getAvailableTonicsForMode === 'function') {
+            this.availableTonics = this.musicTheory.getAvailableTonicsForMode(this.mode);
+        } else {
+            this.availableTonics = this.musicTheory.getAvailableTonics();
+        }
+        const canonical = (typeof this.musicTheory.normalizeTonicForMode === 'function')
+            ? this.musicTheory.normalizeTonicForMode(this.mode, this.tonic)
+            : this.musicTheory.normalizeTonic(this.tonic);
+        this.tonic = canonical || this.tonic || this.musicTheory.getDefaultTonicLetter(this.mode);
+        if (!this.availableTonics.includes(this.tonic) && this.availableTonics.length > 0) {
+            this.tonic = this.availableTonics[0];
+        }
+        if (updateUI && this.uiModule && typeof this.uiModule.populateTonicOptions === 'function') {
+            this.uiModule.populateTonicOptions(this.availableTonics, this.tonic);
+        }
+    }
+
+    /**
      * Keep the staff's key signature and enharmonic spelling aligned with the current mode/tonic.
      */
     syncStaffTonality() {
         try {
             // Configure a speller that maps any incoming note to the display spelling for the active mode/tonic
             this.staffModule.setNoteSpeller((note) => (
-                this.musicTheory.getDisplayNoteLabel(note, this.mode, this.tonic, { includeOctave: true })
+                this.musicTheory.spellNoteForStaff(note, this.mode, this.tonic)
             ));
 
             // Choose the key signature to display on the stave. Use the tonic spelling from MusicTheory.
@@ -252,10 +279,15 @@ class MelodicDictation {
         this.currentSequence = [];
         this.userSequence = [];
         
-        // Choose notes based on scale type
-        const availableNotes = this.scaleType === 'diatonic' ? 
-            this.keyboardModule.getDiatonicNotes() : 
-            this.musicTheory.getNotes();
+        // Choose notes based on current mode/tonic (scaleType only affects keyboard visibility)
+        const availableNotes = this.buildSequenceNotePool();
+        if (!Array.isArray(availableNotes) || availableNotes.length === 0) {
+            console.error('Unable to derive note pool for mode/tonic', { mode: this.mode, tonic: this.tonic });
+            this.uiModule.updateFeedback('Unable to generate a sequence for this mode/tonic. Please adjust settings.', 'incorrect');
+            this.audioModule.setIsPlaying(false);
+            this.uiModule.setPlayButtonState(false);
+            return;
+        }
         
         for (let i = 0; i < this.sequenceLength; i++) {
             const randomNote = availableNotes[Math.floor(Math.random() * availableNotes.length)];
@@ -266,9 +298,36 @@ class MelodicDictation {
         this.uiModule.updateSequenceDisplay(this.currentSequence, { dictationType: this.dictationType });
         this.playSequence();
         
-        const scaleText = this.scaleType === 'diatonic' ? ` (${this.mode} mode)` : '';
+        const scaleText = this.mode ? ` (${this.mode} mode)` : '';
         this.uiModule.updateFeedback(`Listen carefully${scaleText}...`);
         this.uiModule.setPlayButtonState(false);
+    }
+
+    /**
+     * Build the note pool used for new sequences based on the selected mode/tonic.
+     * Falls back gracefully if cached keyboard data or theory helpers are unavailable.
+     * @returns {string[]} ordered list of candidate note names
+     */
+    buildSequenceNotePool() {
+        let notes = [];
+        try {
+            notes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonic) || [];
+        } catch (error) {
+            console.warn('Failed to generate diatonic notes from theory module:', error);
+            notes = [];
+        }
+
+        if (Array.isArray(notes) && notes.length > 0) {
+            return notes.slice();
+        }
+
+        const keyboardNotes = this.keyboardModule.getDiatonicNotes();
+        if (Array.isArray(keyboardNotes) && keyboardNotes.length > 0) {
+            return keyboardNotes.slice();
+        }
+
+        const fallback = this.musicTheory.getNotes();
+        return Array.isArray(fallback) ? fallback.slice() : [];
     }
 
     /**
@@ -625,8 +684,14 @@ class MelodicDictation {
     handleTonicChange(e) {
         try {
             const requestedTonic = e.target.value;
-            this.keyboardModule.setTonic(requestedTonic);
-            this.tonic = this.keyboardModule.tonicLetter || requestedTonic;
+            const canonical = (typeof this.musicTheory.normalizeTonicForMode === 'function')
+                ? this.musicTheory.normalizeTonicForMode(this.mode, requestedTonic)
+                : this.musicTheory.normalizeTonic(requestedTonic);
+            this.keyboardModule.setTonic(canonical);
+            this.tonic = this.keyboardModule.tonicLetter || canonical || requestedTonic;
+            if (!this.availableTonics.includes(this.tonic)) {
+                this.synchronizeTonicOptions();
+            }
             const displayTonic = this.musicTheory.getDisplayTonicName(this.mode, this.tonic);
             this.uiModule.setTonicValue(this.tonic);
             this.keyboardModule.updateKeyboardVisibility();
@@ -656,11 +721,10 @@ class MelodicDictation {
     handleModeChange(e) {
         try {
             const selectedMode = e.target.value;
-            const previousTonic = this.tonic || this.musicTheory.getDefaultTonicLetter(selectedMode);
-
             this.mode = selectedMode;
-            this.keyboardModule.setMode(this.mode, previousTonic);
-            this.tonic = this.keyboardModule.tonicLetter || previousTonic;
+            this.synchronizeTonicOptions();
+            this.keyboardModule.setMode(this.mode, this.tonic);
+            this.tonic = this.keyboardModule.tonicLetter || this.tonic;
             const displayTonic = this.musicTheory.getDisplayTonicName(this.mode, this.tonic);
             this.uiModule.setTonicValue(this.tonic);
             this.keyboardModule.updateKeyboardVisibility();

@@ -288,12 +288,21 @@
           await audio.playChord(f, 0.8);
         }
       } else {
-        if (isValidFrequency(rootFreq)) {
-          await audio.playTone(rootFreq, 0.55);
-          await new Promise(r => setTimeout(r, 140));
-        }
-        if (isValidFrequency(otherFreq)) {
-          await audio.playTone(otherFreq, 0.55);
+        const seq = [rootFreq, otherFreq].filter(isValidFrequency);
+        if (seq.length) {
+          if (typeof audio.playToneSequence === 'function') {
+            // Slightly tighter melodic gap than the original 140ms
+            await audio.playToneSequence(seq, 0.55, 0.12);
+          } else {
+            // Fallback: preserve previous behavior if sequence helper is unavailable
+            if (isValidFrequency(rootFreq)) {
+              await audio.playTone(rootFreq, 0.55);
+              await new Promise(r => setTimeout(r, 120));
+            }
+            if (isValidFrequency(otherFreq)) {
+              await audio.playTone(otherFreq, 0.55);
+            }
+          }
         }
       }
       // Optional: show a transient highlight pass

@@ -29,6 +29,23 @@ export function createVexflowNote(spec, theme) {
   if (!isRest && typeof note.autoStem === 'function') {
     note.autoStem();
   }
+  if (!isRest && spec.stemless) {
+    if (typeof note.setStemLength === 'function') {
+      note.setStemLength(0);
+    }
+    if (typeof note.getStem === 'function') {
+      const stem = note.getStem();
+      if (stem && typeof stem.setVisibility === 'function') {
+        stem.setVisibility(false);
+      }
+    }
+    if (typeof note.setStemStyle === 'function') {
+      note.setStemStyle({ strokeStyle: 'transparent', fillStyle: 'transparent' });
+    }
+    if (note.flag && typeof note.setFlagStyle === 'function') {
+      note.setFlagStyle({ strokeStyle: 'transparent', fillStyle: 'transparent' });
+    }
+  }
   if (theme) {
     const ledgerStyle = buildLedgerStyle(theme);
     if (ledgerStyle) {
