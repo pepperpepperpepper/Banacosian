@@ -324,6 +324,25 @@ class KeyboardModule {
         const whiteDetails = (layout && layout.whiteKeyDetails && layout.whiteKeyDetails.length > 0)
             ? layout.whiteKeyDetails
             : (layout && layout.physicalWhiteKeys ? layout.physicalWhiteKeys.map(note => ({ note })) : (layout && layout.whiteKeys ? layout.whiteKeys.map(note => ({ note })) : []));
+        const blackDetails = (layout && layout.blackKeys) ? layout.blackKeys : [];
+
+        const whiteNotchInfo = whiteDetails.map(() => ({ left: false, right: false }));
+        if (whiteNotchInfo.length > 0 && blackDetails.length > 0) {
+            blackDetails.forEach((detail) => {
+                const precedingIndex = (typeof detail.precedingIndex === 'number')
+                    ? detail.precedingIndex
+                    : (typeof detail.precedingIndex === 'string' ? parseInt(detail.precedingIndex, 10) : null);
+                const followingIndex = (typeof detail.followingIndex === 'number')
+                    ? detail.followingIndex
+                    : (typeof detail.followingIndex === 'string' ? parseInt(detail.followingIndex, 10) : null);
+                if (Number.isInteger(precedingIndex) && whiteNotchInfo[precedingIndex]) {
+                    whiteNotchInfo[precedingIndex].right = true;
+                }
+                if (Number.isInteger(followingIndex) && whiteNotchInfo[followingIndex]) {
+                    whiteNotchInfo[followingIndex].left = true;
+                }
+            });
+        }
 
         whiteDetails.forEach((detail, index) => {
             const keyEl = document.createElement('div');
@@ -341,6 +360,13 @@ class KeyboardModule {
                 keyEl.dataset.displayLabel = detail.displayName;
             } else {
                 keyEl.removeAttribute('data-display-label');
+            }
+            const notchInfo = whiteNotchInfo[index];
+            if (notchInfo && notchInfo.left) {
+                keyEl.classList.add('white-key-notch-left');
+            }
+            if (notchInfo && notchInfo.right) {
+                keyEl.classList.add('white-key-notch-right');
             }
             if (usingUnitLayout && typeof detail.leftUnits === 'number' && typeof detail.widthUnits === 'number' && spanUnits) {
                 const leftPercent = ((detail.leftUnits - minLeftUnits) / spanUnits) * 100;
@@ -364,7 +390,6 @@ class KeyboardModule {
         container.appendChild(whiteFragment);
 
         const blackFragment = document.createDocumentFragment();
-        const blackDetails = (layout && layout.blackKeys) ? layout.blackKeys : [];
 
         blackDetails.forEach(detail => {
             const keyEl = document.createElement('div');
