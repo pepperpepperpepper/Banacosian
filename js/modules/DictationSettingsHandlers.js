@@ -17,6 +17,8 @@
             }
             if (app.inputMode === 'staff' && app.currentSequence.length === 0 && app.staffInputController) {
                 app.staffInputController.setPracticeLimit(app.getPracticeStackLimit());
+            } else if (typeof app.trimPracticeSequenceToLimit === 'function' && app.currentSequence.length === 0) {
+                app.trimPracticeSequenceToLimit(app.getPracticeStackLimit());
             }
             app.persistSettings();
         }

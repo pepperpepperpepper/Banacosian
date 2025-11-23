@@ -174,6 +174,7 @@ class StaffModule {
         await this.ensureDisplay();
         const interactionsReady = await this.enableInteractionStaffInput();
         if (interactionsReady) {
+            await this.forceInteractionRegistration();
             return;
         }
         const helpers = await this.ensureStaffInputHelpers();
@@ -182,6 +183,22 @@ class StaffModule {
             return;
         }
         await this.refreshStaffInputBindings();
+    }
+
+    async forceInteractionRegistration() {
+        if (this.displayInstance && typeof this.displayInstance.render === 'function') {
+            await this.displayInstance.render();
+            return;
+        }
+        if (this.renderRuntime && typeof this.renderRuntime.render === 'function') {
+            await this.renderRuntime.render();
+            return;
+        }
+        await this.enqueue(async (display) => {
+            if (display && typeof display.render === 'function') {
+                await display.render();
+            }
+        });
     }
 
     setKeySignature(keySig) {

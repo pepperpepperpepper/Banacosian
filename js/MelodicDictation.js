@@ -41,6 +41,7 @@ class MelodicDictation {
         this.staffPendingSubmission = false;
         this.lastAppliedInputMode = null;
         this.practiceSequence = [];
+        this.practicePreviewActive = false;
         this.roundPhaseController = new RoundPhaseController({ uiModule: this.uiModule });
         this.audioPreview = new AudioPreviewService({
             audioModule: this.audioModule,
@@ -311,6 +312,93 @@ class MelodicDictation {
         console.warn('enterStaffPracticePhase invoked without DictationStaffBridge');
     }
 
+    async handleIdleKeyboardPractice(note) {
+        if (!note || this.inputMode !== 'keyboard') return;
+        const idlePhase = (typeof ROUND_PHASES !== 'undefined' && ROUND_PHASES.IDLE)
+            ? ROUND_PHASES.IDLE
+            : 'idle';
+        const currentPhase = this.getRoundPhase ? this.getRoundPhase() : null;
+        if (currentPhase && currentPhase !== idlePhase) {
+            return;
+        }
+        if (this.audioModule && typeof this.audioModule.getIsPlaying === 'function' && this.audioModule.getIsPlaying()) {
+            return;
+        }
+        const limit = this.getPracticeStackLimit();
+        if (!Number.isFinite(limit) || limit <= 0) {
+            return;
+        }
+        if (!Array.isArray(this.practiceSequence)) {
+            this.practiceSequence = [];
+        }
+        const sequence = this.practiceSequence.slice();
+        if (sequence.length >= limit) {
+            sequence.shift();
+        }
+        sequence.push(note);
+        this.practiceSequence = sequence;
+        this.renderPracticePreviewSequence(sequence);
+        this.uiModule.updateUserSequenceDisplay(sequence, [], { dictationType: this.dictationType });
+        if (this.audioPreview && typeof this.audioPreview.previewPitch === 'function') {
+            const phaseGuard = idlePhase ? { allowed: [idlePhase] } : null;
+            this.audioPreview.previewPitch(note, {
+                allowWhilePlaying: false,
+                phaseGuard,
+                duration: 0.4,
+            });
+        }
+    }
+
+    renderPracticePreviewSequence(sequence) {
+        const entries = Array.isArray(sequence) ? sequence : [];
+        const hasNotes = entries.length > 0;
+        if (!this.staffModule) {
+            this.practicePreviewActive = hasNotes;
+            return;
+        }
+        if (hasNotes) {
+            this.practicePreviewActive = true;
+            if (typeof this.staffModule.applyInteractionSequence === 'function') {
+                const maybePromise = this.staffModule.applyInteractionSequence(entries.slice());
+                if (maybePromise && typeof maybePromise.catch === 'function') {
+                    maybePromise.catch((error) => console.warn('Practice preview render failed:', error));
+                }
+            } else {
+                this.staffModule.clearStaffNotes();
+                entries.forEach((note) => this.staffModule.showNoteOnStaff(note, { state: null }));
+            }
+            return;
+        }
+        if (!this.practicePreviewActive) {
+            return;
+        }
+        this.practicePreviewActive = false;
+        if (!this.hasActiveSequence()) {
+            this.staffModule.clearStaffNotes();
+            this.staffModule.clearTonicHighlights();
+        }
+    }
+
+    trimPracticeSequenceToLimit(limit) {
+        const cap = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 0;
+        if (!Array.isArray(this.practiceSequence)) {
+            this.practiceSequence = [];
+        }
+        if (cap === 0) {
+            if (this.practiceSequence.length > 0) {
+                this.practiceSequence = [];
+                this.renderPracticePreviewSequence([]);
+                this.uiModule.updateUserSequenceDisplay([], [], { dictationType: this.dictationType });
+            }
+            return;
+        }
+        if (this.practiceSequence.length > cap) {
+            this.practiceSequence = this.practiceSequence.slice(-cap);
+            this.renderPracticePreviewSequence(this.practiceSequence);
+            this.uiModule.updateUserSequenceDisplay(this.practiceSequence, [], { dictationType: this.dictationType });
+        }
+    }
+
     setRoundPhase(nextPhase, options = {}) {
         if (this.roundPhaseController && typeof this.roundPhaseController.setPhase === 'function') {
             this.roundPhaseController.setPhase(nextPhase, options);
@@ -448,6 +536,10 @@ class MelodicDictation {
             this.uiController.setStaffInputActive(staffActive);
         }
         const hasActiveSequence = this.hasActiveSequence();
+        if (staffActive && modeChanged && !hasActiveSequence && Array.isArray(this.practiceSequence) && this.practiceSequence.length > 0) {
+            this.practiceSequence = [];
+            this.renderPracticePreviewSequence([]);
+        }
         if (staffActive && this.staffInputController) {
             const phase = hasActiveSequence ? 'answer' : 'practice';
             await this.staffInputController.setEnabled(true, {
@@ -468,6 +560,7 @@ class MelodicDictation {
             } else {
                 this.staffInputController.setPracticeLimit(this.getPracticeStackLimit());
                 this.staffPendingSubmission = false;
+                this.enterStaffPracticePhase();
             }
         } else {
             if (this.staffInputController) {
@@ -476,11 +569,11 @@ class MelodicDictation {
                 await this.staffModule.setStaffInputMode({ enabled: false });
             }
             this.staffPendingSubmission = false;
-            if (resetExistingInput) {
-                this.clearStaffInputTracking({ clearPractice: true, resetStaff: true });
-            } else {
-                this.clearStaffInputTracking({ clearPractice: true, resetStaff: false });
-            }
+            const shouldResetStaffDisplay = !hasActiveSequence || resetExistingInput;
+            this.clearStaffInputTracking({
+                clearPractice: true,
+                resetStaff: shouldResetStaffDisplay,
+            });
         }
         this.lastAppliedInputMode = this.inputMode;
         this.updateStaffSubmitState();
@@ -633,7 +726,14 @@ class MelodicDictation {
             return;
         }
 
-        if (this.audioModule.getIsPlaying() || !hasActiveSequence) {
+        if (!hasActiveSequence) {
+            if (!isDeleteOperation && this.inputMode === 'keyboard' && actualNote) {
+                await this.handleIdleKeyboardPractice(actualNote);
+            }
+            return;
+        }
+
+        if (this.audioModule.getIsPlaying()) {
             return;
         }
 

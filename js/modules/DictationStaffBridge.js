@@ -122,11 +122,17 @@
                     app.staffInputController.resetPracticeSequence();
                 } else {
                     app.practiceSequence = [];
+                    if (typeof app.renderPracticePreviewSequence === 'function') {
+                        app.renderPracticePreviewSequence([]);
+                    }
                 }
             }
             if (resetStaff) {
                 app.staffModule.clearStaffNotes();
                 app.staffModule.clearTonicHighlights();
+                if (typeof app.practicePreviewActive === 'boolean') {
+                    app.practicePreviewActive = false;
+                }
                 app.uiModule.updateUserSequenceDisplay([], app.currentSequence, { dictationType: app.dictationType });
             }
         }
