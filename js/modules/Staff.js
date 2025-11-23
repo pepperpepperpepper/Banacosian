@@ -5,11 +5,13 @@
 let StaffNoteUtils;
 let StaffDisplayRuntime;
 let StaffInteractionBridge;
+let StaffSequenceManager;
 if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
     try {
         StaffNoteUtils = require('./StaffNoteUtils.js');
         StaffDisplayRuntime = require('./StaffDisplayRuntime.js');
         StaffInteractionBridge = require('./StaffInteractionBridge.js');
+        StaffSequenceManager = require('./StaffSequenceManager.js');
     } catch (error) {
         console.warn('[StaffModule] Unable to require dependencies.', error);
     }
@@ -17,6 +19,7 @@ if (typeof module !== 'undefined' && module.exports && typeof require === 'funct
     StaffNoteUtils = window.StaffNoteUtils;
     StaffDisplayRuntime = window.StaffDisplayRuntime;
     StaffInteractionBridge = window.StaffInteractionBridge;
+    StaffSequenceManager = window.StaffSequenceManager;
 }
 
 if (!StaffNoteUtils) {
@@ -27,6 +30,9 @@ if (!StaffDisplayRuntime || typeof StaffDisplayRuntime.attachTo !== 'function') 
 }
 if (!StaffInteractionBridge || typeof StaffInteractionBridge.attachTo !== 'function') {
     throw new Error('StaffInteractionBridge dependency missing. Load js/modules/StaffInteractionBridge.js before Staff.js');
+}
+if (!StaffSequenceManager || typeof StaffSequenceManager.attachTo !== 'function') {
+    throw new Error('StaffSequenceManager dependency missing. Load js/modules/StaffSequenceManager.js before Staff.js');
 }
 
 const { sortNotesAscending, formatSpecToNote } = StaffNoteUtils;
@@ -587,69 +593,6 @@ class StaffModule {
         };
     }
 
-    updateUserNoteAt(index, nextNote) {
-        if (!Number.isInteger(index) || index < 0) return;
-        if (!nextNote) return;
-        const entry = this.noteEntries[index];
-        if (!entry) return;
-        const spelled = this.spell(nextNote);
-        if (this.dictationMode === 'harmonic') {
-            if (!entry.notes || entry.notes.length === 0) {
-                entry.notes = [spelled];
-                entry.note = spelled;
-            } else {
-                entry.notes[entry.notes.length - 1] = spelled;
-                entry.note = entry.notes[0];
-            }
-            if (this.staffNotes[0]) {
-                this.staffNotes[0].notes = Array.isArray(entry.notes) ? entry.notes.slice() : [spelled];
-            }
-        } else {
-            entry.note = spelled;
-            entry.notes = [spelled];
-            if (this.shouldStemless()) {
-                entry.stemless = true;
-            }
-            if (this.staffNotes[index]) {
-                this.staffNotes[index].note = spelled;
-                this.staffNotes[index].notes = [spelled];
-            }
-        }
-        this.updateInteractionSnapshotFromEntries();
-        this.enqueue((display) => display.setSequence(this.noteEntries));
-    }
-
-    removeNoteAt(index) {
-        if (!Number.isInteger(index) || index < 0) return;
-        if (this.dictationMode === 'harmonic') {
-            const entry = this.noteEntries[0];
-            if (!entry || !Array.isArray(entry.notes) || entry.notes.length === 0) return;
-            const targetIndex = Math.min(index, entry.notes.length - 1);
-            entry.notes.splice(targetIndex, 1);
-            if (entry.notes.length === 0) {
-                this.noteEntries = [];
-                this.staffNotes = [];
-            } else {
-                entry.note = entry.notes[0];
-                const durationInfo = this.computeHarmonicDuration(entry.notes.length);
-                entry.duration = durationInfo.duration;
-                entry.dots = durationInfo.dots;
-                if (this.staffNotes[0]) {
-                    this.staffNotes[0].notes = entry.notes.slice();
-                }
-            }
-        } else {
-            if (index >= this.noteEntries.length) return;
-            this.noteEntries.splice(index, 1);
-            if (Array.isArray(this.staffNotes) && index < this.staffNotes.length) {
-                this.staffNotes.splice(index, 1);
-            }
-            this.reindexStaffNotes(index);
-        }
-        this.updateInteractionSnapshotFromEntries();
-        this.enqueue((display) => display.setSequence(this.noteEntries));
-    }
-
     async refreshStaffInputBindings() {
         if (!this.staffInputState || !this.staffInputState.enabled) return;
         if (this.staffInputState.strategy === 'interaction') return;
@@ -691,132 +634,6 @@ class StaffModule {
             return;
         }
         await this.refreshStaffInputBindings();
-    }
-
-    insertNoteEntry(note, options = {}) {
-        if (!note) return null;
-        const isDraft = Boolean(options.isDraft);
-        const hasStateOverride = Object.prototype.hasOwnProperty.call(options, 'state');
-        const resolvedState = hasStateOverride
-            ? options.state
-            : (isDraft ? 'draft' : 'user');
-        if (this.dictationMode === 'harmonic') {
-            const existing = this.noteEntries[0] ? { ...this.noteEntries[0] } : null;
-            const existingNotes = Array.isArray(existing?.notes) ? existing.notes.slice() : [];
-            existingNotes.push(this.spell(note));
-            const sortedNotes = sortNotesAscending(existingNotes);
-            const durationInfo = this.computeHarmonicDuration(sortedNotes.length);
-            const chordEntry = {
-                note: sortedNotes[0],
-                notes: sortedNotes,
-                ...(resolvedState != null ? { state: resolvedState } : {}),
-                duration: durationInfo.duration,
-                dots: durationInfo.dots,
-            };
-            this.noteEntries = [chordEntry];
-            this.staffNotes = [{
-                notes: sortedNotes.slice(),
-                state: resolvedState ?? null,
-                element: null,
-            }];
-            return 0;
-        }
-        const spelled = this.spell(note);
-        const entry = {
-            note: spelled,
-            notes: [spelled],
-            ...(resolvedState != null ? { state: resolvedState } : {}),
-            ...(this.shouldStemless() ? { stemless: true } : {}),
-        };
-        const targetIndex = this.normalizeInsertIndex(options.index);
-        this.noteEntries.splice(targetIndex, 0, entry);
-        this.staffNotes.splice(targetIndex, 0, {
-            note: spelled,
-            notes: [spelled],
-            index: targetIndex,
-            state: resolvedState ?? null,
-            element: null,
-        });
-        this.reindexStaffNotes(targetIndex + 1);
-        this.updateInteractionSnapshotFromEntries();
-        return targetIndex;
-    }
-
-    showNoteOnStaff(note, options = {}) {
-        if (!note) return;
-        this.cancelActiveReplay();
-        this.insertNoteEntry(note, options);
-        this.enqueue((display) => display.setSequence(this.noteEntries));
-    }
-
-    /**
-     * Append a note to the staff, trimming older notes so that at most `maxVisible`
-     * melodic notes remain. This creates a leftward "scroll" effect when crowded.
-     * Only applies to melodic mode; harmonic mode falls back to showNoteOnStaff.
-     * @param {string} note
-     * @param {number} maxVisible - maximum number of visible notes (default 10)
-     */
-    showNoteOnStaffWithLimit(note, maxVisible = 10, options = {}) {
-        if (!note) return;
-        this.cancelActiveReplay();
-        if (this.dictationMode === 'harmonic') {
-            this.insertNoteEntry(note, options);
-        } else if (Array.isArray(note)) {
-            const spelled = note.map((n) => this.spell(n)).filter(Boolean);
-            if (spelled.length === 0) return;
-            const targetIndex = this.normalizeInsertIndex(options.index);
-            const hasStateOverride = Object.prototype.hasOwnProperty.call(options, 'state');
-            const resolvedState = hasStateOverride
-                ? options.state
-                : (options.isDraft ? 'draft' : 'user');
-            const entry = {
-                note: spelled[0],
-                notes: spelled,
-                ...(resolvedState != null ? { state: resolvedState } : {}),
-                ...(this.shouldStemless() ? { stemless: true } : {}),
-            };
-            this.noteEntries.splice(targetIndex, 0, entry);
-            this.staffNotes.splice(targetIndex, 0, {
-                notes: spelled.slice(),
-                state: resolvedState ?? null,
-                element: null,
-                index: targetIndex,
-            });
-            this.reindexStaffNotes(targetIndex + 1);
-        } else {
-            this.insertNoteEntry(note, options);
-        }
-        const limit = Math.max(1, Number(maxVisible) || 10);
-        if (this.noteEntries.length > limit) {
-            const drop = this.noteEntries.length - limit;
-            this.noteEntries.splice(0, drop);
-            this.staffNotes.splice(0, drop);
-            this.reindexStaffNotes();
-        }
-        this.enqueue((display) => display.setSequence(this.noteEntries));
-    }
-
-    /** Append a chord explicitly (notes array). Obeys maxVisible window. */
-    showChordOnStaffWithLimit(notes, maxVisible = 10) {
-        if (!Array.isArray(notes) || notes.length === 0) return;
-        return this.showNoteOnStaffWithLimit(notes, maxVisible);
-    }
-
-    clearStaffNotes() {
-        this.cancelActiveReplay();
-        this.noteEntries = [];
-        this.staffNotes = [];
-        this.updateInteractionSnapshotFromEntries();
-        if (this.highlightTimeout) {
-            const clearFn = typeof window !== 'undefined' ? window.clearTimeout : clearTimeout;
-            clearFn(this.highlightTimeout);
-            this.highlightTimeout = null;
-        }
-        this.enqueue(async (display) => {
-            await display.clearHighlight();
-            await display.clearOverlay?.();
-            await display.setSequence([]);
-        });
     }
 
     updateStaffComparison(currentSequence, userSequence, options = {}) {
@@ -1191,6 +1008,7 @@ class StaffModule {
 
 StaffDisplayRuntime.attachTo(StaffModule);
 StaffInteractionBridge.attachTo(StaffModule);
+StaffSequenceManager.attachTo(StaffModule);
 
 // Export the module
 if (typeof module !== 'undefined' && module.exports) {
