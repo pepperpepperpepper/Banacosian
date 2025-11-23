@@ -6,12 +6,20 @@ let StaffNoteUtils;
 let StaffDisplayRuntime;
 let StaffInteractionBridge;
 let StaffSequenceManager;
+let StaffPlaybackController;
+let StaffInputBindings;
+let StaffFeedbackController;
+let StaffSharedUtils;
 if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
     try {
         StaffNoteUtils = require('./StaffNoteUtils.js');
         StaffDisplayRuntime = require('./StaffDisplayRuntime.js');
         StaffInteractionBridge = require('./StaffInteractionBridge.js');
         StaffSequenceManager = require('./StaffSequenceManager.js');
+        StaffPlaybackController = require('./StaffPlaybackController.js');
+        StaffInputBindings = require('./StaffInputBindings.js');
+        StaffFeedbackController = require('./StaffFeedbackController.js');
+        StaffSharedUtils = require('./StaffSharedUtils.js');
     } catch (error) {
         console.warn('[StaffModule] Unable to require dependencies.', error);
     }
@@ -20,6 +28,10 @@ if (typeof module !== 'undefined' && module.exports && typeof require === 'funct
     StaffDisplayRuntime = window.StaffDisplayRuntime;
     StaffInteractionBridge = window.StaffInteractionBridge;
     StaffSequenceManager = window.StaffSequenceManager;
+    StaffPlaybackController = window.StaffPlaybackController;
+    StaffInputBindings = window.StaffInputBindings;
+    StaffFeedbackController = window.StaffFeedbackController;
+    StaffSharedUtils = window.StaffSharedUtils;
 }
 
 if (!StaffNoteUtils) {
@@ -34,8 +46,18 @@ if (!StaffInteractionBridge || typeof StaffInteractionBridge.attachTo !== 'funct
 if (!StaffSequenceManager || typeof StaffSequenceManager.attachTo !== 'function') {
     throw new Error('StaffSequenceManager dependency missing. Load js/modules/StaffSequenceManager.js before Staff.js');
 }
-
-const { sortNotesAscending, formatSpecToNote } = StaffNoteUtils;
+if (!StaffPlaybackController || typeof StaffPlaybackController.attachTo !== 'function') {
+    throw new Error('StaffPlaybackController dependency missing. Load js/modules/StaffPlaybackController.js before Staff.js');
+}
+if (!StaffInputBindings || typeof StaffInputBindings.attachTo !== 'function') {
+    throw new Error('StaffInputBindings dependency missing. Load js/modules/StaffInputBindings.js before Staff.js');
+}
+if (!StaffFeedbackController || typeof StaffFeedbackController.attachTo !== 'function') {
+    throw new Error('StaffFeedbackController dependency missing. Load js/modules/StaffFeedbackController.js before Staff.js');
+}
+if (!StaffSharedUtils || typeof StaffSharedUtils.attachTo !== 'function') {
+    throw new Error('StaffSharedUtils dependency missing. Load js/modules/StaffSharedUtils.js before Staff.js');
+}
 
 class StaffModule {
     constructor() {
@@ -154,23 +176,6 @@ class StaffModule {
         });
     }
 
-    reindexStaffNotes(startIndex = 0) {
-        if (!Array.isArray(this.staffNotes) || this.staffNotes.length === 0) return;
-        for (let i = Math.max(0, startIndex); i < this.staffNotes.length; i += 1) {
-            if (this.staffNotes[i]) {
-                this.staffNotes[i].index = i;
-            }
-        }
-    }
-
-    normalizeInsertIndex(index) {
-        const length = this.noteEntries.length;
-        if (!Number.isInteger(index)) return length;
-        if (index < 0) return 0;
-        if (index > length) return length;
-        return index;
-    }
-
     async ensureStaffInputHelpers() {
         if (!this.staffInputState) return null;
         if (this.staffInputState.strategy === 'interaction') return null;
@@ -209,407 +214,6 @@ class StaffModule {
         return this.staffInputState.helpersPromise;
     }
 
-    attachStaffInputListeners() {
-        if (!this.staffInputState || this.staffInputState.strategy === 'interaction') return;
-        const target = this.containerEl;
-        if (!target) return;
-        const svg = target.querySelector?.('svg');
-        if (!svg) return;
-        const helpers = this.staffInputState.helpers;
-        if (!helpers) return;
-        this.detachStaffInputListeners();
-        const handler = (event) => this.handleStaffPointerEvent(event);
-        const handlers = [];
-        const documentHandlers = [];
-        if (helpers.HAS_POINTER_EVENTS) {
-            ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach((type) => {
-                target.addEventListener(type, handler);
-                handlers.push({ type, handler });
-            });
-        } else {
-            target.addEventListener('mousedown', handler);
-            target.addEventListener('touchstart', handler, { passive: false });
-            target.addEventListener('mousemove', handler);
-            target.addEventListener('mouseup', handler);
-            target.addEventListener('touchmove', handler, { passive: false });
-            target.addEventListener('touchend', handler, { passive: false });
-            target.addEventListener('touchcancel', handler, { passive: false });
-            handlers.push({ type: 'mousedown', handler }, { type: 'touchstart', handler }, { type: 'mousemove', handler }, { type: 'mouseup', handler }, { type: 'touchmove', handler }, { type: 'touchend', handler }, { type: 'touchcancel', handler });
-            if (typeof document !== 'undefined') {
-                const docTargets = [
-                    'mousemove',
-                    'mouseup',
-                    'touchmove',
-                    'touchend',
-                    'touchcancel',
-                ];
-                docTargets.forEach((type) => {
-                    const docHandler = (event) => this.handleStaffPointerEvent(event);
-                    document.addEventListener(type, docHandler, { passive: false });
-                    documentHandlers.push({ target: document, type, handler: docHandler });
-                });
-            }
-        }
-        this.staffInputState.handlers = handlers;
-        this.staffInputState.documentHandlers = documentHandlers;
-        this.staffInputState.boundSvg = svg;
-        this.staffInputState.boundTarget = target;
-        if (this.staffInputState.originalTouchAction === null) {
-            this.staffInputState.originalTouchAction = target.style.touchAction || '';
-        }
-        target.style.touchAction = 'none';
-    }
-
-    detachStaffInputListeners() {
-        if (!this.staffInputState) return;
-        const target = this.staffInputState.boundTarget || this.staffInputState.boundSvg;
-        if (target) {
-            this.staffInputState.handlers.forEach(({ type, handler }) => {
-                if (handler) {
-                    target.removeEventListener(type, handler);
-                }
-            });
-            if (this.staffInputState.originalTouchAction !== null) {
-                target.style.touchAction = this.staffInputState.originalTouchAction;
-            }
-        }
-        this.staffInputState.handlers = [];
-        const docHandlers = this.staffInputState.documentHandlers || [];
-        docHandlers.forEach(({ target, type, handler }) => {
-            if (target && type && handler) {
-                target.removeEventListener(type, handler);
-            }
-        });
-        this.staffInputState.documentHandlers = [];
-        this.staffInputState.boundSvg = null;
-        this.staffInputState.boundTarget = null;
-        this.staffInputState.originalTouchAction = null;
-        if (this.staffInputState.activePointers) {
-            this.staffInputState.activePointers.clear();
-        }
-        if (this.staffInputState.pointerNotes) {
-            this.staffInputState.pointerNotes.clear();
-        }
-    }
-
-    handleStaffPointerEvent(event) {
-        if (!this.staffInputState || !this.staffInputState.enabled) return;
-        if (this.staffInputState.strategy === 'interaction') return;
-        const helpers = this.staffInputState.helpers;
-        if (!helpers || typeof helpers.convertToSvgCoords !== 'function') return;
-        if (!this.containerEl) return;
-        const svg = this.containerEl.querySelector('svg');
-        if (!svg) return;
-        const hasPointerEvents = Boolean(helpers.HAS_POINTER_EVENTS);
-        const type = event?.type || '';
-        const isPointerEvent = hasPointerEvents && type.startsWith('pointer');
-        let phase = null;
-        if (isPointerEvent) {
-            if (type === 'pointerdown') {
-                if (event.button !== undefined && event.button !== 0) return;
-                phase = 'start';
-            } else if (type === 'pointermove') {
-                if (!this.staffInputState.activePointers.has(event.pointerId)) return;
-                phase = 'move';
-            } else if (type === 'pointerup' || type === 'pointercancel') {
-                if (!this.staffInputState.activePointers.has(event.pointerId)) return;
-                phase = 'end';
-            }
-        } else if (type === 'mousedown' || type === 'touchstart') {
-            if (event.button !== undefined && event.button !== 0) return;
-            phase = 'start';
-        } else if (type === 'mouseup' || type === 'touchend' || type === 'touchcancel') {
-            phase = 'end';
-        } else if (type === 'mousemove' || type === 'touchmove') {
-            phase = 'move';
-        }
-        if (!phase) return;
-        const pointerId = isPointerEvent
-            ? event.pointerId
-            : (type.startsWith('mouse') ? 'mouse' : 'touch');
-        const captureTarget = this.staffInputState.boundTarget || svg;
-        if (phase === 'start') {
-            this.staffInputState.activePointers.add(pointerId);
-            if (isPointerEvent && captureTarget && typeof captureTarget.setPointerCapture === 'function' && pointerId != null) {
-                try {
-                    captureTarget.setPointerCapture(pointerId);
-                } catch (captureError) {
-                    console.warn('[StaffModule] unable to capture pointer', captureError);
-                }
-            }
-        } else if ((phase === 'end' || phase === 'cancel') && pointerId != null) {
-            this.staffInputState.activePointers.delete(pointerId);
-            if (isPointerEvent && captureTarget && typeof captureTarget.releasePointerCapture === 'function') {
-                try {
-                    captureTarget.releasePointerCapture(pointerId);
-                } catch (_releaseError) {
-                    /* noop */
-                }
-            }
-        } else if (phase === 'move' && !this.staffInputState.activePointers.has(pointerId)) {
-            return;
-        }
-
-        const normalized = helpers.normalizePointerEvent ? helpers.normalizePointerEvent(event) : event;
-        let coords = null;
-        if (phase !== 'end') {
-            coords = helpers.convertToSvgCoords ? helpers.convertToSvgCoords(normalized, svg) : null;
-            if (!coords) {
-                coords = this.fallbackSvgCoords(normalized, svg);
-            }
-        }
-        const pointerKey = pointerId != null ? pointerId : undefined;
-        const pointerNotes = this.staffInputState.pointerNotes;
-        const existingPointerMeta = pointerNotes.get(pointerKey) || null;
-        let staffIndex = phase === 'start'
-            ? this.resolveStaffIndexFromEvent(event, coords)
-            : (Number.isInteger(existingPointerMeta?.staffIndex)
-                ? existingPointerMeta.staffIndex
-                : null);
-        let pitchInfo = null;
-        let note = null;
-        if (coords) {
-        const renderState = this.getRenderStateSnapshot();
-            pitchInfo = helpers.findClosestPitchForY?.(coords.y, this.clef, {
-                stave: renderState?.activeStave,
-                metrics: renderState?.staffMetrics,
-                midiMin: this.staffInputState.midiMin,
-                midiMax: this.staffInputState.midiMax,
-            });
-            if (pitchInfo?.spec) {
-                note = formatSpecToNote(pitchInfo.spec);
-            }
-        }
-        if (phase !== 'end' && !note) return;
-        if (typeof event.preventDefault === 'function') {
-            event.preventDefault();
-        }
-        if (typeof event.stopPropagation === 'function') {
-            event.stopPropagation();
-        }
-        if (phase === 'move'
-            && note
-            && existingPointerMeta
-            && existingPointerMeta.note === note
-            && (existingPointerMeta.staffIndex === staffIndex)) {
-            return;
-        }
-        let insertIndex = phase === 'start'
-            ? this.determineInsertIndexFromCoords(coords, staffIndex)
-            : (Number.isInteger(existingPointerMeta?.insertIndex)
-                ? existingPointerMeta.insertIndex
-                : null);
-        if (phase === 'start' && staffIndex == null && Number.isInteger(insertIndex)) {
-            staffIndex = insertIndex;
-        }
-        if (typeof this.staffInputState.onInput === 'function') {
-            this.staffInputState.onInput(note, {
-                pitchInfo,
-                coords,
-                phase,
-                pointerId,
-                staffIndex,
-                insertIndex,
-            });
-        }
-        if (phase === 'end' || phase === 'cancel') {
-            pointerNotes.delete(pointerKey);
-        } else if (pointerKey != null) {
-            pointerNotes.set(pointerKey, {
-                note: note ?? existingPointerMeta?.note ?? null,
-                staffIndex,
-                insertIndex,
-            });
-        }
-    }
-
-    resolveStaffIndexFromEvent(event, coords = null) {
-        const targetIndex = this.resolveStaffIndexFromTarget(event);
-        if (targetIndex != null) {
-            return targetIndex;
-        }
-        return this.resolveStaffIndexFromCoords(coords);
-    }
-
-    resolveStaffIndexFromTarget(event) {
-        if (!event) return null;
-        const buildPath = (start) => {
-            const nodes = [];
-            let current = start || null;
-            while (current) {
-                nodes.push(current);
-                current = current.parentNode;
-            }
-            return nodes;
-        };
-        const path = typeof event.composedPath === 'function'
-            ? event.composedPath()
-            : buildPath(event.target);
-        if (!Array.isArray(path)) return null;
-        for (const node of path) {
-            if (!node) continue;
-            const dataset = node.dataset || {};
-            let value = dataset.staffIndex;
-            if (value == null && typeof node.getAttribute === 'function') {
-                value = node.getAttribute('data-staff-index');
-            }
-            if (value == null || value === '') continue;
-            const parsed = Number.parseInt(value, 10);
-            if (Number.isInteger(parsed)) {
-                return parsed;
-            }
-        }
-        return null;
-    }
-
-    resolveStaffIndexFromCoords(coords) {
-        if (!coords || !this.containerEl) return null;
-        const svg = this.containerEl.querySelector('svg');
-        if (!svg) return null;
-        const pointerX = Number.isFinite(coords.x) ? coords.x : coords.scaledX;
-        const pointerY = Number.isFinite(coords.y) ? coords.y : coords.scaledY;
-        if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) return null;
-        const noteEls = svg.querySelectorAll?.('.vf-stavenote[data-staff-index]');
-        if (!noteEls || noteEls.length === 0) return null;
-        const metrics = this.getRenderStateSnapshot()?.staffMetrics || null;
-        const baseSpacing = Number.isFinite(metrics?.spacing) ? metrics.spacing : 10;
-        const padding = Math.max(4, baseSpacing * 0.35);
-        let bestIndex = null;
-        let bestScore = Infinity;
-        noteEls.forEach((node) => {
-            if (!node) return;
-            const attr = node.getAttribute('data-staff-index');
-            const idx = Number.parseInt(attr, 10);
-            if (!Number.isInteger(idx)) return;
-            let bbox = null;
-            try {
-                bbox = node.getBBox?.();
-            } catch (_err) {
-                bbox = null;
-            }
-            if (!bbox) return;
-            const expandedX = bbox.x - padding;
-            const expandedY = bbox.y - padding;
-            const expandedWidth = bbox.width + (padding * 2);
-            const expandedHeight = bbox.height + (padding * 2);
-            const inside = pointerX >= expandedX
-                && pointerX <= expandedX + expandedWidth
-                && pointerY >= expandedY
-                && pointerY <= expandedY + expandedHeight;
-            const centerX = bbox.x + (bbox.width / 2);
-            const centerY = bbox.y + (bbox.height / 2);
-            const dx = Math.abs(pointerX - centerX);
-            const dy = Math.abs(pointerY - centerY);
-            const withinBand = dy <= (padding * 1.5);
-            if (!inside && !withinBand) return;
-            const score = inside ? (dx + dy * 0.1) : (dx + dy);
-            if (score < bestScore) {
-                bestScore = score;
-                bestIndex = idx;
-            }
-        });
-        return bestIndex;
-    }
-
-    determineInsertIndexFromCoords(coords, staffIndex) {
-        if (Number.isInteger(staffIndex) && staffIndex >= 0) {
-            return staffIndex;
-        }
-        if (!coords || !this.containerEl) {
-            return this.noteEntries.length;
-        }
-        const svg = this.containerEl.querySelector('svg');
-        if (!svg) return this.noteEntries.length;
-        const noteEls = svg.querySelectorAll?.('.vf-stavenote[data-staff-index]');
-        if (!noteEls || noteEls.length === 0) {
-            return this.noteEntries.length;
-        }
-        const targetX = Number.isFinite(coords.x) ? coords.x : coords.scaledX;
-        if (!Number.isFinite(targetX)) {
-            return this.noteEntries.length;
-        }
-        let candidate = null;
-        noteEls.forEach((node) => {
-            if (!node) return;
-            const attr = node.getAttribute('data-staff-index');
-            const idx = Number.parseInt(attr, 10);
-            if (!Number.isInteger(idx)) return;
-            let bbox = null;
-            try {
-                bbox = node.getBBox?.();
-            } catch (_err) {
-                bbox = null;
-            }
-            if (!bbox) return;
-            const center = bbox.x + (bbox.width / 2);
-            if (!Number.isFinite(center)) return;
-            if (targetX <= center) {
-                if (candidate == null || idx < candidate) {
-                    candidate = idx;
-                }
-            }
-        });
-        if (candidate == null) {
-            return this.noteEntries.length;
-        }
-        return candidate;
-    }
-
-    fallbackSvgCoords(pointerEvent, svg) {
-        if (!pointerEvent || !svg) return null;
-        const rect = typeof svg.getBoundingClientRect === 'function'
-            ? svg.getBoundingClientRect()
-            : null;
-        if (!rect) return null;
-        const clientX = pointerEvent.clientX ?? pointerEvent.pageX;
-        const clientY = pointerEvent.clientY ?? pointerEvent.pageY;
-        if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
-        const viewBoxAttr = svg.getAttribute?.('viewBox') || '';
-        let minX = 0;
-        let minY = 0;
-        let viewWidth = svg.viewBox?.baseVal?.width || svg.width?.baseVal?.value || rect.width || 0;
-        let viewHeight = svg.viewBox?.baseVal?.height || svg.height?.baseVal?.value || rect.height || 0;
-        if (viewBoxAttr && typeof viewBoxAttr === 'string') {
-            const parts = viewBoxAttr.trim().split(/[\s,]+/).map((part) => Number.parseFloat(part));
-            if (parts.length === 4 && parts.every((n) => Number.isFinite(n))) {
-                [minX, minY, viewWidth, viewHeight] = parts;
-            }
-        }
-        if (!Number.isFinite(viewWidth) || viewWidth === 0 || !Number.isFinite(viewHeight) || viewHeight === 0) {
-            return null;
-        }
-        const relX = (clientX - rect.left) / rect.width;
-        const relY = (clientY - rect.top) / rect.height;
-        if (!Number.isFinite(relX) || !Number.isFinite(relY)) return null;
-        const x = minX + relX * viewWidth;
-        const y = minY + relY * viewHeight;
-        const scale = this.getRenderStateSnapshot()?.staffMetrics?.scale || 1;
-        return {
-            x,
-            y,
-            scaledX: x * scale,
-            scaledY: y * scale,
-            scale,
-        };
-    }
-
-    async refreshStaffInputBindings() {
-        if (!this.staffInputState || !this.staffInputState.enabled) return;
-        if (this.staffInputState.strategy === 'interaction') return;
-        const helpers = this.staffInputState.helpers || await this.ensureStaffInputHelpers();
-        if (!helpers) return;
-        if (!this.containerEl) return;
-        const svg = this.containerEl.querySelector('svg');
-        if (!svg) return;
-        svg.style.pointerEvents = 'all';
-        svg.setAttribute('pointer-events', 'all');
-        this.staffInputState.boundSvg = svg;
-        if (this.staffInputState.boundTarget === this.containerEl && this.staffInputState.handlers.length > 0) {
-            return;
-        }
-        this.attachStaffInputListeners();
-    }
-
     async setStaffInputMode(options = {}) {
         if (!this.staffInputState) return;
         const onInput = typeof options.onInput === 'function' ? options.onInput : null;
@@ -636,105 +240,6 @@ class StaffModule {
         await this.refreshStaffInputBindings();
     }
 
-    updateStaffComparison(currentSequence, userSequence, options = {}) {
-        if (!Array.isArray(currentSequence) || currentSequence.length === 0) return;
-        const user = Array.isArray(userSequence) ? userSequence : [];
-        const mode = options.dictationMode || this.dictationMode;
-        if (mode === 'harmonic') {
-            if (this.noteEntries.length === 0) return;
-            const isCorrect = typeof options.isCorrect === 'boolean'
-                ? options.isCorrect
-                : this.compareHarmonicSequences(currentSequence, user);
-
-            // Build per-note correctness against the target chord (multiset logic)
-            const normalize = (n) => (typeof n === 'string' ? n.trim().toUpperCase() : String(n).toUpperCase());
-            const targetCounts = new Map();
-            const targetSpelled = currentSequence.map((n) => this.spell(n));
-            targetSpelled.forEach((n) => {
-                const key = normalize(n);
-                targetCounts.set(key, (targetCounts.get(key) || 0) + 1);
-            });
-            const existing = this.noteEntries[0] ? { ...this.noteEntries[0] } : null;
-            const chordNotes = Array.isArray(existing?.notes) ? existing.notes.slice() : [];
-            const perNoteStates = chordNotes.map((n) => {
-                const key = normalize(n);
-                const remaining = targetCounts.get(key) || 0;
-                if (remaining > 0) {
-                    targetCounts.set(key, remaining - 1);
-                    return 'correct';
-                }
-                return 'incorrect';
-            });
-
-            const entry = {
-                ...existing,
-                // Keep an overall state for messaging, but avoid whole-note coloring in display
-                state: isCorrect ? 'correct' : 'incorrect',
-                perNoteStates,
-            };
-            this.noteEntries = [entry];
-            this.staffNotes = [{
-                notes: chordNotes,
-                state: entry.state,
-                element: null,
-            }];
-            this.enqueue((display) => display.setSequence(this.noteEntries));
-            return;
-        }
-        const limit = Math.min(this.noteEntries.length, currentSequence.length);
-        for (let i = 0; i < limit; i += 1) {
-            if (i < user.length) {
-                const isCorrect = user[i] === currentSequence[i];
-                this.noteEntries[i] = {
-                    ...this.noteEntries[i],
-                    state: isCorrect ? 'correct' : 'incorrect'
-                };
-                if (this.staffNotes[i]) {
-                    this.staffNotes[i].state = isCorrect ? 'correct' : 'incorrect';
-                }
-            }
-        }
-        this.enqueue((display) => display.setSequence(this.noteEntries));
-    }
-
-    getStaffNotes() {
-        return this.staffNotes;
-    }
-
-    getStaffNotesCount() {
-        return this.staffNotes.length;
-    }
-
-    highlightNoteOnStaff(note, duration = 600) {
-        if (!note) return;
-        this.cancelActiveReplay();
-        const entry = {
-            note,
-            state: 'highlight',
-            ...(this.shouldStemless() ? { stemless: true } : {}),
-        };
-        this.enqueue((display) => display.setHighlight(entry));
-        if (this.highlightTimeout) {
-            const clearFn = typeof window !== 'undefined' ? window.clearTimeout : clearTimeout;
-            clearFn(this.highlightTimeout);
-            this.highlightTimeout = null;
-        }
-        const scheduleTimeout = typeof window !== 'undefined' ? window.setTimeout : setTimeout;
-        this.highlightTimeout = scheduleTimeout(() => {
-            this.highlightTimeout = null;
-            this.enqueue((display) => display.clearHighlight());
-        }, Math.max(0, duration));
-    }
-
-    clearTonicHighlights() {
-        if (this.highlightTimeout) {
-            const clearFn = typeof window !== 'undefined' ? window.clearTimeout : clearTimeout;
-            clearFn(this.highlightTimeout);
-            this.highlightTimeout = null;
-        }
-        this.enqueue((display) => display.clearHighlight());
-    }
-
     setKeySignature(keySig) {
         this.keySignature = keySig || this.keySignature;
         this.enqueue(async (display) => {
@@ -753,262 +258,21 @@ class StaffModule {
         this.clearStaffNotes();
     }
 
-    computeHarmonicDuration(noteCount) {
-        if (!Number.isInteger(noteCount) || noteCount <= 0) {
-            return { duration: 'w', dots: 0 };
-        }
-        return { duration: 'w', dots: 0 };
-    }
-
-    compareHarmonicSequences(target, attempt) {
-        if (!Array.isArray(target) || !Array.isArray(attempt) || target.length !== attempt.length) {
-            return false;
-        }
-        const counts = new Map();
-        const normalize = (note) => (typeof note === 'string' ? note.trim().toUpperCase() : String(note));
-        target.forEach((note) => {
-            const key = normalize(note);
-            counts.set(key, (counts.get(key) || 0) + 1);
-        });
-        for (let i = 0; i < attempt.length; i += 1) {
-            const key = normalize(attempt[i]);
-            if (!counts.has(key)) {
-                return false;
-            }
-            const remaining = counts.get(key) - 1;
-            if (remaining === 0) {
-                counts.delete(key);
-            } else {
-                counts.set(key, remaining);
-            }
-        }
-        return counts.size === 0;
-    }
-
     setFontPreference(fontId) {
         if (!fontId || fontId === this.fontPreference) return;
         this.fontPreference = fontId;
         this.enqueue((display) => display.setFont(fontId));
     }
 
-    cancelActiveReplay() {
-        if (this.activeReplayToken === null) return;
-        this.activeReplayToken = null;
-        this.enqueue(async (display) => {
-            await display.clearHighlight();
-            // preserve overlay while cancelling highlight
-            await display.setSequence(this.noteEntries);
-        });
-    }
-
-    // Back-compat alias used by some callers
-    async replayOnStaff(notes, options = {}) {
-        return this.replaySequenceOnStaff(notes, options);
-    }
-
-    async replaySequenceOnStaff(notes, options = {}) {
-        const sequence = Array.isArray(notes) ? notes.filter((note) => typeof note === 'string' && note) : [];
-        if (sequence.length === 0) {
-            return;
-        }
-        const {
-            noteDuration = 700,
-            gapDuration = 180,
-            useTemporaryLayout = false,
-            dictationMode = this.dictationMode,
-        } = options;
-        const availableEntries = Array.isArray(this.noteEntries) ? this.noteEntries.length : 0;
-        const shouldUseTemporary = useTemporaryLayout || availableEntries === 0;
-        const limit = shouldUseTemporary ? sequence.length : Math.min(sequence.length, availableEntries);
-        if (limit === 0) return;
-        const baseEntries = shouldUseTemporary
-            ? sequence.map((note) => ({
-                note: this.spell(note),
-                state: 'reference',
-                duration: '8',
-                dots: 0,
-                // Intro/reference notes should be stemless for clarity
-                stemless: true,
-            }))
-            : this.noteEntries.map((entry) => ({ ...entry }));
-        this.cancelActiveReplay();
-        const replayToken = {};
-        this.activeReplayToken = replayToken;
-
-        const delay = (ms) => new Promise((resolve) => {
-            const timer = (typeof window !== 'undefined' && window.setTimeout)
-                ? window.setTimeout(resolve, Math.max(0, ms))
-                : setTimeout(resolve, Math.max(0, ms));
-            if (!timer && ms <= 0) resolve();
-        });
-
-        if (dictationMode === 'harmonic') {
-            const sortedNotes = sortNotesAscending(sequence.map((n) => this.spell(n)));
-            const durationInfo = this.computeHarmonicDuration(sortedNotes.length);
-            const chordEntry = {
-                note: sortedNotes[0],
-                notes: sortedNotes,
-                state: 'reference',
-                duration: durationInfo.duration,
-                dots: durationInfo.dots,
-            };
-            if (shouldUseTemporary) {
-                await this.enqueue((display) => display.setSequence([chordEntry]));
-            }
-            const highlightEntry = {
-                ...chordEntry,
-                state: 'highlight',
-                stemless: true,
-            };
-            await this.enqueue((display) => {
-                if (shouldUseTemporary) {
-                    return display.setSequence([highlightEntry]);
-                }
-                return display.updateEntry(0, () => highlightEntry);
-            });
-            await delay(noteDuration);
-            if (this.activeReplayToken === replayToken) {
-                await this.enqueue((display) => {
-                    if (shouldUseTemporary) {
-                        return display.setSequence([chordEntry]);
-                    }
-                const base = baseEntries[0] ? { ...baseEntries[0] } : chordEntry;
-                return display.updateEntry(0, () => base);
-            });
-                await delay(gapDuration);
-                await this.enqueue(async (display) => {
-                    await display.setSequence(this.noteEntries);
-                    await display.clearHighlight();
-                });
-                if (this.activeReplayToken === replayToken) {
-                    this.activeReplayToken = null;
-                }
-            }
-            return;
-        }
-
-        if (shouldUseTemporary) {
-            await this.enqueue((display) => display.setSequence(baseEntries));
-        }
-
-        for (let i = 0; i < limit; i += 1) {
-            if (this.activeReplayToken !== replayToken) break;
-
-            const targetNote = this.spell(sequence[i]);
-            const originalEntry = baseEntries[i];
-            if (!targetNote || !originalEntry) continue;
-
-            const highlightEntry = {
-                ...originalEntry,
-                note: targetNote,
-                state: 'highlight',
-                stemless: true,
-            };
-            if (shouldUseTemporary) {
-                highlightEntry.duration = '8';
-                highlightEntry.dots = 0;
-            }
-
-            await this.enqueue((display) => display.updateEntry(i, () => highlightEntry));
-            await delay(noteDuration);
-
-            if (this.activeReplayToken !== replayToken) break;
-
-            await this.enqueue((display) => display.updateEntry(i, () => ({ ...originalEntry })));
-
-            if (this.activeReplayToken !== replayToken) break;
-
-            if (i < limit - 1) {
-                await delay(gapDuration);
-            }
-        }
-
-        await this.enqueue(async (display) => {
-            await display.setSequence(this.noteEntries);
-            await display.clearHighlight();
-        });
-
-        if (this.activeReplayToken === replayToken) {
-            this.activeReplayToken = null;
-        }
-    }
-
-    // Show a persistent overlay of the correct answer on the staff
-    showAnswerOverlay(sequence, options = {}) {
-        const dictationMode = options.dictationMode || this.dictationMode;
-        const userSeq = Array.isArray(options.userSequence) ? options.userSequence : null;
-        const notes = Array.isArray(sequence) ? sequence.filter((n) => typeof n === 'string' && n) : [];
-        if (notes.length === 0) return;
-        if (dictationMode === 'harmonic') {
-            const spelledTarget = sortNotesAscending(notes.map((n) => this.spell(n)));
-            // Determine which target notes are missing from the user's chord
-            const userNotes = Array.isArray(this.noteEntries[0]?.notes)
-                ? this.noteEntries[0].notes.slice()
-                : (Array.isArray(userSeq) ? userSeq.slice() : []);
-            const normalize = (n) => (typeof n === 'string' ? this.spell(n).trim().toUpperCase() : String(n).toUpperCase());
-            const targetCounts = new Map();
-            spelledTarget.forEach((n) => {
-                const key = normalize(n);
-                targetCounts.set(key, (targetCounts.get(key) || 0) + 1);
-            });
-            const userCounts = new Map();
-            userNotes.map((n) => this.spell(n)).forEach((n) => {
-                const key = normalize(n);
-                userCounts.set(key, (userCounts.get(key) || 0) + 1);
-            });
-            const missing = [];
-            spelledTarget.forEach((n) => {
-                const key = normalize(n);
-                const need = targetCounts.get(key) || 0;
-                const have = userCounts.get(key) || 0;
-                if (have < need) {
-                    missing.push(n);
-                    userCounts.set(key, have + 1); // virtually account to avoid duplicating
-                }
-            });
-            const sorted = sortNotesAscending(missing);
-            const durationInfo = this.computeHarmonicDuration(sorted.length);
-            const overlay = sorted.length > 0
-                ? [{
-                    note: sorted[0],
-                    notes: sorted,
-                    state: 'answer',
-                    duration: durationInfo.duration,
-                    dots: durationInfo.dots,
-                }]
-                : [];
-            this._lastOverlayEntries = overlay;
-            this.enqueue((display) => display.setOverlay(overlay));
-            return;
-        }
-        const spelled = notes.map((n) => this.spell(n));
-        const userSpelled = Array.isArray(userSeq) && userSeq.length === spelled.length
-            ? userSeq.map((n) => this.spell(n))
-            : (this.noteEntries.length === spelled.length ? this.noteEntries.map((e) => e?.note || '?') : null);
-        const overlay = [];
-        const stemless = this.shouldStemless(dictationMode);
-        for (let i = 0; i < spelled.length; i += 1) {
-            const target = spelled[i];
-            const userNote = Array.isArray(userSpelled) ? userSpelled[i] : null;
-            if (userNote && userNote === target) {
-                // keep place with invisible rest to preserve alignment
-                overlay.push({ isRest: true, duration: 'q', state: 'answer', style: { fillStyle: 'transparent', strokeStyle: 'transparent' } });
-            } else {
-                overlay.push({
-                    note: target,
-                    state: 'answer',
-                    ...(stemless ? { stemless: true } : {}),
-                });
-            }
-        }
-        this._lastOverlayEntries = overlay;
-        this.enqueue((display) => display.setOverlay(overlay));
-    }
 }
 
 StaffDisplayRuntime.attachTo(StaffModule);
 StaffInteractionBridge.attachTo(StaffModule);
 StaffSequenceManager.attachTo(StaffModule);
+StaffPlaybackController.attachTo(StaffModule);
+StaffInputBindings.attachTo(StaffModule);
+StaffFeedbackController.attachTo(StaffModule);
+StaffSharedUtils.attachTo(StaffModule);
 
 // Export the module
 if (typeof module !== 'undefined' && module.exports) {
