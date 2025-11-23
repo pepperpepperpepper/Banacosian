@@ -476,7 +476,12 @@ class MelodicDictation {
         try {
             // Configure a speller that maps any incoming note to the display spelling for the active mode/tonic
             this.staffModule.setNoteSpeller((note) => (
-                this.musicTheory.spellNoteForStaff(note, this.mode, this.tonic)
+                this.musicTheory.spellNoteForStaff(
+                    note,
+                    this.mode,
+                    this.tonic,
+                    { preserveExplicitAccidentals: false },
+                )
             ));
 
             // Choose the key signature to display on the stave. Use the tonic spelling from MusicTheory.

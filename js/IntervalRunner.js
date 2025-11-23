@@ -4,6 +4,10 @@
   const TWO_PI = Math.PI * 2;
   const RAND = (min, max) => min + Math.random() * (max - min);
   const CLAMP = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+  const USER_SPEED_MIN = 0.4;
+  const USER_SPEED_MAX = 1.6;
+  const USER_SPEED_STEP = 0.1;
+  const DEFAULT_USER_SPEED = 0.7;
 
   function buildChoices(container, onChoose, allowedSet) {
     const order = [1,2,3,4,5,6,7,8,9,10,11,12];
@@ -117,7 +121,7 @@
       lastAnchoredPair: null,
       hitMarker: null,
       spawnedCount: 0,
-      speedSetting: 'normal',
+      userSpeed: DEFAULT_USER_SPEED,
     };
 
     // Keyboard answer shortcuts: map visible interval choices to physical keyboard rows.
@@ -245,35 +249,34 @@
     window.addEventListener('resize', scheduleRebuildChoiceKeyMap);
 
     function getGameSpeedFactor() {
-      switch (state.speedSetting) {
-        case 'slow': return 0.7;
-        case 'fast': return 1.4;
-        default: return 1.0;
-      }
+      const raw = (typeof state.userSpeed === 'number' && !Number.isNaN(state.userSpeed))
+        ? state.userSpeed
+        : DEFAULT_USER_SPEED;
+      return CLAMP(raw, USER_SPEED_MIN, USER_SPEED_MAX);
     }
 
-    function applySpeedSetting(next) {
-      const allowed = ['slow', 'normal', 'fast'];
-      if (!allowed.includes(next)) return;
-      state.speedSetting = next;
-      saveRunnerSettings({ speedSetting: state.speedSetting });
+    function applyUserSpeed(next) {
+      const clamped = CLAMP(next, USER_SPEED_MIN, USER_SPEED_MAX);
+      const stepped = Math.round(clamped / USER_SPEED_STEP) * USER_SPEED_STEP;
+      const rounded = Number(stepped.toFixed(2));
+      state.userSpeed = rounded;
+      saveRunnerSettings({ userSpeed: state.userSpeed });
       updateHud();
       updateSpeedButtonsDisabledState();
     }
 
-    function stepSpeed(delta) {
-      const order = ['slow', 'normal', 'fast'];
-      let idx = order.indexOf(state.speedSetting);
-      if (idx === -1) idx = order.indexOf('normal');
-      idx = CLAMP(idx + delta, 0, order.length - 1);
-      applySpeedSetting(order[idx]);
+    function stepUserSpeed(deltaSteps) {
+      const current = (typeof state.userSpeed === 'number' && !Number.isNaN(state.userSpeed))
+        ? state.userSpeed
+        : DEFAULT_USER_SPEED;
+      const next = current + (deltaSteps * USER_SPEED_STEP);
+      applyUserSpeed(next);
     }
 
     function updateSpeedButtonsDisabledState() {
-      const order = ['slow', 'normal', 'fast'];
-      const idx = order.indexOf(state.speedSetting);
-      if ($speedDown) $speedDown.disabled = idx <= 0;
-      if ($speedUp) $speedUp.disabled = idx >= order.length - 1;
+      const factor = getGameSpeedFactor();
+      if ($speedDown) $speedDown.disabled = factor <= USER_SPEED_MIN + USER_SPEED_STEP * 0.25;
+      if ($speedUp) $speedUp.disabled = factor >= USER_SPEED_MAX - USER_SPEED_STEP * 0.25;
     }
 
     // Populate timbres
@@ -313,27 +316,35 @@
         if ($type && saved.type && $type.querySelector(`option[value="${saved.type}"]`)) $type.value = saved.type;
         if ($dir && saved.direction && $dir.querySelector(`option[value="${saved.direction}"]`)) $dir.value = saved.direction;
         if ($startMode && saved.startMode && $startMode.querySelector(`option[value="${saved.startMode}"]`)) $startMode.value = saved.startMode;
-        if (saved.speedSetting && ['slow','normal','fast'].includes(saved.speedSetting)) {
-          state.speedSetting = saved.speedSetting;
+        let initialSpeed = DEFAULT_USER_SPEED;
+        if (typeof saved.userSpeed === 'number' && !Number.isNaN(saved.userSpeed)) {
+          initialSpeed = saved.userSpeed;
+        } else if (saved.speedSetting && ['slow','normal','fast'].includes(saved.speedSetting)) {
+          // Backwards-compat mapping from older string speedSetting
+          if (saved.speedSetting === 'slow') initialSpeed = 0.7;
+          else if (saved.speedSetting === 'fast') initialSpeed = 1.4;
+          else initialSpeed = 1.0;
         }
+        state.userSpeed = CLAMP(initialSpeed, USER_SPEED_MIN, USER_SPEED_MAX);
       }
     })();
 
     state.type = ($type?.value === 'harmonic') ? 'harmonic' : 'melodic';
     state.direction = ($dir?.value === 'up' || $dir?.value === 'down') ? $dir.value : 'random';
     state.startMode = ($startMode?.value === 'anchored') ? 'anchored' : 'chromatic';
-    if (!['slow', 'normal', 'fast'].includes(state.speedSetting)) {
-      state.speedSetting = 'normal';
+    if (typeof state.userSpeed !== 'number' || Number.isNaN(state.userSpeed)) {
+      state.userSpeed = DEFAULT_USER_SPEED;
     }
+    state.userSpeed = CLAMP(state.userSpeed, USER_SPEED_MIN, USER_SPEED_MAX);
     $type?.addEventListener('change', () => { state.type = ($type.value === 'harmonic') ? 'harmonic' : 'melodic'; saveRunnerSettings({ type: state.type }); });
     $dir?.addEventListener('change', () => { state.direction = ($dir.value === 'up' || $dir.value === 'down') ? $dir.value : 'random'; saveRunnerSettings({ direction: state.direction }); });
     $startMode?.addEventListener('change', () => { state.startMode = ($startMode.value === 'anchored') ? 'anchored' : 'chromatic'; saveRunnerSettings({ startMode: state.startMode }); });
 
     if ($speedDown) {
-      $speedDown.addEventListener('click', () => stepSpeed(-1));
+      $speedDown.addEventListener('click', () => stepUserSpeed(-1));
     }
     if ($speedUp) {
-      $speedUp.addEventListener('click', () => stepSpeed(1));
+      $speedUp.addEventListener('click', () => stepUserSpeed(1));
     }
     updateSpeedButtonsDisabledState();
 

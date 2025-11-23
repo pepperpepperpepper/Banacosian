@@ -256,13 +256,15 @@ class MusicTheoryModule {
 
     /**
      * Spell a note for staff rendering while respecting mode/tonic preference.
-     * Notes with explicit accidentals are preserved; naturals are re-spelled using the preference map.
+     * Optionally re-spells explicit accidentals so staff notation matches the active key signature.
      * @param {string} note
      * @param {string} mode
      * @param {string} tonic
+     * @param {{preserveExplicitAccidentals?: boolean}} [options]
      * @returns {string}
      */
-    spellNoteForStaff(note, mode, tonic) {
+    spellNoteForStaff(note, mode, tonic, options = {}) {
+        const { preserveExplicitAccidentals = true } = options || {};
         if (!note || typeof note !== 'string') {
             return note;
         }
@@ -271,7 +273,7 @@ class MusicTheoryModule {
         if (midi === null) {
             return normalized;
         }
-        if (this.noteHasExplicitAccidental(normalized)) {
+        if (preserveExplicitAccidentals && this.noteHasExplicitAccidental(normalized)) {
             return normalized;
         }
         const displayName = this.getDisplayNoteName(normalized, mode, tonic);
