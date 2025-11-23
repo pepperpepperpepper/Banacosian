@@ -158,62 +158,6 @@ class StaffModule {
         });
     }
 
-    tagStaffNoteElements() {
-        if (!this.containerEl) return;
-        const svg = this.containerEl.querySelector('svg');
-        if (!svg) return;
-        const noteEls = svg.querySelectorAll ? svg.querySelectorAll('.vf-stavenote') : [];
-        if (!noteEls || noteEls.length === 0) return;
-        let assigned = 0;
-        noteEls.forEach((el) => {
-            if (!el || typeof el.setAttribute !== 'function') return;
-            if (assigned < this.noteEntries.length) {
-                el.setAttribute('data-staff-index', `${assigned}`);
-                assigned += 1;
-            } else {
-                el.removeAttribute?.('data-staff-index');
-            }
-        });
-    }
-
-    async ensureStaffInputHelpers() {
-        if (!this.staffInputState) return null;
-        if (this.staffInputState.strategy === 'interaction') return null;
-        if (this.staffInputState.helpers) return this.staffInputState.helpers;
-        if (this.staffInputState.helpersPromise) return this.staffInputState.helpersPromise;
-        this.staffInputState.helpersPromise = Promise.all([
-            import('/staff/interaction-dom.js').catch((error) => {
-                console.warn('[StaffModule] unable to load interaction DOM helpers', error);
-                return {};
-            }),
-            import('/js/vexflow/core/helpers/pitch.js').catch((error) => {
-                console.warn('[StaffModule] unable to load pitch helpers', error);
-                return {};
-            }),
-        ]).then(([domHelpers, pitchHelpers]) => {
-            const helpers = {
-                HAS_POINTER_EVENTS: Boolean(domHelpers?.HAS_POINTER_EVENTS),
-                normalizePointerEvent: typeof domHelpers?.normalizePointerEvent === 'function'
-                    ? domHelpers.normalizePointerEvent
-                    : ((event) => event),
-                convertToSvgCoords: domHelpers?.convertToSvgCoords,
-                findClosestPitchForY: pitchHelpers?.findClosestPitchForY,
-            };
-            if (typeof helpers.convertToSvgCoords !== 'function' || typeof helpers.findClosestPitchForY !== 'function') {
-                console.warn('[StaffModule] staff input helpers incomplete');
-                return null;
-            }
-            this.staffInputState.helpers = helpers;
-            return helpers;
-        }).catch((error) => {
-            console.warn('[StaffModule] failed to initialize staff input helpers', error);
-            return null;
-        }).finally(() => {
-            this.staffInputState.helpersPromise = null;
-        });
-        return this.staffInputState.helpersPromise;
-    }
-
     async setStaffInputMode(options = {}) {
         if (!this.staffInputState) return;
         const onInput = typeof options.onInput === 'function' ? options.onInput : null;

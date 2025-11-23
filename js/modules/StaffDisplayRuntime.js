@@ -119,6 +119,24 @@
         return null;
     }
 
+    function tagStaffNoteElements() {
+        if (!this.containerEl) return;
+        const svg = this.containerEl.querySelector('svg');
+        if (!svg) return;
+        const noteEls = svg.querySelectorAll ? svg.querySelectorAll('.vf-stavenote') : [];
+        if (!noteEls || noteEls.length === 0) return;
+        let assigned = 0;
+        noteEls.forEach((el) => {
+            if (!el || typeof el.setAttribute !== 'function') return;
+            if (assigned < this.noteEntries.length) {
+                el.setAttribute('data-staff-index', `${assigned}`);
+                assigned += 1;
+            } else {
+                el.removeAttribute?.('data-staff-index');
+            }
+        });
+    }
+
     function updateFontIndicator(display) {
         if (!this.fontIndicatorEl || !display) return;
         const label = display.getFontLabel();
@@ -155,6 +173,7 @@
         proto.ensureRenderRuntime = ensureRenderRuntime;
         proto.initializeDisplay = initializeDisplay;
         proto.ensureDisplay = ensureDisplay;
+        proto.tagStaffNoteElements = tagStaffNoteElements;
         proto.updateFontIndicator = updateFontIndicator;
         proto.enqueue = enqueue;
     }
