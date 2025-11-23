@@ -80,3 +80,32 @@
   width: auto;
   max-width: max-content;
 }
+
+/* HUD speed controls */
+.runner-speed-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.runner-speed-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.runner-speed-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.9em;
+  line-height: 1.2;
+  background: var(--app-interactive-surface);
+  color: var(--app-text-primary);
+  cursor: pointer;
+}
+
+.runner-speed-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

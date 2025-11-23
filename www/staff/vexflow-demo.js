@@ -1,12 +1,19 @@
 import { renderVexflowStaff as renderStaff } from './render-staff.js';
 import { createInteractionController } from './interaction-controller.js';
 import {
+  setPitchClassConfig,
+  setDragQuantizer,
+  createPitchClassQuantizer,
+} from './interaction-state.js';
+import {
   SUPPORTED_KEY_SIGNATURES,
   canonicalizeKeySignature,
+  getKeySignatureMap,
 } from '/js/modules/KeySignatures.js';
 import {
   applySpecPitchUpdate,
   keyToMidi,
+  LETTER_TO_SEMITONE,
 } from './music-helpers.js';
 import { MUSIC_FONT_CHOICES } from '/js/modules/StaffFonts.js';
 import { debounce } from '/js/shared/utils.js';
@@ -221,6 +228,7 @@ function initializeKeySelect() {
     }
     keySelect.appendChild(option);
   });
+  updateInteractionPitchClasses(currentKey);
 }
 
 function onKeySignatureChange(event) {
@@ -233,6 +241,7 @@ function onKeySignatureChange(event) {
   if (keySelect && keySelect.value !== canonical) {
     keySelect.value = canonical;
   }
+  updateInteractionPitchClasses(canonical);
   renderAllDemos().catch((error) => reportRenderFailure(null, error));
 }
 
@@ -266,4 +275,37 @@ function applyKeySignatureToVoices(voices, keySig) {
       }
     });
   });
+}
+
+function updateInteractionPitchClasses(keySig) {
+  const canonical = canonicalizeKeySignature(keySig) || 'C';
+  const pitchClasses = buildPitchClassesForKeySignature(canonical);
+  setPitchClassConfig({
+    pitchClasses,
+    midiMin: 36,
+    midiMax: 96,
+  });
+  const quantizer = createPitchClassQuantizer({
+    pitchClasses,
+    midiMin: 36,
+    midiMax: 96,
+  });
+  setDragQuantizer(quantizer);
+}
+
+function buildPitchClassesForKeySignature(canonical) {
+  const letterOrder = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const map = getKeySignatureMap(canonical);
+  const tonicLetter = (canonical && canonical[0]) ? canonical[0] : 'C';
+  const startIndex = Math.max(0, letterOrder.indexOf(tonicLetter));
+  const orderedLetters = [];
+  for (let i = 0; i < letterOrder.length; i += 1) {
+    orderedLetters.push(letterOrder[(startIndex + i) % letterOrder.length]);
+  }
+  const classes = orderedLetters.map((letter) => {
+    const base = LETTER_TO_SEMITONE[letter.toLowerCase()] ?? 0;
+    const alteration = map[letter] || 0;
+    return ((base + alteration) % 12 + 12) % 12;
+  });
+  return Array.from(new Set(classes));
 }

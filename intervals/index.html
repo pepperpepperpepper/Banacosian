@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Intervals — Ear Training</title>
   <link rel="stylesheet" href="/css/styles.css" />
-  <script src="/js/shared/blockContextMenu.js"></script>
 </head>
 <body>
   <div class="container ui-card">
@@ -64,18 +66,52 @@
     <div id="staff-status" class="sequence-display" aria-live="polite"></div>
   </div>
 
-  <script src="/js/modules/MusicTheory.js"></script>
-  <script src="/js/modules/Audio.js"></script>
-  <script src="/js/modules/StaffNoteUtils.js"></script>
-  <script src="/js/modules/StaffDisplayRuntime.js"></script>
-  <script src="/js/modules/StaffInteractionBridge.js"></script>
-  <script src="/js/modules/StaffSequenceManager.js"></script>
-  <script src="/js/modules/StaffPlaybackController.js"></script>
-  <script src="/js/modules/StaffInputBindings.js"></script>
-  <script src="/js/modules/StaffFeedbackController.js"></script>
-  <script src="/js/modules/StaffSharedUtils.js"></script>
-  <script src="/js/modules/Staff.js"></script>
-  <script src="/js/modules/Scoring.js"></script>
-  <script src="/js/Intervals.js"></script>
+  <script>
+    (function loadIntervalsScriptsSequentially() {
+      const cacheTag = window.__EarCacheTag || (window.__EarCacheTag = `cb=${Date.now().toString(36)}`);
+      const scripts = [
+        '/js/shared/blockContextMenu.js',
+        '/js/modules/MusicTheory.js',
+        '/js/modules/Audio.js',
+        '/js/modules/StaffNoteUtils.js',
+        '/js/modules/StaffDisplayRuntime.js',
+        '/js/modules/StaffInteractionBridge.js',
+        '/js/modules/StaffSequenceManager.js',
+        '/js/modules/StaffPlaybackController.js',
+        '/js/modules/StaffInputBindings.js',
+        '/js/modules/StaffFeedbackController.js',
+        '/js/modules/StaffSharedUtils.js',
+        '/js/modules/Staff.js',
+        '/js/modules/Scoring.js',
+        '/js/Intervals.js'
+      ];
+      const isAbsolute = (src) => /^https?:\/\//i.test(src);
+      const target = document.body || document.head;
+      if (!target) return;
+
+      function appendNext(index) {
+        if (index >= scripts.length) return;
+        const originalSrc = scripts[index];
+        if (typeof originalSrc !== 'string' || originalSrc.trim() === '') {
+          appendNext(index + 1);
+          return;
+        }
+        const src = isAbsolute(originalSrc)
+          ? originalSrc
+          : `${originalSrc}${originalSrc.includes('?') ? '&' : '?'}${cacheTag}`;
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = false;
+        script.onload = () => appendNext(index + 1);
+        script.onerror = (event) => {
+          console.error('[ScriptLoader] Failed to load script:', src, event);
+          appendNext(index + 1);
+        };
+        target.appendChild(script);
+      }
+
+      appendNext(0);
+    })();
+  </script>
 </body>
 </html>

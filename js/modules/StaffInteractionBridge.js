@@ -1,4 +1,24 @@
 (function initStaffInteractionBridge(globalScope) {
+    const INTERACTION_CONTROLLER_BASE = '/staff/interaction-controller.js';
+
+    function resolveInteractionControllerSpecifier() {
+        if (!globalScope || typeof globalScope.document === 'undefined') {
+            return INTERACTION_CONTROLLER_BASE;
+        }
+        const cacheKeyProp = '__earInteractionControllerCacheTag';
+        const specProp = '__earInteractionControllerSpecifier';
+        if (!globalScope[cacheKeyProp]) {
+            const stamp = (typeof Date !== 'undefined' && typeof Date.now === 'function')
+                ? Date.now().toString(36)
+                : `${Math.random()}`;
+            globalScope[cacheKeyProp] = stamp;
+        }
+        if (!globalScope[specProp]) {
+            globalScope[specProp] = `${INTERACTION_CONTROLLER_BASE}?v=${globalScope[cacheKeyProp]}`;
+        }
+        return globalScope[specProp];
+    }
+
     function resolveUtils() {
         let utils = null;
         if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
@@ -28,7 +48,8 @@
         if (this.staffInputState.interactionPromise) {
             return this.staffInputState.interactionPromise;
         }
-        this.staffInputState.interactionPromise = import('/staff/interaction-controller.js')
+        const specifier = resolveInteractionControllerSpecifier();
+        this.staffInputState.interactionPromise = import(specifier)
             .then((module) => {
                 const factory = module?.createInteractionController;
                 if (typeof factory !== 'function') {
@@ -71,6 +92,9 @@
             },
         });
         controller.setEnabled(true);
+        if (typeof this.applyPitchQuantizerToInteraction === 'function') {
+            this.applyPitchQuantizerToInteraction();
+        }
         if (typeof display.setInteractionRegistrar === 'function') {
             display.setInteractionRegistrar(({ context, voices, baseMessage, scale }) => {
                 controller.register(context, voices, baseMessage, scale, this.containerEl);

@@ -11,6 +11,7 @@ import {
   triggerRender,
   getRenderState,
   setStatusText,
+  getDragQuantizer,
 } from './interaction-state.js';
 import {
   normalizePointerEvent,
@@ -103,6 +104,9 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
     specClone,
     hiddenNoteVisibility: originalVisibility,
     activationColor,
+    quantizedMidi: baseMidi,
+    lastDirection: 0,
+    lastPreviewDelta: 0,
   };
   if (noteEl && !(specClone?.isRest)) {
     noteEl.style.visibility = 'hidden';
@@ -141,7 +145,29 @@ function handlePointerMove(event) {
     drag.accum -= (drag.accum > 0) ? step : -step;
   }
   if (semitones !== 0) drag.previewDelta += semitones;
-  const previewMidi = drag.baseMidi + drag.previewDelta;
+  let previewMidi = drag.baseMidi + drag.previewDelta;
+  const quantizer = getDragQuantizer()
+    || (typeof window !== 'undefined' ? window.__EarStaffDragQuantizer : null);
+  if (typeof quantizer === 'function') {
+    const previousDelta = Number.isFinite(drag.lastPreviewDelta) ? drag.lastPreviewDelta : 0;
+    const deltaChange = drag.previewDelta - previousDelta;
+    const directionHint = deltaChange !== 0
+      ? Math.sign(deltaChange)
+      : (drag.lastDirection || Math.sign(drag.previewDelta) || 0);
+    const quantizedMidi = quantizer({
+      baseMidi: drag.baseMidi,
+      previewMidi,
+      lastMidi: drag.quantizedMidi ?? (drag.baseMidi + previousDelta),
+      direction: directionHint,
+    });
+    if (Number.isFinite(quantizedMidi)) {
+      previewMidi = quantizedMidi;
+      drag.previewDelta = previewMidi - drag.baseMidi;
+      drag.quantizedMidi = previewMidi;
+      drag.lastDirection = directionHint || drag.lastDirection || 0;
+    }
+    drag.lastPreviewDelta = drag.previewDelta;
+  }
   let previewKey = midiToKeySpec(previewMidi);
   if ((drag.previewDelta === 0 || !Number.isFinite(previewKey?.diatonicIndex)) && drag.baseKey) {
     previewKey = drag.baseKey;
@@ -181,7 +207,20 @@ function commitNoteDelta(drag, delta) {
   if (!voice) { triggerRender(); return; }
   const spec = voice.noteSpecs?.[drag.noteIndex];
   if (!spec || spec.isRest) { triggerRender(); return; }
-  const targetMidi = drag.baseMidi + (delta || 0);
+  let targetMidi = drag.baseMidi + (delta || 0);
+  const quantizer = getDragQuantizer()
+    || (typeof window !== 'undefined' ? window.__EarStaffDragQuantizer : null);
+  if (typeof quantizer === 'function') {
+    const resolved = quantizer({
+      baseMidi: drag.baseMidi,
+      previewMidi: targetMidi,
+      lastMidi: drag.quantizedMidi ?? targetMidi,
+      direction: Math.sign(delta || drag.lastDirection || 0) || 0,
+    });
+    if (Number.isFinite(resolved)) {
+      targetMidi = resolved;
+    }
+  }
   applySpecPitchUpdate(spec, targetMidi, renderState?.keySig);
   clearSelection(selectionState.messageBase);
   triggerRender();
@@ -198,7 +237,20 @@ export function applyWheelDelta(delta) {
   const spec = voice.noteSpecs?.[noteIndex];
   if (!spec || spec.isRest) return;
   const baseMidi = getPrimaryMidi(spec);
-  const targetMidi = baseMidi + delta;
+  let targetMidi = baseMidi + (delta || 0);
+  const quantizer = getDragQuantizer()
+    || (typeof window !== 'undefined' ? window.__EarStaffDragQuantizer : null);
+  if (typeof quantizer === 'function') {
+    const resolved = quantizer({
+      baseMidi,
+      previewMidi: targetMidi,
+      lastMidi: baseMidi,
+      direction: Math.sign(delta) || 0,
+    });
+    if (Number.isFinite(resolved)) {
+      targetMidi = resolved;
+    }
+  }
   applySpecPitchUpdate(spec, targetMidi, renderState?.keySig);
   clearSelection(selectionState.messageBase);
   triggerRender();

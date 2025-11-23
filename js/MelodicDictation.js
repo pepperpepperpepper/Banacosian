@@ -482,8 +482,94 @@ class MelodicDictation {
             // Choose the key signature to display on the stave. Use the tonic spelling from MusicTheory.
             const keySig = this.musicTheory.getDisplayTonicName(this.mode, this.tonic) || 'C';
             this.staffModule.setKeySignature(keySig);
+            this.updateStaffPitchQuantizer();
         } catch (e) {
             console.warn('Failed to sync staff tonality:', e);
+        }
+    }
+
+    updateStaffPitchQuantizer() {
+        if (!this.staffModule || typeof this.staffModule.setPitchQuantizer !== 'function') {
+            return;
+        }
+        if (!this.musicTheory || this.scaleType === 'chromatic') {
+            if (typeof window !== 'undefined') {
+                window.__EarStaffQuantizerDebug = {
+                    active: false,
+                    scaleType: this.scaleType,
+                    mode: this.mode,
+                    tonic: this.tonic,
+                    timestamp: Date.now(),
+                };
+            }
+            if (typeof this.staffModule.setPitchClassConfig === 'function') {
+                this.staffModule.setPitchClassConfig(null);
+            }
+            return;
+        }
+        let allowedNotes = [];
+        try {
+            allowedNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonic) || [];
+        } catch (error) {
+            console.warn('Unable to build diatonic notes for staff quantizer:', error);
+            allowedNotes = [];
+        }
+        if (!Array.isArray(allowedNotes) || allowedNotes.length === 0) {
+            this.staffModule.setPitchQuantizer(null);
+            return;
+        }
+        const pitchClasses = new Set();
+        allowedNotes.forEach((note) => {
+            if (!note || typeof note !== 'string') return;
+            try {
+                const midi = this.musicTheory.noteToSemitone(note);
+                if (typeof midi === 'number' && Number.isFinite(midi)) {
+                    const normalized = ((Math.round(midi) % 12) + 12) % 12;
+                    pitchClasses.add(normalized);
+                }
+            } catch (error) {
+                console.warn('Unable to convert note for quantizer:', note, error);
+            }
+        });
+        if (pitchClasses.size === 0) {
+            if (typeof window !== 'undefined') {
+                window.__EarStaffQuantizerDebug = {
+                    active: false,
+                    scaleType: this.scaleType,
+                    mode: this.mode,
+                    tonic: this.tonic,
+                    reason: 'noPitchClasses',
+                    timestamp: Date.now(),
+                };
+            }
+            if (typeof this.staffModule.setPitchClassConfig === 'function') {
+                this.staffModule.setPitchClassConfig(null);
+            }
+            return;
+        }
+        const midiMin = Number.isFinite(this.staffModule?.staffInputState?.midiMin)
+            ? this.staffModule.staffInputState.midiMin
+            : 36;
+        const midiMax = Number.isFinite(this.staffModule?.staffInputState?.midiMax)
+            ? this.staffModule.staffInputState.midiMax
+            : 96;
+        const pitchClassList = Array.from(pitchClasses);
+        if (typeof this.staffModule.setPitchClassConfig === 'function') {
+            this.staffModule.setPitchClassConfig({
+                pitchClasses: pitchClassList,
+                midiMin,
+                midiMax,
+            });
+        }
+        if (typeof window !== 'undefined') {
+            window.__EarStaffQuantizerDebug = {
+                active: true,
+                scaleType: this.scaleType,
+                mode: this.mode,
+                tonic: this.tonic,
+                pitchClasses: pitchClassList,
+                timestamp: Date.now(),
+            };
         }
     }
 
@@ -1040,7 +1126,13 @@ class MelodicDictation {
     }
 }
 
-// Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize the app when DOM is ready (handles scripts injected after DOMContentLoaded)
+function initializeMelodicDictation() {
     new MelodicDictation();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeMelodicDictation);
+} else {
+    initializeMelodicDictation();
+}

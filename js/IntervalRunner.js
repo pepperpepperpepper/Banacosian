@@ -36,10 +36,11 @@
     const $type = document.getElementById('runnerType');
     const $dir = document.getElementById('runnerDirection');
     const $timbre = document.getElementById('runnerTimbre');
-    const $speedSetting = document.getElementById('runnerGameSpeed');
     const $startMode = document.getElementById('runnerStartMode');
     const $anchorSelect = document.getElementById('runnerAnchorSelect');
     const $intervalSet = document.getElementById('runnerIntervalSet');
+    const $speedDown = document.getElementById('runnerSpeedDown');
+    const $speedUp = document.getElementById('runnerSpeedUp');
 
     const ctx = $canvas.getContext('2d');
 
@@ -251,6 +252,30 @@
       }
     }
 
+    function applySpeedSetting(next) {
+      const allowed = ['slow', 'normal', 'fast'];
+      if (!allowed.includes(next)) return;
+      state.speedSetting = next;
+      saveRunnerSettings({ speedSetting: state.speedSetting });
+      updateHud();
+      updateSpeedButtonsDisabledState();
+    }
+
+    function stepSpeed(delta) {
+      const order = ['slow', 'normal', 'fast'];
+      let idx = order.indexOf(state.speedSetting);
+      if (idx === -1) idx = order.indexOf('normal');
+      idx = CLAMP(idx + delta, 0, order.length - 1);
+      applySpeedSetting(order[idx]);
+    }
+
+    function updateSpeedButtonsDisabledState() {
+      const order = ['slow', 'normal', 'fast'];
+      const idx = order.indexOf(state.speedSetting);
+      if ($speedDown) $speedDown.disabled = idx <= 0;
+      if ($speedUp) $speedUp.disabled = idx >= order.length - 1;
+    }
+
     // Populate timbres
     if ($timbre && typeof audio.getAvailableTimbres === 'function') {
       const opts = audio.getAvailableTimbres();
@@ -288,8 +313,8 @@
         if ($type && saved.type && $type.querySelector(`option[value="${saved.type}"]`)) $type.value = saved.type;
         if ($dir && saved.direction && $dir.querySelector(`option[value="${saved.direction}"]`)) $dir.value = saved.direction;
         if ($startMode && saved.startMode && $startMode.querySelector(`option[value="${saved.startMode}"]`)) $startMode.value = saved.startMode;
-        if ($speedSetting && saved.speedSetting && ['slow','normal','fast'].includes(saved.speedSetting)) {
-          $speedSetting.value = saved.speedSetting;
+        if (saved.speedSetting && ['slow','normal','fast'].includes(saved.speedSetting)) {
+          state.speedSetting = saved.speedSetting;
         }
       }
     })();
@@ -297,17 +322,20 @@
     state.type = ($type?.value === 'harmonic') ? 'harmonic' : 'melodic';
     state.direction = ($dir?.value === 'up' || $dir?.value === 'down') ? $dir.value : 'random';
     state.startMode = ($startMode?.value === 'anchored') ? 'anchored' : 'chromatic';
-    state.speedSetting = ($speedSetting?.value === 'slow' || $speedSetting?.value === 'fast' || $speedSetting?.value === 'normal')
-      ? $speedSetting.value
-      : 'normal';
+    if (!['slow', 'normal', 'fast'].includes(state.speedSetting)) {
+      state.speedSetting = 'normal';
+    }
     $type?.addEventListener('change', () => { state.type = ($type.value === 'harmonic') ? 'harmonic' : 'melodic'; saveRunnerSettings({ type: state.type }); });
     $dir?.addEventListener('change', () => { state.direction = ($dir.value === 'up' || $dir.value === 'down') ? $dir.value : 'random'; saveRunnerSettings({ direction: state.direction }); });
     $startMode?.addEventListener('change', () => { state.startMode = ($startMode.value === 'anchored') ? 'anchored' : 'chromatic'; saveRunnerSettings({ startMode: state.startMode }); });
-    $speedSetting?.addEventListener('change', () => {
-      const v = $speedSetting.value;
-      state.speedSetting = (v === 'slow' || v === 'fast' || v === 'normal') ? v : 'normal';
-      saveRunnerSettings({ speedSetting: state.speedSetting });
-    });
+
+    if ($speedDown) {
+      $speedDown.addEventListener('click', () => stepSpeed(-1));
+    }
+    if ($speedUp) {
+      $speedUp.addEventListener('click', () => stepSpeed(1));
+    }
+    updateSpeedButtonsDisabledState();
 
     // Build interval choices (filtered to enabled set)
     function renderChoiceButtonsFromEnabled() {
