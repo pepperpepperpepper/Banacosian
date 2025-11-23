@@ -5,16 +5,6 @@
 const MIN_SEQUENCE_LENGTH = 2;
 const MAX_SEQUENCE_LENGTH = 5;
 const DEFAULT_SEQUENCE_LENGTH = 3;
-const ROUND_PHASES = Object.freeze({
-    IDLE: 'idle',
-    REFERENCE_PROMPT: 'reference_prompt',
-    REFERENCE_NOTES: 'reference_notes',
-    SEQUENCE_PLAYBACK: 'sequence_playback',
-    AWAIT_INPUT: 'await_input',
-    RESULT_FEEDBACK: 'result_feedback',
-    NEXT_SEQUENCE_COUNTDOWN: 'next_sequence_countdown',
-});
-
 class MelodicDictation {
     constructor() {
         // Initialize modules
@@ -24,11 +14,12 @@ class MelodicDictation {
         this.scoringModule = new ScoringModule();
         this.storageModule = new StorageModule(this.scoringModule);
         this.uiModule = new UIModule();
+        this.uiController = new DictationUIController({ uiModule: this.uiModule });
         this.keyboardModule = new KeyboardModule(this.musicTheory, this.audioModule);
         this.midiModule = (typeof MidiInputModule !== 'undefined')
             ? new MidiInputModule(this.musicTheory, this.keyboardModule)
             : null;
-        this.uiModule.setNoteLabelFormatter((note) => this.formatNoteLabel(note));
+        this.uiController.setNoteLabelFormatter((note) => this.formatNoteLabel(note));
 
         // Application state
         this.currentSequence = [];
@@ -51,10 +42,13 @@ class MelodicDictation {
         this.staffPendingSubmission = false;
         this.lastAppliedInputMode = null;
         this.practiceSequence = [];
-        this.activeStaffPointers = new Map();
-        this.roundPhase = ROUND_PHASES.IDLE;
-        this.roundPhaseVerbose = false;
-        this.initializeRoundPhaseDebug();
+        this.roundPhaseController = new RoundPhaseController({ uiModule: this.uiModule });
+        this.audioPreview = new AudioPreviewService({
+            audioModule: this.audioModule,
+            musicTheory: this.musicTheory,
+            roundPhaseController: this.roundPhaseController,
+        });
+        this.staffInputController = null;
 
         // Load saved settings (if any) before configuring modules
         try {
@@ -99,6 +93,8 @@ class MelodicDictation {
 
         // Ensure staff spelling and key signature reflect current mode/tonic
         this.syncStaffTonality();
+
+        this.initializeStaffInputController();
 
         // Initialize the application
         this.initialize();
@@ -184,44 +180,91 @@ class MelodicDictation {
 
         } catch (error) {
             console.error('Error during initialization:', error);
-            this.uiModule.updateFeedback('Error initializing application. Please refresh the page.', 'incorrect');
+            this.uiController.updateFeedback('Error initializing application. Please refresh the page.', 'incorrect');
         }
     }
 
-    updateStaffPointerNote(pointerKey, nextNote) {
-        if (!pointerKey || !nextNote) return;
-        const pointerState = this.activeStaffPointers.get(pointerKey);
-        if (!pointerState) return;
-        const targetArray = pointerState.array === 'practice'
-            ? this.practiceSequence
-            : this.userSequence;
-        if (!Array.isArray(targetArray)) return;
-        if (pointerState.index < 0 || pointerState.index >= targetArray.length) return;
-        const existing = targetArray[pointerState.index];
-        if (existing === nextNote) return;
-        targetArray[pointerState.index] = nextNote;
-        if (typeof this.staffModule.updateUserNoteAt === 'function') {
-            this.staffModule.updateUserNoteAt(pointerState.staffIndex, nextNote);
+    initializeStaffInputController() {
+        if (typeof StaffInputController !== 'function') {
+            console.warn('StaffInputController unavailable; staff input mode disabled.');
+            return;
         }
-        if (pointerState.array === 'practice') {
-            this.uiModule.updateUserSequenceDisplay(this.practiceSequence, [], { dictationType: this.dictationType });
-        } else {
-            this.uiModule.updateUserSequenceDisplay(this.userSequence, this.currentSequence, { dictationType: this.dictationType });
-            if (this.inputMode !== 'staff') {
-                try {
-                    this.staffModule.updateStaffComparison(this.currentSequence, this.userSequence, { dictationMode: this.dictationType });
-                } catch (error) {
-                    console.warn('Live staff comparison (drag update) failed:', error);
+        this.staffInputController = new StaffInputController({
+            staffModule: this.staffModule,
+            getPracticeSequence: () => this.practiceSequence,
+            setPracticeSequence: (sequence) => {
+                this.practiceSequence = sequence;
+                return this.practiceSequence;
+            },
+            getAnswerSequence: () => this.userSequence,
+            setAnswerSequence: (sequence) => {
+                this.userSequence = sequence;
+                return this.userSequence;
+            },
+            getPracticeLimit: () => this.getPracticeStackLimit(),
+            getAnswerLimit: () => this.getAnswerStackLimit(),
+            getContext: () => ({
+                targetLength: this.currentSequence.length,
+                requiresSubmit: this.inputMode === 'staff' && this.currentSequence.length > 0,
+            }),
+            previewService: this.audioPreview,
+            onPracticeChange: (sequence) => {
+                this.uiModule.updateUserSequenceDisplay(sequence, [], { dictationType: this.dictationType });
+            },
+            onAnswerChange: (sequence, meta = {}) => {
+                this.uiModule.updateUserSequenceDisplay(sequence, this.currentSequence, { dictationType: this.dictationType });
+                if (!meta.requiresSubmit) {
+                    this.tryUpdateStaffComparison(sequence);
                 }
-            }
+            },
+            onAnswerReady: (info = {}) => this.handleStaffAnswerReady(info),
+            onSubmitStateChange: (pending) => {
+                this.staffPendingSubmission = pending;
+                this.updateStaffSubmitState();
+            },
+            onComparisonUpdate: (sequence) => this.tryUpdateStaffComparison(sequence),
+            onFeedback: (message) => {
+                if (message) {
+                    this.uiController.updateFeedback(message);
+                }
+            },
+        });
+        this.staffInputController.setPracticeLimit(this.getPracticeStackLimit());
+    }
+
+    tryUpdateStaffComparison(sequence) {
+        if (!Array.isArray(this.currentSequence) || this.currentSequence.length === 0) {
+            return;
+        }
+        if (!Array.isArray(sequence)) {
+            sequence = Array.isArray(this.userSequence) ? this.userSequence : [];
+        }
+        try {
+            this.staffModule.updateStaffComparison(this.currentSequence, sequence, { dictationMode: this.dictationType });
+        } catch (error) {
+            console.warn('Live staff comparison failed:', error);
         }
     }
 
-    clampInsertIndex(hint, length) {
-        if (!Number.isInteger(hint)) return length;
-        if (hint < 0) return 0;
-        if (hint > length) return length;
-        return hint;
+    async handleStaffAnswerReady(info = {}) {
+        if (info.requiresSubmit) {
+            this.staffPendingSubmission = true;
+            this.updateStaffSubmitState();
+            if (info.message) {
+                this.uiController.updateFeedback(info.message);
+            }
+            return;
+        }
+        await this.checkSequence();
+    }
+
+    enterStaffPracticePhase() {
+        if (!this.staffInputController || this.inputMode !== 'staff') return;
+        this.staffInputController.setPhase('practice');
+        this.staffInputController.resetAnswerSequence();
+        this.staffInputController.setPracticeLimit(this.getPracticeStackLimit());
+        this.staffPendingSubmission = false;
+        this.updateStaffSubmitState();
     }
 
     normalizeSequenceLength(rawValue) {
@@ -231,19 +274,6 @@ class MelodicDictation {
             Math.max(parsed, MIN_SEQUENCE_LENGTH),
             MAX_SEQUENCE_LENGTH,
         );
-    }
-
-    shiftPointerTracking(arrayName, startIndex, delta) {
-        if (!this.activeStaffPointers || this.activeStaffPointers.size === 0) return;
-        this.activeStaffPointers.forEach((state) => {
-            if (!state || state.array !== arrayName) return;
-            if (Number.isInteger(state.index) && state.index >= startIndex) {
-                state.index += delta;
-            }
-            if (Number.isInteger(state.staffIndex) && state.staffIndex >= startIndex) {
-                state.staffIndex += delta;
-            }
-        });
     }
 
     getPracticeStackLimit() {
@@ -260,104 +290,29 @@ class MelodicDictation {
         return this.getPracticeStackLimit();
     }
 
-    initializeRoundPhaseDebug() {
-        if (typeof window === 'undefined') return;
-        try {
-            const params = new URLSearchParams(window.location.search || '');
-            if (params.has('stateDebug')) {
-                this.roundPhaseVerbose = params.get('stateDebug') !== '0';
-            } else if (window.localStorage) {
-                const stored = window.localStorage.getItem('dictationStateDebug');
-                this.roundPhaseVerbose = stored === 'true';
-            }
-        } catch (error) {
-            console.warn('Unable to evaluate stateDebug flag:', error);
-            this.roundPhaseVerbose = false;
-        }
-        window.DictationDebug = window.DictationDebug || {};
-        window.DictationDebug.setRoundPhaseVerbose = (enabled) => {
-            const flag = Boolean(enabled);
-            this.roundPhaseVerbose = flag;
-            try {
-                if (window.localStorage) {
-                    window.localStorage.setItem('dictationStateDebug', flag ? 'true' : 'false');
-                }
-            } catch (storageError) {
-                console.warn('Unable to persist stateDebug flag:', storageError);
-            }
-            console.info(`[RoundPhase] verbose logging ${flag ? 'enabled' : 'disabled'}.`);
-        };
-        window.DictationDebug.toggleRoundPhaseVerbose = () => {
-            window.DictationDebug.setRoundPhaseVerbose(!this.roundPhaseVerbose);
-        };
-        if (this.roundPhaseVerbose) {
-            console.info('[RoundPhase] verbose logging enabled via settings.');
-            console.info('[RoundPhase] initial state:', this.roundPhase);
-        }
-    }
-
     setRoundPhase(nextPhase, options = {}) {
-        const allowed = Object.values(ROUND_PHASES);
-        const resolved = allowed.includes(nextPhase) ? nextPhase : ROUND_PHASES.IDLE;
-        const previousPhase = this.roundPhase;
-        this.roundPhase = resolved;
-        if (this.roundPhaseVerbose) {
-            console.info('[RoundPhase]', `${previousPhase} -> ${resolved}`, {
-                feedback: options.feedback || null,
-                feedbackClass: options.feedbackClass || 'feedback',
-            });
-        }
-        const { feedback, feedbackClass = 'feedback' } = options;
-        if (feedback && this.uiModule && typeof this.uiModule.updateFeedback === 'function') {
-            this.uiModule.updateFeedback(feedback, feedbackClass);
+        if (this.roundPhaseController && typeof this.roundPhaseController.setPhase === 'function') {
+            this.roundPhaseController.setPhase(nextPhase, options);
         }
     }
 
     getRoundPhase() {
-        return this.roundPhase;
+        if (this.roundPhaseController && typeof this.roundPhaseController.getPhase === 'function') {
+            return this.roundPhaseController.getPhase();
+        }
+        return ROUND_PHASES.IDLE;
     }
 
     beginNextSequenceCountdown(seconds, onComplete) {
-        this.setRoundPhase(ROUND_PHASES.NEXT_SEQUENCE_COUNTDOWN);
-        if (!this.uiModule || typeof this.uiModule.startCountdown !== 'function') {
-            if (typeof onComplete === 'function') {
-                onComplete();
-            }
+        if (this.roundPhaseController && typeof this.roundPhaseController.beginNextSequenceCountdown === 'function') {
+            this.roundPhaseController.beginNextSequenceCountdown(seconds, onComplete);
             return;
         }
-        this.uiModule.startCountdown(seconds, () => {
-            this.setRoundPhase(ROUND_PHASES.IDLE);
-            if (typeof onComplete === 'function') {
-                onComplete();
-            }
-        });
+        if (typeof onComplete === 'function') {
+            onComplete();
+        }
     }
 
-    trimPracticeSequenceToLimit(limit) {
-        if (!Number.isFinite(limit) || limit <= 0) {
-            if (this.practiceSequence.length > 0) {
-                this.practiceSequence = [];
-                if (typeof this.staffModule.clearStaffNotes === 'function') {
-                    this.staffModule.clearStaffNotes();
-                }
-                this.uiModule.updateUserSequenceDisplay([], [], { dictationType: this.dictationType });
-            }
-            return;
-        }
-        let trimmed = false;
-        while (this.practiceSequence.length > limit) {
-            const removeIndex = this.practiceSequence.length - 1;
-            this.practiceSequence.pop();
-            this.shiftPointerTracking('practice', removeIndex, -1);
-            if (typeof this.staffModule.removeNoteAt === 'function') {
-                this.staffModule.removeNoteAt(removeIndex);
-            }
-            trimmed = true;
-        }
-        if (trimmed) {
-            this.uiModule.updateUserSequenceDisplay(this.practiceSequence, [], { dictationType: this.dictationType });
-        }
-    }
 
     /**
      * Optionally replay the correct sequence on the staff
@@ -432,7 +387,7 @@ class MelodicDictation {
      */
     setupEventListeners() {
         // Setup UI event listeners
-        this.uiModule.setupEventListeners({
+        this.uiController.bindEventHandlers({
             onNewSequence: () => this.generateNewSequence(),
             onPlaySequence: () => this.playSequence(),
             onShowHistory: () => this.showHistory(),
@@ -465,28 +420,31 @@ class MelodicDictation {
         if (resetExistingInput && modeChanged) {
             this.resetUserInputForModeSwitch();
         }
-        if (typeof this.uiModule.setInputModeValue === 'function') {
-            this.uiModule.setInputModeValue(this.inputMode);
+        if (typeof this.uiController.setInputModeValue === 'function') {
+            this.uiController.setInputModeValue(this.inputMode);
         }
         const staffActive = this.inputMode === 'staff';
-        if (typeof this.uiModule.setStaffInputActive === 'function') {
-            this.uiModule.setStaffInputActive(staffActive);
+        if (typeof this.uiController.setStaffInputActive === 'function') {
+            this.uiController.setStaffInputActive(staffActive);
         }
-        if (staffActive) {
-            await this.staffModule.setStaffInputMode({
-                enabled: true,
-                onInput: (note, meta = {}) => this.handleNotePlayed(note, {
-                    source: 'staff',
-                    phase: meta.phase,
-                    pointerId: meta.pointerId,
-                    staffIndex: meta.staffIndex,
-                    insertIndex: meta.insertIndex,
-                    operation: meta.operation,
-                    skipStaffUpdate: meta.skipStaffUpdate,
-                }),
+        if (staffActive && this.staffInputController) {
+            const phase = this.currentSequence.length > 0 ? 'answer' : 'practice';
+            await this.staffInputController.setEnabled(true, {
+                midiMin: 36,
+                midiMax: 96,
+                phase,
             });
+            if (phase === 'answer') {
+                this.staffInputController.setAnswerLimit(this.getAnswerStackLimit());
+            } else {
+                this.staffInputController.setPracticeLimit(this.getPracticeStackLimit());
+            }
         } else {
-            await this.staffModule.setStaffInputMode({ enabled: false });
+            if (this.staffInputController) {
+                await this.staffInputController.setEnabled(false);
+            } else {
+                await this.staffModule.setStaffInputMode({ enabled: false });
+            }
             this.staffPendingSubmission = false;
             this.clearStaffInputTracking({ clearPractice: true, resetStaff: true });
         }
@@ -501,7 +459,12 @@ class MelodicDictation {
             return;
         }
         this.userSequence = [];
-        this.practiceSequence = [];
+        if (this.staffInputController) {
+            this.staffInputController.resetPracticeSequence();
+            this.staffInputController.resetAnswerSequence();
+        } else {
+            this.practiceSequence = [];
+        }
         this.clearStaffInputTracking({ clearPractice: false });
         this.staffModule.clearStaffNotes();
         this.staffModule.clearTonicHighlights();
@@ -512,11 +475,12 @@ class MelodicDictation {
 
     clearStaffInputTracking(options = {}) {
         const { clearPractice = false, resetStaff = false } = options;
-        if (this.activeStaffPointers && typeof this.activeStaffPointers.clear === 'function') {
-            this.activeStaffPointers.clear();
-        }
         if (clearPractice) {
-            this.practiceSequence = [];
+            if (this.staffInputController) {
+                this.staffInputController.resetPracticeSequence();
+            } else {
+                this.practiceSequence = [];
+            }
         }
         if (resetStaff) {
             this.staffModule.clearStaffNotes();
@@ -526,11 +490,11 @@ class MelodicDictation {
     }
 
     updateStaffSubmitState() {
-        if (typeof this.uiModule.setStaffSubmitEnabled !== 'function') return;
+        if (typeof this.uiController.setStaffSubmitEnabled !== 'function') return;
         const shouldEnable = this.inputMode === 'staff'
             && this.staffPendingSubmission
             && this.currentSequence.length > 0;
-        this.uiModule.setStaffSubmitEnabled(shouldEnable);
+        this.uiController.setStaffSubmitEnabled(shouldEnable);
     }
 
     async handleInputModeChange(e) {
@@ -547,7 +511,7 @@ class MelodicDictation {
         const ready = this.currentSequence.length > 0
             && this.userSequence.length === this.currentSequence.length;
         if (!ready) {
-            this.uiModule.updateFeedback('Enter all notes on the staff before submitting.');
+            this.uiController.updateFeedback('Enter all notes on the staff before submitting.');
             return;
         }
         this.staffPendingSubmission = false;
@@ -560,7 +524,7 @@ class MelodicDictation {
      */
     generateNewSequence() {
         // Show the status area when generating a new sequence
-        this.uiModule.showStatusArea();
+        this.uiController.showStatusArea();
         
         // Clear previous staff notes and tonic highlights
         if (typeof this.staffModule.setDictationMode === 'function') {
@@ -568,8 +532,13 @@ class MelodicDictation {
         }
         this.staffModule.clearStaffNotes();
         this.staffModule.clearTonicHighlights();
-        this.practiceSequence = [];
-        this.clearStaffInputTracking();
+        if (this.staffInputController) {
+            this.staffInputController.resetPracticeSequence();
+            this.staffInputController.resetAnswerSequence();
+        } else {
+            this.practiceSequence = [];
+        }
+        this.clearStaffInputTracking({ clearPractice: false });
         
         // Start new sequence in scoring module
         this.scoringModule.startNewSequence();
@@ -579,7 +548,16 @@ class MelodicDictation {
         // Clear sequences
         this.currentSequence = [];
         this.userSequence = [];
-        this.practiceSequence = [];
+        if (this.staffInputController) {
+            this.staffInputController.resetPracticeSequence();
+            this.staffInputController.resetAnswerSequence();
+            if (this.inputMode === 'staff') {
+                this.staffInputController.setPhase('answer');
+                this.staffInputController.setAnswerLimit(this.sequenceLength);
+            }
+        } else {
+            this.practiceSequence = [];
+        }
         this.staffPendingSubmission = false;
         this.updateStaffSubmitState();
 
@@ -592,13 +570,18 @@ class MelodicDictation {
                 feedbackClass: 'incorrect',
             });
             this.audioModule.setIsPlaying(false);
-            this.uiModule.setPlayButtonState(false);
+            this.uiController.setPlayButtonState(false);
             return;
         }
         
         for (let i = 0; i < this.sequenceLength; i++) {
             const randomNote = availableNotes[Math.floor(Math.random() * availableNotes.length)];
             this.currentSequence.push(randomNote);
+        }
+
+        if (this.staffInputController && this.inputMode === 'staff') {
+            this.staffInputController.setAnswerLimit(this.currentSequence.length);
+            this.staffInputController.setPhase('answer');
         }
         
         // Update displays
@@ -608,7 +591,7 @@ class MelodicDictation {
             feedback: `Listen carefully${scaleText}...`,
         });
         this.playSequence();
-        this.uiModule.setPlayButtonState(false);
+        this.uiController.setPlayButtonState(false);
     }
 
     /**
@@ -645,7 +628,7 @@ class MelodicDictation {
         if (this.audioModule.getIsPlaying()) return;
         
         this.audioModule.setIsPlaying(true);
-        this.uiModule.setPlayButtonState(true);
+        this.uiController.setPlayButtonState(true);
         // Ensure timer is paused while examples play
         try { if (typeof this.scoringModule.pauseSequenceTimer === 'function') this.scoringModule.pauseSequenceTimer(); } catch {}
         
@@ -750,7 +733,7 @@ class MelodicDictation {
         this.uiModule.removePlayingHighlights();
         
         this.audioModule.setIsPlaying(false);
-        this.uiModule.setPlayButtonState(false);
+        this.uiController.setPlayButtonState(false);
         // Resume timer after playback so user thinking time is measured
         try { if (typeof this.scoringModule.resumeSequenceTimer === 'function') this.scoringModule.resumeSequenceTimer(); } catch {}
         
@@ -774,9 +757,6 @@ class MelodicDictation {
         const phase = operation === 'delete'
             ? 'delete'
             : (options && options.phase ? options.phase : 'commit');
-        const skipStaffUpdate = Boolean(options && options.skipStaffUpdate);
-        const pointerId = options && options.pointerId != null ? options.pointerId : null;
-        const pointerKey = (pointerId != null) ? `ptr-${pointerId}` : null;
         const staffIndexMeta = Number.isInteger(options && options.staffIndex)
             ? options.staffIndex
             : null;
@@ -786,237 +766,58 @@ class MelodicDictation {
         const staffModeActive = this.inputMode === 'staff';
         const isStaffSource = source === 'staff';
         const hasActiveSequence = this.currentSequence.length > 0;
-        const isPracticePhase = staffModeActive && isStaffSource && !hasActiveSequence;
-
-        if (staffModeActive && !isStaffSource && !isPracticePhase) {
-            return;
-        }
-
-        if (!isPracticePhase && (this.audioModule.getIsPlaying() || !hasActiveSequence)) {
-            return;
-        }
-
         const isDeleteOperation = operation === 'delete';
         if (!actualNote && !isDeleteOperation && phase !== 'end' && phase !== 'cancel') {
             return;
         }
-
-        if (isStaffSource && pointerKey) {
-            if (phase === 'move') {
-                this.updateStaffPointerNote(pointerKey, actualNote);
-                return;
-            }
-            if (phase === 'end' || phase === 'cancel') {
-                this.activeStaffPointers.delete(pointerKey);
-                return;
-            }
-        }
-
-        if (isPracticePhase) {
-            const practiceLimit = this.getPracticeStackLimit();
-            this.trimPracticeSequenceToLimit(practiceLimit);
-            if (isDeleteOperation && staffIndexMeta != null && staffIndexMeta >= 0 && staffIndexMeta < this.practiceSequence.length) {
-                this.practiceSequence.splice(staffIndexMeta, 1);
-                this.shiftPointerTracking('practice', staffIndexMeta, -1);
-                if (!skipStaffUpdate && typeof this.staffModule.removeNoteAt === 'function') {
-                    this.staffModule.removeNoteAt(staffIndexMeta);
-                }
-                this.uiModule.updateUserSequenceDisplay(this.practiceSequence, [], { dictationType: this.dictationType });
-                return;
-            }
-            if (staffIndexMeta != null && staffIndexMeta >= 0 && staffIndexMeta < this.practiceSequence.length) {
-                this.practiceSequence[staffIndexMeta] = actualNote;
-                if (!skipStaffUpdate && typeof this.staffModule.updateUserNoteAt === 'function') {
-                    this.staffModule.updateUserNoteAt(staffIndexMeta, actualNote);
-                }
-                this.uiModule.updateUserSequenceDisplay(this.practiceSequence, [], { dictationType: this.dictationType });
-                if (pointerKey) {
-                    this.activeStaffPointers.set(pointerKey, {
-                        array: 'practice',
-                        index: staffIndexMeta,
-                        staffIndex: staffIndexMeta,
-                    });
-                }
-                return;
-            }
-            const capacityReached = this.practiceSequence.length >= practiceLimit;
-            const targetIndex = this.clampInsertIndex(insertIndexHint, this.practiceSequence.length);
-            if (capacityReached) {
-                const boundedIndex = Math.min(
-                    Number.isInteger(insertIndexHint) ? insertIndexHint : this.practiceSequence.length - 1,
-                    practiceLimit - 1,
-                );
-                const targetSlot = Math.max(0, boundedIndex);
-                this.practiceSequence[targetSlot] = actualNote;
-                if (!skipStaffUpdate && typeof this.staffModule.updateUserNoteAt === 'function') {
-                    this.staffModule.updateUserNoteAt(targetSlot, actualNote);
-                }
-                this.uiModule.updateUserSequenceDisplay(this.practiceSequence, [], { dictationType: this.dictationType });
-                if (pointerKey) {
-                    this.activeStaffPointers.set(pointerKey, {
-                        array: 'practice',
-                        index: targetSlot,
-                        staffIndex: targetSlot,
-                    });
-                }
-                return;
-            }
-            this.shiftPointerTracking('practice', targetIndex, 1);
-            this.practiceSequence.splice(targetIndex, 0, actualNote);
-            if (!skipStaffUpdate) {
-                this.staffModule.showNoteOnStaff(actualNote, { index: targetIndex, isDraft: true, state: null });
-            }
-            this.uiModule.updateUserSequenceDisplay(this.practiceSequence, [], { dictationType: this.dictationType });
-            if (pointerKey) {
-                this.activeStaffPointers.set(pointerKey, {
-                    array: 'practice',
-                    index: targetIndex,
-                    staffIndex: targetIndex,
-                });
-            }
+        if (staffModeActive && !isStaffSource && this.staffInputController) {
             return;
         }
 
-        const requiresSubmit = staffModeActive && hasActiveSequence;
-        const editingExistingAnswer = staffModeActive
-            && isStaffSource
-            && staffIndexMeta != null
-            && staffIndexMeta >= 0
-            && staffIndexMeta < this.userSequence.length;
-        const allowStackOverride = staffModeActive && isStaffSource;
-        const answerLimit = this.getAnswerStackLimit();
+        if (isStaffSource && this.staffInputController) {
+            const controllerPhase = this.staffInputController.getPhase();
+            if (controllerPhase !== 'practice') {
+                if (this.audioModule.getIsPlaying() || !hasActiveSequence) {
+                    return;
+                }
+            }
+            const consumed = this.staffInputController.handleStaffInput(actualNote, {
+                operation,
+                phase,
+                staffIndex: staffIndexMeta,
+                insertIndex: insertIndexHint,
+            });
+            if (consumed) {
+                return;
+            }
+        }
+
+        if (staffModeActive && this.staffInputController) {
+            return;
+        }
+
+        if (this.audioModule.getIsPlaying() || !hasActiveSequence) {
+            return;
+        }
+
         if (isDeleteOperation) {
-            if (!staffModeActive || staffIndexMeta == null || staffIndexMeta < 0 || staffIndexMeta >= this.userSequence.length) {
-                return;
-            }
-            this.userSequence.splice(staffIndexMeta, 1);
-            this.shiftPointerTracking('answer', staffIndexMeta, -1);
-            if (!skipStaffUpdate && typeof this.staffModule.removeNoteAt === 'function') {
-                this.staffModule.removeNoteAt(staffIndexMeta);
-            }
-            this.uiModule.updateUserSequenceDisplay(this.userSequence, this.currentSequence, { dictationType: this.dictationType });
-            if (!requiresSubmit) {
-                try {
-                    this.staffModule.updateStaffComparison(this.currentSequence, this.userSequence, { dictationMode: this.dictationType });
-                } catch (error) {
-                    console.warn('Live staff comparison (delete) failed:', error);
-                }
-            }
             return;
         }
 
-        if (editingExistingAnswer) {
-            this.userSequence[staffIndexMeta] = actualNote;
-            if (!skipStaffUpdate && typeof this.staffModule.updateUserNoteAt === 'function') {
-                this.staffModule.updateUserNoteAt(staffIndexMeta, actualNote);
-            }
-            this.uiModule.updateUserSequenceDisplay(this.userSequence, this.currentSequence, { dictationType: this.dictationType });
-            if (!requiresSubmit) {
-                try {
-                    this.staffModule.updateStaffComparison(this.currentSequence, this.userSequence, { dictationMode: this.dictationType });
-                } catch (error) {
-                    console.warn('Live staff comparison failed:', error);
-                }
-            }
-            if (pointerKey) {
-                this.activeStaffPointers.set(pointerKey, {
-                    array: 'answer',
-                    index: staffIndexMeta,
-                    staffIndex: staffIndexMeta,
-                });
-            }
+        const answerLimit = this.getAnswerStackLimit();
+        if (this.userSequence.length >= answerLimit) {
             return;
         }
 
-        if (allowStackOverride && this.userSequence.length >= answerLimit) {
-            const preferredIndex = Number.isInteger(insertIndexHint)
-                ? insertIndexHint
-                : (Number.isInteger(staffIndexMeta) ? staffIndexMeta : answerLimit - 1);
-            const boundedIndex = Math.min(
-                Math.max(0, preferredIndex),
-                Math.max(0, answerLimit - 1),
-            );
-            this.userSequence[boundedIndex] = actualNote;
-            if (!skipStaffUpdate && typeof this.staffModule.updateUserNoteAt === 'function') {
-                this.staffModule.updateUserNoteAt(boundedIndex, actualNote);
-            }
-            this.uiModule.updateUserSequenceDisplay(this.userSequence, this.currentSequence, { dictationType: this.dictationType });
-            if (!requiresSubmit) {
-                try {
-                    this.staffModule.updateStaffComparison(this.currentSequence, this.userSequence, { dictationMode: this.dictationType });
-                } catch (error) {
-                    console.warn('Live staff comparison (override) failed:', error);
-                }
-            } else {
-                this.staffPendingSubmission = true;
-                this.updateStaffSubmitState();
-                this.uiModule.updateFeedback('Ready to submit your answer.');
-            }
-            if (pointerKey) {
-                this.activeStaffPointers.set(pointerKey, {
-                    array: 'answer',
-                    index: boundedIndex,
-                    staffIndex: boundedIndex,
-                });
-            }
-            return;
-        }
-
-        if (requiresSubmit
-            && !allowStackOverride
-            && this.staffPendingSubmission
-            && this.userSequence.length >= answerLimit) {
-            this.uiModule.updateFeedback('Submit or clear your answer before adding more notes.');
-            return;
-        }
-
-        // Show note on staff
-        const noteDisplayOptions = {};
-        if (staffModeActive) {
-            noteDisplayOptions.state = null;
-        }
-        if (!skipStaffUpdate) {
-            this.staffModule.showNoteOnStaff(actualNote, noteDisplayOptions);
-        }
-
-        const userIndex = this.userSequence.length;
+        this.staffModule.showNoteOnStaff(actualNote, {});
         this.userSequence.push(actualNote);
         this.uiModule.updateUserSequenceDisplay(this.userSequence, this.currentSequence, { dictationType: this.dictationType });
-        // Provide immediate correctness feedback on the staff for the notes entered so far
-        if (!requiresSubmit) {
-            try {
-                this.staffModule.updateStaffComparison(this.currentSequence, this.userSequence, { dictationMode: this.dictationType });
-            } catch (e) {
-                // Non-fatal: if comparison rendering fails, keep interaction responsive
-                console.warn('Live staff comparison failed:', e);
-            }
-        }
+        this.tryUpdateStaffComparison(this.userSequence);
 
-        if (pointerKey && isStaffSource) {
-            this.activeStaffPointers.set(pointerKey, {
-                array: 'answer',
-                index: userIndex,
-                staffIndex: userIndex,
-            });
-        }
-        
         if (this.userSequence.length === this.currentSequence.length) {
-            if (requiresSubmit) {
-                this.staffPendingSubmission = true;
-                this.updateStaffSubmitState();
-                this.uiModule.updateFeedback('Ready to submit your answer.');
-            } else {
-                await this.checkSequence();
-            }
+            await this.checkSequence();
         } else {
-            const progressMessage = `Note ${this.userSequence.length} of ${this.currentSequence.length}`;
-            if (requiresSubmit) {
-                this.staffPendingSubmission = false;
-                this.updateStaffSubmitState();
-                this.uiModule.updateFeedback(progressMessage);
-            } else {
-                this.uiModule.updateFeedback(progressMessage);
-            }
+            this.uiController.updateFeedback(`Note ${this.userSequence.length} of ${this.currentSequence.length}`);
         }
     }
 
@@ -1120,6 +921,7 @@ class MelodicDictation {
         
         // Reset timer display
         document.getElementById('timer').textContent = '00:00';
+        this.enterStaffPracticePhase();
     }
 
     /**
@@ -1133,7 +935,9 @@ class MelodicDictation {
             e.target.value = `${normalized}`;
         }
         if (this.inputMode === 'staff' && this.currentSequence.length === 0) {
-            this.trimPracticeSequenceToLimit(this.getPracticeStackLimit());
+            if (this.staffInputController) {
+                this.staffInputController.setPracticeLimit(this.getPracticeStackLimit());
+            }
         }
         this.persistSettings();
     }
@@ -1165,19 +969,27 @@ class MelodicDictation {
         }
         this.currentSequence = [];
         this.userSequence = [];
-        this.practiceSequence = [];
-        this.clearStaffInputTracking();
+        if (this.staffInputController) {
+            this.staffInputController.resetPracticeSequence();
+            this.staffInputController.resetAnswerSequence();
+            this.staffInputController.setPhase('practice');
+            this.staffInputController.setPracticeLimit(this.getPracticeStackLimit());
+        } else {
+            this.practiceSequence = [];
+        }
+        this.clearStaffInputTracking({ clearPractice: false, resetStaff: false });
         this.staffPendingSubmission = false;
         this.updateStaffSubmitState();
         this.staffModule.clearStaffNotes();
         this.staffModule.clearTonicHighlights();
         this.uiModule.updateSequenceDisplay([], { dictationType: this.dictationType });
         this.uiModule.updateUserSequenceDisplay([], [], { dictationType: this.dictationType });
-        this.uiModule.updateFeedback(
+        this.uiController.updateFeedback(
             this.dictationType === 'harmonic'
                 ? 'Harmonic dictation enabled. Click "Start" to hear the chord.'
                 : 'Melodic dictation enabled. Click "Start" to hear the melody.'
         );
+        this.enterStaffPracticePhase();
         this.persistSettings();
     }
 
@@ -1194,12 +1006,12 @@ class MelodicDictation {
 
             const timbreLabel = this.audioModule.getTimbreLabel(appliedTimbre);
             if (!this.audioModule.getIsPlaying()) {
-                this.uiModule.showStatusArea();
-                this.uiModule.updateFeedback(`Timbre set to ${timbreLabel}. Click "Start" to begin.`, 'feedback');
+                this.uiController.showStatusArea();
+                this.uiController.updateFeedback(`Timbre set to ${timbreLabel}. Click "Start" to begin.`, 'feedback');
             }
         } catch (error) {
             console.error('Error changing timbre:', error);
-            this.uiModule.updateFeedback('Error updating timbre. Please try again.', 'incorrect');
+            this.uiController.updateFeedback('Error updating timbre. Please try again.', 'incorrect');
         }
         this.persistSettings();
     }
@@ -1262,20 +1074,28 @@ class MelodicDictation {
             // Update staff spelling and key signature for new tonic
             this.syncStaffTonality();
 
-            this.uiModule.hideStatusArea();
+            this.uiController.hideStatusArea();
             this.currentSequence = [];
             this.userSequence = [];
-            this.practiceSequence = [];
-            this.clearStaffInputTracking();
+            if (this.staffInputController) {
+                this.staffInputController.resetPracticeSequence();
+                this.staffInputController.resetAnswerSequence();
+                this.staffInputController.setPhase('practice');
+                this.staffInputController.setPracticeLimit(this.getPracticeStackLimit());
+            } else {
+                this.practiceSequence = [];
+            }
+            this.clearStaffInputTracking({ clearPractice: false });
             this.staffPendingSubmission = false;
             this.updateStaffSubmitState();
             this.staffModule.clearStaffNotes();
             this.staffModule.clearTonicHighlights();
-            this.uiModule.updateFeedback(`Tonic set to ${displayTonic} in ${this.mode} mode. Click "Start" to begin.`);
-            this.uiModule.setPlayButtonState(true);
+            this.uiController.updateFeedback(`Tonic set to ${displayTonic} in ${this.mode} mode. Click "Start" to begin.`);
+            this.uiController.setPlayButtonState(true);
+            this.enterStaffPracticePhase();
         } catch (error) {
             console.error('Error changing tonic:', error);
-            this.uiModule.updateFeedback('Error updating tonic. Please try again.', 'incorrect');
+            this.uiController.updateFeedback('Error updating tonic. Please try again.', 'incorrect');
         }
         this.persistSettings();
     }
@@ -1299,22 +1119,30 @@ class MelodicDictation {
             this.syncStaffTonality();
             
             // Hide status area when mode changes
-            this.uiModule.hideStatusArea();
+            this.uiController.hideStatusArea();
             
             // Clear current sequence when mode changes
             this.currentSequence = [];
             this.userSequence = [];
-            this.practiceSequence = [];
-            this.clearStaffInputTracking();
+            if (this.staffInputController) {
+                this.staffInputController.resetPracticeSequence();
+                this.staffInputController.resetAnswerSequence();
+                this.staffInputController.setPhase('practice');
+                this.staffInputController.setPracticeLimit(this.getPracticeStackLimit());
+            } else {
+                this.practiceSequence = [];
+            }
+            this.clearStaffInputTracking({ clearPractice: false });
             this.staffPendingSubmission = false;
             this.updateStaffSubmitState();
             this.staffModule.clearStaffNotes();
             this.staffModule.clearTonicHighlights();
-            this.uiModule.updateFeedback(`Switched to ${this.mode} mode (tonic ${displayTonic}). Click "Start" to begin.`);
-            this.uiModule.setPlayButtonState(true);
+            this.uiController.updateFeedback(`Switched to ${this.mode} mode (tonic ${displayTonic}). Click "Start" to begin.`);
+            this.uiController.setPlayButtonState(true);
+            this.enterStaffPracticePhase();
         } catch (error) {
             console.error('Error changing mode:', error);
-            this.uiModule.updateFeedback(`Error switching to ${this.mode} mode. Please try again.`, 'incorrect');
+            this.uiController.updateFeedback(`Error switching to ${this.mode} mode. Please try again.`, 'incorrect');
         }
         this.persistSettings();
     }
@@ -1352,7 +1180,7 @@ class MelodicDictation {
      * Show history modal
      */
     showHistory() {
-        this.uiModule.showHistory(
+        this.uiController.showHistory(
             this.scoringModule.getRoundHistory(),
             () => this.scoringModule.calculateAverageAccuracy(),
             () => this.scoringModule.getBestRound()
@@ -1363,7 +1191,7 @@ class MelodicDictation {
      * Hide history modal
      */
     hideHistory() {
-        this.uiModule.hideHistory();
+        this.uiController.hideHistory();
     }
 
     /**
@@ -1384,9 +1212,9 @@ class MelodicDictation {
                 this.inputMode
             );
             const message = await this.storageModule.saveToGoogleDrive(settings);
-            this.uiModule.updateFeedback(message, 'correct');
+            this.uiController.updateFeedback(message, 'correct');
         } catch (error) {
-            this.uiModule.updateFeedback(error.message, 'incorrect');
+            this.uiController.updateFeedback(error.message, 'incorrect');
         }
     }
 
@@ -1462,12 +1290,12 @@ class MelodicDictation {
                 this.scoringModule.updateScore();
                 this.scoringModule.updateRoundDisplay();
                 
-                this.uiModule.updateFeedback(result.message, 'correct');
+                this.uiController.updateFeedback(result.message, 'correct');
             } else {
-                this.uiModule.updateFeedback(result.message, 'feedback');
+                this.uiController.updateFeedback(result.message, 'feedback');
             }
         } catch (error) {
-            this.uiModule.updateFeedback(error.message, 'incorrect');
+            this.uiController.updateFeedback(error.message, 'incorrect');
         }
     }
 
