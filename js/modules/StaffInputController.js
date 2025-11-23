@@ -161,12 +161,16 @@ class StaffInputController {
             return true;
         }
         if (sequence.length >= limit) {
-            const fallback = sequence.length > 0 ? sequence.length - 1 : 0;
-            const preferredIndex = Number.isInteger(meta.insertIndex) ? meta.insertIndex : fallback;
-            const targetSlot = this.normalizeInsertIndex(preferredIndex, limit - 1);
-            sequence[targetSlot] = note;
+            const removed = sequence.shift();
+            sequence.push(note);
             this.setPracticeSequence(sequence);
-            this.emitPracticeChange({ reason: 'override', staffIndex: targetSlot });
+            this.emitPracticeChange({
+                reason: 'fifo',
+                removedIndex: 0,
+                removedNote: removed,
+                staffIndex: sequence.length - 1,
+            });
+            this.removeOldestStaffEntries(1);
             this.preview(note, { allowWhilePlaying: this.phase === 'practice' });
             return true;
         }
@@ -213,17 +217,19 @@ class StaffInputController {
             return true;
         }
         if (answerLimit > 0 && sequence.length >= answerLimit) {
-            const fallback = sequence.length > 0 ? sequence.length - 1 : 0;
-            const preferredIndex = Number.isInteger(meta.insertIndex)
-                ? meta.insertIndex
-                : (staffIndex != null ? staffIndex : fallback);
-            const targetSlot = this.normalizeInsertIndex(preferredIndex, Math.max(answerLimit - 1, 0));
-            sequence[targetSlot] = note;
+            const removed = sequence.shift();
+            sequence.push(note);
             this.setAnswerSequence(sequence);
-            this.emitAnswerChange({ reason: 'override', requiresSubmit });
+            this.emitAnswerChange({
+                reason: 'fifo',
+                removedIndex: 0,
+                removedNote: removed,
+                requiresSubmit,
+            });
             if (!requiresSubmit) {
                 this.onComparisonUpdate(sequence.slice());
             }
+            this.removeOldestStaffEntries(1);
             this.preview(note);
             this.evaluateAnswerState(sequence, { requiresSubmit, targetLength });
             return true;
@@ -311,6 +317,21 @@ class StaffInputController {
         }
         if (typeof this.onPitchPreview === 'function') {
             this.onPitchPreview(note);
+        }
+    }
+
+    removeOldestStaffEntries(count = 1) {
+        if (!this.staffModule || typeof this.staffModule.removeNoteAt !== 'function' || count <= 0) {
+            return;
+        }
+        const available = typeof this.staffModule.getStaffNotesCount === 'function'
+            ? this.staffModule.getStaffNotesCount()
+            : null;
+        const removals = Number.isInteger(available)
+            ? Math.min(Math.max(count, 0), available)
+            : Math.max(count, 0);
+        for (let i = 0; i < removals; i += 1) {
+            this.staffModule.removeNoteAt(0);
         }
     }
 
