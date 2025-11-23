@@ -271,6 +271,10 @@ class MelodicDictation {
         );
     }
 
+    hasActiveSequence() {
+        return Array.isArray(this.currentSequence) && this.currentSequence.length > 0;
+    }
+
     getPracticeStackLimit() {
         if (this.staffBridge && typeof this.staffBridge.getPracticeStackLimit === 'function') {
             return this.staffBridge.getPracticeStackLimit();
@@ -427,7 +431,10 @@ class MelodicDictation {
     }
 
     async applyInputMode(options = {}) {
-        const { resetExistingInput = false } = options;
+        const {
+            resetExistingInput = false,
+            syncExistingAnswer = true,
+        } = options;
         const previousMode = this.lastAppliedInputMode || this.inputMode;
         const modeChanged = previousMode !== this.inputMode;
         if (resetExistingInput && modeChanged) {
@@ -440,8 +447,9 @@ class MelodicDictation {
         if (typeof this.uiController.setStaffInputActive === 'function') {
             this.uiController.setStaffInputActive(staffActive);
         }
+        const hasActiveSequence = this.hasActiveSequence();
         if (staffActive && this.staffInputController) {
-            const phase = this.currentSequence.length > 0 ? 'answer' : 'practice';
+            const phase = hasActiveSequence ? 'answer' : 'practice';
             await this.staffInputController.setEnabled(true, {
                 midiMin: 36,
                 midiMax: 96,
@@ -449,8 +457,17 @@ class MelodicDictation {
             });
             if (phase === 'answer') {
                 this.staffInputController.setAnswerLimit(this.getAnswerStackLimit());
+                if (syncExistingAnswer && this.staffBridge && typeof this.staffBridge.syncStaffWithUserSequence === 'function') {
+                    await this.staffBridge.syncStaffWithUserSequence();
+                }
+                if (hasActiveSequence && this.currentSequence.length > 0) {
+                    const ready = this.userSequence.length >= this.currentSequence.length;
+                    this.staffPendingSubmission = ready;
+                    this.updateStaffSubmitState();
+                }
             } else {
                 this.staffInputController.setPracticeLimit(this.getPracticeStackLimit());
+                this.staffPendingSubmission = false;
             }
         } else {
             if (this.staffInputController) {
@@ -459,7 +476,11 @@ class MelodicDictation {
                 await this.staffModule.setStaffInputMode({ enabled: false });
             }
             this.staffPendingSubmission = false;
-            this.clearStaffInputTracking({ clearPractice: true, resetStaff: true });
+            if (resetExistingInput) {
+                this.clearStaffInputTracking({ clearPractice: true, resetStaff: true });
+            } else {
+                this.clearStaffInputTracking({ clearPractice: true, resetStaff: false });
+            }
         }
         this.lastAppliedInputMode = this.inputMode;
         this.updateStaffSubmitState();
@@ -503,7 +524,14 @@ class MelodicDictation {
         const requested = e && e.target && e.target.value === 'staff' ? 'staff' : 'keyboard';
         if (requested === this.inputMode) return;
         this.inputMode = requested;
-        await this.applyInputMode({ resetExistingInput: true });
+        const hasActiveSequence = this.hasActiveSequence();
+        const shouldReset = !hasActiveSequence
+            && this.userSequence.length === 0
+            && this.practiceSequence.length === 0;
+        await this.applyInputMode({
+            resetExistingInput: shouldReset,
+            syncExistingAnswer: hasActiveSequence || this.userSequence.length > 0,
+        });
         this.persistSettings();
     }
 

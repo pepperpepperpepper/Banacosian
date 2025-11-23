@@ -161,6 +161,31 @@
                 && app.currentSequence.length > 0;
             app.uiController.setStaffSubmitEnabled(shouldEnable);
         }
+
+        async syncStaffWithUserSequence(options = {}) {
+            const app = this.app;
+            if (!app || !app.staffModule) return;
+            const sequenceSource = Array.isArray(options.sequence)
+                ? options.sequence
+                : (Array.isArray(app.userSequence) ? app.userSequence : []);
+            const sequence = sequenceSource.slice();
+            if (typeof app.staffModule.applyInteractionSequence === 'function') {
+                try {
+                    await app.staffModule.applyInteractionSequence(sequence);
+                } catch (error) {
+                    console.warn('Failed to sync staff with user sequence:', error);
+                }
+            } else {
+                app.staffModule.clearStaffNotes();
+                sequence.forEach((note) => {
+                    app.staffModule.showNoteOnStaff(note, { state: null });
+                });
+            }
+            const shouldUpdateComparison = options.updateComparison !== false;
+            if (shouldUpdateComparison) {
+                this.tryUpdateStaffComparison(sequence);
+            }
+        }
     }
 
     if (typeof module !== 'undefined' && module.exports) {
