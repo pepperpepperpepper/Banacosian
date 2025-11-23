@@ -7,6 +7,8 @@ class KeyboardModule {
         this.audioModule = audioModule;
         this.scaleType = 'diatonic';
         this.mode = 'ionian';
+        this.labelIncludesOctave = false;
+        this.allowOverlap = true; // allow simultaneous notes by default for /keyboard
         this.diatonicNotes = [];
         this.tonicLetter = this.musicTheory.getDefaultTonicLetter(this.mode);
         this.whiteKeyElements = Array.from(document.querySelectorAll('.white-key'));
@@ -16,17 +18,84 @@ class KeyboardModule {
         this.disabledKeysStyle = 'hatched';
         this.currentLayout = null;
         this.boundKeyHandler = null;
+        this.boundPointerDown = null;
+        this.boundPointerUp = null;
+        this.boundPointerMove = null;
+        this.boundTouchStart = null;
+        this.boundTouchEnd = null;
+        this.boundTouchMove = null;
+        this.pointerDownMap = new Map();
+        this.pointerTypeMap = new Map();
+        this.managePressedVisually = true;
         this.onNotePlayedCallback = null;
         this.hasLeadingBlack = false;
         this.hasTrailingBlack = false;
         this.updateMetricsHandle = null;
         this.handleResize = this.handleResize.bind(this);
+        this.chromaticPreference = null;
+        this.displayTonicForLabels = null;
+        // Sustain support
+        this.sustainCounts = new Map(); // note -> refcount
+        this.pointerNoteMap = new Map(); // pointerId -> note
+        this.touchNoteMap = new Map(); // touchId -> note
 
         this.applyDisabledKeysStyle();
 
         if (typeof window !== 'undefined') {
             window.addEventListener('resize', this.handleResize);
         }
+    }
+
+    /** Start sustaining a note with reference counting so multiple pointers can hold it. */
+    startSustainForNote(actualNote) {
+        if (!actualNote) return;
+        // Respect mode filtering when not chromatic
+        if (this.scaleType !== 'chromatic') {
+            if (!this.diatonicNotes || this.diatonicNotes.length === 0) {
+                this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
+            }
+            if (!this.diatonicNotes.includes(actualNote)) {
+                return;
+            }
+        }
+        const freq = this.musicTheory.getNoteFrequency(actualNote);
+        if (!Number.isFinite(freq)) return;
+        const count = this.sustainCounts.get(actualNote) || 0;
+        if (count === 0 && this.audioModule && typeof this.audioModule.startSustain === 'function') {
+            this.audioModule.startSustain(actualNote, freq);
+        }
+        this.sustainCounts.set(actualNote, count + 1);
+        if (this.onNotePlayedCallback) {
+            try { this.onNotePlayedCallback(actualNote); } catch (_) {}
+        }
+    }
+
+    /** Stop sustaining a note, honoring reference counts. */
+    stopSustainForNote(actualNote) {
+        if (!actualNote) return;
+        const count = this.sustainCounts.get(actualNote) || 0;
+        if (count <= 1) {
+            this.sustainCounts.delete(actualNote);
+            if (this.audioModule && typeof this.audioModule.stopSustain === 'function') {
+                this.audioModule.stopSustain(actualNote);
+            }
+        } else {
+            this.sustainCounts.set(actualNote, count - 1);
+        }
+    }
+
+    /**
+     * Control whether key labels include octave numbers (e.g., C4)
+     * @param {boolean} flag
+     */
+    setLabelIncludesOctave(flag) {
+        this.labelIncludesOctave = !!flag;
+        this.updateKeyboardVisibility();
+    }
+
+    /** Set whether overlapping sounds are allowed (polyphony). */
+    setAllowOverlap(flag) {
+        this.allowOverlap = !!flag;
     }
 
     /**
@@ -44,14 +113,47 @@ class KeyboardModule {
     setMode(mode, tonicLetter) {
         this.mode = mode;
         if (tonicLetter) {
-            this.tonicLetter = this.musicTheory.normalizeTonic
-                ? this.musicTheory.normalizeTonic(tonicLetter)
-                : tonicLetter.toUpperCase();
+            if (typeof this.musicTheory.normalizeTonicForMode === 'function') {
+                this.tonicLetter = this.musicTheory.normalizeTonicForMode(this.mode, tonicLetter);
+            } else if (this.musicTheory.normalizeTonic) {
+                this.tonicLetter = this.musicTheory.normalizeTonic(tonicLetter);
+            } else {
+                this.tonicLetter = tonicLetter.toUpperCase();
+            }
         } else {
-            this.tonicLetter = this.musicTheory.getDefaultTonicLetter(this.mode);
+            this.tonicLetter = this.musicTheory.getDefaultTonicLetter
+                ? this.musicTheory.getDefaultTonicLetter(this.mode)
+                : 'C';
         }
         this.applyModeLayout();
         this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
+    }
+
+    setChromaticPreference(preference) {
+        const normalized = (preference === 'flat' || preference === 'sharp') ? preference : null;
+        if (this.chromaticPreference === normalized) {
+            return;
+        }
+        this.chromaticPreference = normalized;
+        this.updateKeyboardVisibility();
+    }
+
+    setDisplayTonicForLabels(tonicLetter) {
+        if (!tonicLetter) {
+            if (this.displayTonicForLabels !== null) {
+                this.displayTonicForLabels = null;
+                this.updateKeyboardVisibility();
+            }
+            return;
+        }
+        const normalized = (this.musicTheory && typeof this.musicTheory.normalizeTonic === 'function')
+            ? this.musicTheory.normalizeTonic(tonicLetter)
+            : tonicLetter;
+        if (this.displayTonicForLabels === normalized) {
+            return;
+        }
+        this.displayTonicForLabels = normalized;
+        this.updateKeyboardVisibility();
     }
 
     /**
@@ -60,9 +162,13 @@ class KeyboardModule {
      */
     setTonic(tonicLetter) {
         if (!tonicLetter) return;
-        this.tonicLetter = this.musicTheory.normalizeTonic
-            ? this.musicTheory.normalizeTonic(tonicLetter)
-            : tonicLetter.toUpperCase();
+        if (typeof this.musicTheory.normalizeTonicForMode === 'function') {
+            this.tonicLetter = this.musicTheory.normalizeTonicForMode(this.mode, tonicLetter);
+        } else if (this.musicTheory.normalizeTonic) {
+            this.tonicLetter = this.musicTheory.normalizeTonic(tonicLetter);
+        } else {
+            this.tonicLetter = tonicLetter.toUpperCase();
+        }
         this.applyModeLayout();
         this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
     }
@@ -496,6 +602,9 @@ class KeyboardModule {
         const activeNotes = new Set(this.diatonicNotes);
 
         const keys = document.querySelectorAll('.white-key, .black-key');
+        const includeOctave = this.labelIncludesOctave;
+        const labelTonic = this.displayTonicForLabels || this.tonicLetter;
+        const preferChromatic = showAllNotes ? this.chromaticPreference : null;
 
         keys.forEach(key => {
             const actualNote = key.dataset.note;
@@ -508,15 +617,23 @@ class KeyboardModule {
                 key.classList.add('disabled');
                 return;
             }
-
-            const noteLabel = this.musicTheory.getDisplayNoteName(actualNote, this.mode, this.tonicLetter);
+            let noteLabel;
+            if (preferChromatic && this.musicTheory && typeof this.musicTheory.getChromaticDisplayLabel === 'function') {
+                noteLabel = this.musicTheory.getChromaticDisplayLabel(actualNote, preferChromatic, { includeOctave });
+            } else if (this.musicTheory && typeof this.musicTheory.getDisplayNoteLabel === 'function') {
+                noteLabel = this.musicTheory.getDisplayNoteLabel(actualNote, this.mode, labelTonic, { includeOctave });
+            } else if (this.musicTheory && typeof this.musicTheory.getDisplayNoteName === 'function') {
+                noteLabel = this.musicTheory.getDisplayNoteName(actualNote, this.mode, labelTonic);
+            } else {
+                noteLabel = actualNote;
+            }
             const labelEl = key.querySelector('.key-label') || (() => {
                 const created = document.createElement('span');
                 created.className = 'key-label';
                 key.appendChild(created);
                 return created;
             })();
-            const labelText = noteLabel ? noteLabel.replace(/[0-9]/g, '') : '';
+            const labelText = noteLabel || '';
             labelEl.textContent = labelText;
 
             const shouldDisable = !showAllNotes && !activeNotes.has(actualNote);
@@ -576,7 +693,7 @@ class KeyboardModule {
      * @param {Function} onNotePlayed - Callback function when note is played
      */
     async playNote(physicalNote, onNotePlayed = this.onNotePlayedCallback) {
-        if (this.audioModule.getIsPlaying()) return;
+        if (!this.allowOverlap && this.audioModule.getIsPlaying && this.audioModule.getIsPlaying()) return;
         
         let actualNote;
         
@@ -592,13 +709,15 @@ class KeyboardModule {
             }
         }
         
-        // Visual feedback on key press
+        // Visual feedback on key press (managed by pointer/touch handlers when enabled)
         const key = document.querySelector(`.white-key[data-note="${actualNote}"], .black-key[data-note="${actualNote}"]`);
         if (!key || key.classList.contains('disabled')) {
             return;
         }
-        key.classList.add('pressed');
-        setTimeout(() => key.classList.remove('pressed'), 150);
+        if (this.managePressedVisually) {
+            key.classList.add('pressed');
+            setTimeout(() => key.classList.remove('pressed'), 150);
+        }
         
         // Play the note
         const frequency = this.musicTheory.getNoteFrequency(actualNote);
@@ -624,6 +743,203 @@ class KeyboardModule {
             return;
         }
 
+        // Prefer Pointer Events (multi-touch friendly). Fallback to touch/click.
+        if (window && 'PointerEvent' in window) {
+            if (!this.boundPointerDown) {
+                this.boundPointerDown = (e) => {
+                    const target = e.target && e.target.closest ? e.target.closest('.white-key, .black-key') : null;
+                    if (!target || !this.pianoKeysContainer.contains(target)) return;
+                    e.preventDefault();
+                    const note = target.dataset.note;
+                    if (!note || target.classList.contains('disabled')) return;
+                    try { target.setPointerCapture && target.setPointerCapture(e.pointerId); } catch (_) {}
+                    this.pointerDownMap.set(e.pointerId, target);
+                    this.pointerTypeMap.set(e.pointerId, e.pointerType || 'mouse');
+                    target.classList.add('pressed');
+                    const isSustain = this.audioModule && typeof this.audioModule.isSustainTimbre === 'function' && this.audioModule.isSustainTimbre();
+                    if (isSustain) {
+                        this.pointerNoteMap.set(e.pointerId, note);
+                        this.startSustainForNote(note);
+                    } else {
+                        this.playNote(note);
+                    }
+                };
+                this.pianoKeysContainer.addEventListener('pointerdown', this.boundPointerDown, { passive: false });
+            }
+            if (!this.boundPointerUp) {
+                this.boundPointerUp = (e) => {
+                    const keyEl = this.pointerDownMap.get(e.pointerId);
+                    if (keyEl) {
+                        keyEl.classList.remove('pressed');
+                        this.pointerDownMap.delete(e.pointerId);
+                    }
+                    const note = this.pointerNoteMap.get(e.pointerId);
+                    if (note) {
+                        this.stopSustainForNote(note);
+                        this.pointerNoteMap.delete(e.pointerId);
+                    }
+                    this.pointerTypeMap.delete(e.pointerId);
+                };
+                window.addEventListener('pointerup', this.boundPointerUp, { passive: true });
+                window.addEventListener('pointercancel', this.boundPointerUp, { passive: true });
+                window.addEventListener('pointerleave', this.boundPointerUp, { passive: true });
+            }
+            if (!this.boundMouseUp) {
+                this.boundMouseUp = () => {
+                    // Fallback: in case pointerup didn't fire for mouse, release any mouse-held notes
+                    for (const [id, type] of Array.from(this.pointerTypeMap.entries())) {
+                        if (type !== 'mouse') continue;
+                        const keyEl = this.pointerDownMap.get(id);
+                        if (keyEl) keyEl.classList.remove('pressed');
+                        this.pointerDownMap.delete(id);
+                        const note = this.pointerNoteMap.get(id);
+                        if (note) {
+                            this.stopSustainForNote(note);
+                            this.pointerNoteMap.delete(id);
+                        }
+                        this.pointerTypeMap.delete(id);
+                    }
+                };
+                window.addEventListener('mouseup', this.boundMouseUp, { passive: true });
+            }
+            if (!this.boundLostCapture) {
+                this.boundLostCapture = (e) => {
+                    const id = e.pointerId;
+                    const keyEl = this.pointerDownMap.get(id);
+                    if (keyEl) {
+                        keyEl.classList.remove('pressed');
+                        this.pointerDownMap.delete(id);
+                    }
+                    const note = this.pointerNoteMap.get(id);
+                    if (note) {
+                        this.stopSustainForNote(note);
+                        this.pointerNoteMap.delete(id);
+                    }
+                    this.pointerTypeMap.delete(id);
+                };
+                // Listen at capture to catch from any key element
+                document.addEventListener('lostpointercapture', this.boundLostCapture, true);
+            }
+            if (!this.boundPointerMove) {
+                this.boundPointerMove = (e) => {
+                    // Only handle active drags we started
+                    if (!this.pointerDownMap.has(e.pointerId)) return;
+                    const isSustain = this.audioModule && typeof this.audioModule.isSustainTimbre === 'function' && this.audioModule.isSustainTimbre();
+                    const container = this.pianoKeysContainer;
+                    const el = document.elementFromPoint(e.clientX, e.clientY);
+                    const target = el && el.closest ? el.closest('.white-key, .black-key') : null;
+                    const nextEl = (target && container.contains(target) && !target.classList.contains('disabled') && !target.hasAttribute('hidden')) ? target : null;
+                    const prevEl = this.pointerDownMap.get(e.pointerId);
+                    const prevNote = this.pointerNoteMap.get(e.pointerId) || (prevEl ? prevEl.dataset.note : null);
+                    const nextNote = nextEl ? nextEl.dataset.note : null;
+                    if (prevEl === nextEl || prevNote === nextNote) return;
+                    if (prevEl) prevEl.classList.remove('pressed');
+                    if (isSustain && prevNote) this.stopSustainForNote(prevNote);
+                    if (nextEl && nextNote) {
+                        nextEl.classList.add('pressed');
+                        this.pointerDownMap.set(e.pointerId, nextEl);
+                        this.pointerNoteMap.set(e.pointerId, nextNote);
+                        if (isSustain) {
+                            this.startSustainForNote(nextNote);
+                        } else {
+                            this.playNote(nextNote);
+                        }
+                    } else {
+                        // moved off keys
+                        this.pointerDownMap.set(e.pointerId, null);
+                        this.pointerNoteMap.delete(e.pointerId);
+                    }
+                };
+                window.addEventListener('pointermove', this.boundPointerMove, { passive: true });
+            }
+            // When using pointer events, let pointer handlers manage visual pressed state
+            this.managePressedVisually = false;
+            // Do not add click handler to avoid double-trigger
+            return;
+        }
+
+        // Touch fallback
+        if ('ontouchstart' in window && !this.boundTouchStart) {
+            this.boundTouchStart = (e) => {
+                if (!e.changedTouches) return;
+                for (const t of Array.from(e.changedTouches)) {
+                    const el = document.elementFromPoint(t.clientX, t.clientY);
+                    const target = el && el.closest ? el.closest('.white-key, .black-key') : null;
+                    if (!target || !this.pianoKeysContainer.contains(target)) continue;
+                    e.preventDefault();
+                    const note = target.dataset.note;
+                    if (!note || target.classList.contains('disabled')) continue;
+                    target.dataset.touchId = String(t.identifier);
+                    target.classList.add('pressed');
+                    const isSustain = this.audioModule && typeof this.audioModule.isSustainTimbre === 'function' && this.audioModule.isSustainTimbre();
+                    if (isSustain) {
+                        this.touchNoteMap.set(String(t.identifier), note);
+                        this.startSustainForNote(note);
+                    } else {
+                        this.playNote(note);
+                    }
+                }
+            };
+            this.pianoKeysContainer.addEventListener('touchstart', this.boundTouchStart, { passive: false });
+        }
+        if ('ontouchend' in window && !this.boundTouchEnd) {
+            this.boundTouchEnd = (e) => {
+                if (!e.changedTouches) return;
+                for (const t of Array.from(e.changedTouches)) {
+                    const id = String(t.identifier);
+                    const pressed = this.pianoKeysContainer.querySelector(`.flat-key[data-touch-id="${id}"]`);
+                    if (pressed) {
+                        pressed.classList.remove('pressed');
+                        pressed.removeAttribute('data-touch-id');
+                    }
+                    const note = this.touchNoteMap.get(id) || (pressed ? pressed.dataset.note : null);
+                    if (note) {
+                        this.stopSustainForNote(note);
+                        this.touchNoteMap.delete(id);
+                    }
+                }
+            };
+            window.addEventListener('touchend', this.boundTouchEnd, { passive: true });
+            window.addEventListener('touchcancel', this.boundTouchEnd, { passive: true });
+        }
+        if ('ontouchmove' in window && !this.boundTouchMove) {
+            this.boundTouchMove = (e) => {
+                if (!e.changedTouches) return;
+                const isSustain = this.audioModule && typeof this.audioModule.isSustainTimbre === 'function' && this.audioModule.isSustainTimbre();
+                for (const t of Array.from(e.changedTouches)) {
+                    const id = String(t.identifier);
+                    // Only track touches that began on keys (have a mapping or pressed el)
+                    const had = this.touchNoteMap.has(id) || !!this.pianoKeysContainer.querySelector(`.flat-key[data-touch-id="${id}"]`);
+                    if (!had) continue;
+                    const el = document.elementFromPoint(t.clientX, t.clientY);
+                    const target = el && el.closest ? el.closest('.white-key, .black-key') : null;
+                    const nextEl = (target && this.pianoKeysContainer.contains(target) && !target.classList.contains('disabled') && !target.hasAttribute('hidden')) ? target : null;
+                    const prevEl = this.pianoKeysContainer.querySelector(`.flat-key[data-touch-id="${id}"]`);
+                    const prevNote = this.touchNoteMap.get(id) || (prevEl ? prevEl.dataset.note : null);
+                    const nextNote = nextEl ? nextEl.dataset.note : null;
+                    if (prevEl === nextEl || prevNote === nextNote) continue;
+                    if (prevEl) { prevEl.classList.remove('pressed'); prevEl.removeAttribute('data-touch-id'); }
+                    if (isSustain && prevNote) this.stopSustainForNote(prevNote);
+                    if (nextEl && nextNote) {
+                        nextEl.classList.add('pressed');
+                        nextEl.dataset.touchId = id;
+                        this.touchNoteMap.set(id, nextNote);
+                        if (isSustain) {
+                            this.startSustainForNote(nextNote);
+                        } else {
+                            this.playNote(nextNote);
+                        }
+                    } else {
+                        this.touchNoteMap.delete(id);
+                    }
+                }
+            };
+            window.addEventListener('touchmove', this.boundTouchMove, { passive: true });
+        }
+        // Touch handlers drive visual pressed state
+        this.managePressedVisually = false;
+
+        // Mouse click fallback
         if (!this.boundKeyHandler) {
             this.boundKeyHandler = (event) => {
                 const target = event.target.closest('.white-key, .black-key');
@@ -633,6 +949,7 @@ class KeyboardModule {
                 this.playNote(target.dataset.note);
             };
             this.pianoKeysContainer.addEventListener('click', this.boundKeyHandler);
+            this.managePressedVisually = true;
         }
     }
 

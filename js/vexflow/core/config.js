@@ -7,18 +7,26 @@ import { readTokens, applyVexflowSvgTheme } from '/staff/shared/theme.js';
 
 export const DEFAULT_STAFF_SCALE = 1.8;
 
+// Reduce key signature glyph size slightly so they occupy less horizontal space
+export const DEFAULT_KEY_SIGNATURE_SCALE = 0.66;
+export const DEFAULT_KEY_SIGNATURE_SPACING_SCALE = 0.55;
+export const DEFAULT_KEY_SIGNATURE_PADDING_SCALE = 0.45;
+export const DEFAULT_KEY_SIGNATURE_CLEF_OFFSET = -12;
+
 export const DEFAULT_STAFF_SIZING = Object.freeze({
     minWidth: null,
     maxWidth: null,
     targetWidth: null,
-    baseHeight: 200,
+    // Slightly shorter base height to trim extra top/bottom whitespace
+    baseHeight: 188,
 });
 
 export const DEFAULT_STAFF_PADDING = Object.freeze({
     horizontalRatio: 0.02,
-    verticalRatio: 0.026,
+    // Reduce vertical padding slightly to trim top/bottom
+    verticalRatio: 0.022,
     minHorizontal: 14,
-    minVertical: 6,
+    minVertical: 4,
 });
 
 export function normalizeStaffSizing(source = {}, defaults = DEFAULT_STAFF_SIZING) {

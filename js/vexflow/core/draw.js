@@ -5,7 +5,131 @@ import VexFlow, {
   Formatter,
 } from '/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js';
 import { logStructured, parsePositiveNumber, normalizeDomRect } from '/js/shared/utils.js';
-import { calculateDefaultStaffPadding } from './config.js';
+import {
+  calculateDefaultStaffPadding,
+  DEFAULT_KEY_SIGNATURE_SCALE,
+  DEFAULT_KEY_SIGNATURE_SPACING_SCALE,
+  DEFAULT_KEY_SIGNATURE_PADDING_SCALE,
+  DEFAULT_KEY_SIGNATURE_CLEF_OFFSET,
+} from './config.js';
+
+const KeySignatureClass = VexFlow?.KeySignature;
+const StaveModifierPosition = VexFlow?.StaveModifierPosition;
+let keySignatureScalingPatched = false;
+
+function ensureKeySignatureScalingSupport() {
+  if (keySignatureScalingPatched || !KeySignatureClass) return;
+  keySignatureScalingPatched = true;
+  if (typeof KeySignatureClass.prototype.setGlyphScale !== 'function') {
+    KeySignatureClass.prototype.setGlyphScale = function setGlyphScale(scale = 1, spacingScale) {
+      this.__glyphScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+      const resolvedSpacing = Number.isFinite(spacingScale) && spacingScale > 0
+        ? spacingScale
+        : this.__glyphScale;
+      this.__glyphSpacingScale = resolvedSpacing;
+      return this;
+    };
+  }
+  const originalFormat = KeySignatureClass.prototype.__formatWithScalePatched
+    ? null
+    : KeySignatureClass.prototype.format;
+  if (originalFormat) {
+    KeySignatureClass.prototype.__formatWithScalePatched = true;
+    KeySignatureClass.prototype.format = function formatWithScale(...args) {
+      const result = originalFormat.apply(this, args);
+      const scale = Number.isFinite(this.__glyphScale) ? this.__glyphScale : 1;
+      const spacingScale = Number.isFinite(this.__glyphSpacingScale)
+        ? this.__glyphSpacingScale
+        : scale;
+      if ((scale !== 1 || spacingScale !== 1) && Array.isArray(this.children)) {
+        for (const glyph of this.children) {
+          if (!glyph) continue;
+          if (scale !== 1 && glyph.fontInfo) {
+            if (typeof glyph.__baseFontSize !== 'number') {
+              glyph.__baseFontSize = glyph.fontInfo.size;
+            }
+            const baseSize = glyph.__baseFontSize || glyph.fontInfo.size;
+            if (baseSize && typeof glyph.setFontSize === 'function') {
+              glyph.setFontSize(baseSize * scale);
+            }
+          }
+          if (spacingScale !== 1) {
+            const currentShift = typeof glyph.getXShift === 'function'
+              ? glyph.getXShift()
+              : glyph.xShift ?? 0;
+            if (typeof glyph.__baseXShift !== 'number') {
+              glyph.__baseXShift = currentShift;
+            }
+            const nextShift = glyph.__baseXShift * spacingScale;
+            if (typeof glyph.setXShift === 'function') {
+              glyph.setXShift(nextShift);
+            } else {
+              glyph.xShift = nextShift;
+            }
+          }
+        }
+        if (typeof this.calculateDimensions === 'function') {
+          this.calculateDimensions();
+        }
+        if (typeof this.padding === 'number') {
+          this.padding = this.padding * spacingScale;
+        }
+      }
+      return result;
+    };
+  }
+}
+
+function assignKeySignatureScale(stave, scale) {
+  if (!stave || !Number.isFinite(scale) || scale <= 0 || Math.abs(scale - 1) < 0.001) {
+    return;
+  }
+  if (typeof stave.getModifiers !== 'function') return;
+  const category = KeySignatureClass?.CATEGORY || 'KeySignature';
+  const modifiers = stave.getModifiers(
+    StaveModifierPosition?.BEGIN ?? 1,
+    category,
+  );
+  if (!Array.isArray(modifiers) || modifiers.length === 0) return;
+  const keySig = modifiers[modifiers.length - 1];
+  if (keySig && typeof keySig.setGlyphScale === 'function') {
+    keySig.setGlyphScale(scale, DEFAULT_KEY_SIGNATURE_SPACING_SCALE);
+  }
+  if (keySig) {
+    if (typeof keySig.__basePadding !== 'number') {
+      keySig.__basePadding = typeof keySig.padding === 'number' ? keySig.padding : 10;
+    }
+    const padScale = Number.isFinite(DEFAULT_KEY_SIGNATURE_PADDING_SCALE)
+      ? DEFAULT_KEY_SIGNATURE_PADDING_SCALE
+      : 1;
+    if (typeof keySig.setPadding === 'function') {
+      keySig.setPadding(keySig.__basePadding * padScale);
+    } else if (typeof keySig.padding === 'number') {
+      keySig.padding = keySig.__basePadding * padScale;
+    }
+
+    if (typeof keySig.__baseClefShift !== 'number') {
+      if (typeof keySig.getXShift === 'function') {
+        keySig.__baseClefShift = keySig.getXShift();
+      } else {
+        keySig.__baseClefShift = keySig.xShift ?? 0;
+      }
+    }
+    const clefOffset = Number.isFinite(DEFAULT_KEY_SIGNATURE_CLEF_OFFSET)
+      ? DEFAULT_KEY_SIGNATURE_CLEF_OFFSET
+      : 0;
+    if (clefOffset !== 0) {
+      const nextShift = keySig.__baseClefShift + clefOffset;
+      if (typeof keySig.setXShift === 'function') {
+        keySig.setXShift(nextShift);
+      } else {
+        keySig.xShift = nextShift;
+      }
+    }
+  }
+}
+
+ensureKeySignatureScalingSupport();
 import { buildLedgerStyle, createVexflowNote } from './noteFactory.js';
 
 export function computeDimensions(container, staffScale, renderState) {
@@ -145,6 +269,7 @@ export function drawStaff({
   stave.addClef(primaryClef);
   if (keySig) {
     try { stave.addKeySignature(keySig); } catch (_err) { /* ignore */ }
+    assignKeySignatureScale(stave, DEFAULT_KEY_SIGNATURE_SCALE);
   }
   const ledgerStyle = buildLedgerStyle(theme);
   if (ledgerStyle) {

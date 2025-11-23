@@ -143,7 +143,7 @@ class StorageModule {
      * @param {string} answerRevealMode - Correct answer replay preference
      * @returns {Object} Settings object
      */
-    getCurrentSettings(sequenceLength, scaleType, dictationType, mode, tonic, timbre, staffFont, disabledKeysStyle, answerRevealMode) {
+    getCurrentSettings(sequenceLength, scaleType, dictationType, mode, tonic, timbre, staffFont, disabledKeysStyle, answerRevealMode, inputMode) {
         return {
             sequenceLength: sequenceLength,
             scaleType: scaleType,
@@ -153,7 +153,8 @@ class StorageModule {
             timbre: timbre,
             staffFont: staffFont,
             disabledKeysStyle: disabledKeysStyle,
-            answerRevealMode: answerRevealMode
+            answerRevealMode: answerRevealMode,
+            inputMode: inputMode
         };
     }
 }

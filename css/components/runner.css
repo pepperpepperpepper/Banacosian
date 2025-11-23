@@ -28,3 +28,17 @@
 .interval-set { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-items: center; }
 .interval-set label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 12px; border: 1px solid var(--app-interactive-border); background: var(--app-interactive-surface); font-size: 0.9em; }
 .interval-set input[type="checkbox"] { accent-color: var(--notation-accent, #88f); }
+
+/* Answer buttons */
+#runnerChoices {
+  justify-content: center;
+}
+
+#runnerChoices .interval-choice {
+  --ui-padding-block: 18px;
+  --ui-padding-inline: 32px;
+  --ui-font-size: 1.2em;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: max-content;
+}

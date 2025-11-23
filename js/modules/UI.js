@@ -39,13 +39,41 @@ class UIModule {
      * @param {Object} callbacks - Callback functions for various events
      */
     setupEventListeners(callbacks) {
-        // Button event listeners
-        document.getElementById('newSequenceBtn').addEventListener('click', callbacks.onNewSequence);
-        document.getElementById('playSequenceBtn').addEventListener('click', callbacks.onPlaySequence);
-        document.getElementById('showHistoryBtn').addEventListener('click', callbacks.onShowHistory);
-        document.getElementById('closeHistoryBtn').addEventListener('click', callbacks.onHideHistory);
-        document.getElementById('saveDataBtn').addEventListener('click', callbacks.onSaveData);
-        document.getElementById('loadDataBtn').addEventListener('click', callbacks.onLoadData);
+        // Button event listeners (guard against optional/missing controls)
+        const newSequenceBtn = document.getElementById('newSequenceBtn');
+        if (newSequenceBtn && typeof callbacks.onNewSequence === 'function') {
+            newSequenceBtn.addEventListener('click', callbacks.onNewSequence);
+        }
+
+        const playSequenceBtn = document.getElementById('playSequenceBtn');
+        if (playSequenceBtn && typeof callbacks.onPlaySequence === 'function') {
+            playSequenceBtn.addEventListener('click', callbacks.onPlaySequence);
+        }
+
+        const staffSubmitBtn = document.getElementById('staffSubmitBtn');
+        if (staffSubmitBtn && typeof callbacks.onStaffSubmit === 'function') {
+            staffSubmitBtn.addEventListener('click', callbacks.onStaffSubmit);
+        }
+
+        const showHistoryBtn = document.getElementById('showHistoryBtn');
+        if (showHistoryBtn && typeof callbacks.onShowHistory === 'function') {
+            showHistoryBtn.addEventListener('click', callbacks.onShowHistory);
+        }
+
+        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+        if (closeHistoryBtn && typeof callbacks.onHideHistory === 'function') {
+            closeHistoryBtn.addEventListener('click', callbacks.onHideHistory);
+        }
+
+        const saveDataBtn = document.getElementById('saveDataBtn');
+        if (saveDataBtn && typeof callbacks.onSaveData === 'function') {
+            saveDataBtn.addEventListener('click', callbacks.onSaveData);
+        }
+
+        const loadDataBtn = document.getElementById('loadDataBtn');
+        if (loadDataBtn && typeof callbacks.onLoadData === 'function') {
+            loadDataBtn.addEventListener('click', callbacks.onLoadData);
+        }
 
         const settingsToggle = document.getElementById('settingsToggle');
         const settingsPanel = document.getElementById('settingsPanel');
@@ -80,6 +108,10 @@ class UIModule {
         const dictationTypeSelect = document.getElementById('dictationType');
         if (dictationTypeSelect && typeof callbacks.onDictationTypeChange === 'function') {
             dictationTypeSelect.addEventListener('change', callbacks.onDictationTypeChange);
+        }
+        const inputModeSelect = document.getElementById('inputMode');
+        if (inputModeSelect && typeof callbacks.onInputModeChange === 'function') {
+            inputModeSelect.addEventListener('change', callbacks.onInputModeChange);
         }
         document.getElementById('mode').addEventListener('change', callbacks.onModeChange);
 
@@ -524,6 +556,9 @@ class UIModule {
                 : undefined,
             answerRevealMode: document.getElementById('answerRevealMode')
                 ? document.getElementById('answerRevealMode').value
+                : undefined,
+            inputMode: document.getElementById('inputMode')
+                ? document.getElementById('inputMode').value
                 : undefined
         };
     }
@@ -560,6 +595,9 @@ class UIModule {
         if (values.answerRevealMode !== undefined) {
             this.setAnswerRevealModeValue(values.answerRevealMode);
         }
+        if (values.inputMode !== undefined) {
+            this.setInputModeValue(values.inputMode);
+        }
     }
 }
 
@@ -581,6 +619,36 @@ UIModule.prototype.setAnswerRevealModeValue = function setAnswerRevealModeValue(
     const select = document.getElementById('answerRevealMode');
     if (select && value) {
         select.value = value;
+    }
+};
+
+UIModule.prototype.setInputModeValue = function setInputModeValue(value) {
+    const select = document.getElementById('inputMode');
+    if (select && value) {
+        select.value = value;
+    }
+};
+
+UIModule.prototype.setStaffInputActive = function setStaffInputActive(active) {
+    const controls = document.getElementById('staffInputControls');
+    const piano = document.getElementById('pianoContainer');
+    if (controls) {
+        if (active) controls.removeAttribute('hidden');
+        else controls.setAttribute('hidden', '');
+    }
+    if (piano) {
+        if (active) piano.setAttribute('hidden', '');
+        else piano.removeAttribute('hidden');
+    }
+};
+
+UIModule.prototype.setStaffSubmitEnabled = function setStaffSubmitEnabled(enabled) {
+    const submitBtn = document.getElementById('staffSubmitBtn');
+    if (!submitBtn) return;
+    if (enabled) {
+        submitBtn.removeAttribute('disabled');
+    } else {
+        submitBtn.setAttribute('disabled', '');
     }
 };
 

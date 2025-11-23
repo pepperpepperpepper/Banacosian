@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dictation - Ear Training</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="/js/shared/blockContextMenu.js"></script>
 </head>
 <body>
             <div class="container ui-card">
@@ -33,6 +34,10 @@
                 <select id="dictationType" class="select-pill ui-pill">
                     <option value="melodic" selected>Dictation Mode: Melodic</option>
                     <option value="harmonic">Dictation Mode: Harmonic</option>
+                </select>
+                <select id="inputMode" class="select-pill ui-pill">
+                    <option value="keyboard" selected>Input: Keyboard</option>
+                    <option value="staff">Input: Staff</option>
                 </select>
                 <select id="mode" class="select-pill ui-pill">
                     <option value="ionian" selected>Ionian</option>
@@ -78,7 +83,11 @@
             data-staff-scale="3"
         ></div>
 
-        <div class="piano">
+        <div class="staff-input-controls" id="staffInputControls" hidden>
+            <button class="control-btn ui-pill" id="staffSubmitBtn" disabled>Submit</button>
+        </div>
+
+        <div class="piano" id="pianoContainer">
             <div class="piano-keys" aria-label="Interactive piano keyboard"></div>
         </div>
 
@@ -92,6 +101,7 @@
                 Current Accuracy: <span id="currentAccuracy">0%</span>
             </div>
         </div>
+        <!-- History / data controls (temporarily disabled)
         <div class="data-controls">
             <div class="data-row">
                 <button class="control-btn ui-pill" id="showHistoryBtn">📊 View History</button>
@@ -109,6 +119,13 @@
                     <button id="closeHistoryBtn" class="ui-pill modal__close" type="button">✕ Close</button>
                 </div>
                 <div id="historyContent" class="modal__content"></div>
+            </div>
+        </div>
+        -->
+
+        <div class="data-controls">
+            <div class="data-row">
+                <a class="control-btn ui-pill" href="intervals-runner/">🏃 Interval Runner</a>
             </div>
         </div>
 

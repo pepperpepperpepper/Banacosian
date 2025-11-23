@@ -6,6 +6,7 @@
   <title>Interval Runner — Ear Training</title>
   <link rel="stylesheet" href="/css/styles.css" />
   <link rel="stylesheet" href="/css/components/runner.css" />
+  <script src="/js/shared/blockContextMenu.js"></script>
 </head>
 <body>
   <div class="container ui-card">
@@ -13,7 +14,6 @@
 
     <div class="game-controls">
       <div class="main-action-row">
-        <button class="control-btn ui-pill" id="runnerStartBtn">Start</button>
         <button class="control-btn ui-pill" id="runnerPauseBtn" disabled>Pause</button>
         <button class="control-btn ui-pill" id="runnerSettingsBtn" aria-haspopup="true" aria-expanded="false" aria-controls="runnerSettingsPanel">Settings</button>
       </div>
@@ -28,6 +28,12 @@
           <option value="down">Always down</option>
         </select>
         <select id="runnerTimbre" class="select-pill ui-pill" aria-label="Timbre"></select>
+
+        <select id="runnerGameSpeed" class="select-pill ui-pill" aria-label="Game speed">
+          <option value="slow">Speed: Slow</option>
+          <option value="normal" selected>Speed: Normal</option>
+          <option value="fast">Speed: Fast</option>
+        </select>
 
         <select id="runnerStartMode" class="select-pill ui-pill" aria-label="Start mode">
           <option value="chromatic" selected>Chromatic start (random root)</option>
