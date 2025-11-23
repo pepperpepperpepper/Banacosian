@@ -12,7 +12,6 @@ class MelodicDictation {
         this.musicTheory = new MusicTheoryModule();
         this.staffModule = new StaffModule();
         this.scoringModule = new ScoringModule();
-        this.storageModule = new StorageModule(this.scoringModule);
         this.uiModule = new UIModule();
         this.uiController = new DictationUIController({ uiModule: this.uiModule });
         this.keyboardModule = new KeyboardModule(this.musicTheory, this.audioModule);
@@ -50,36 +49,52 @@ class MelodicDictation {
         });
         this.staffInputController = null;
 
-        // Load saved settings (if any) before configuring modules
-        try {
-            if (window.SettingsStore && typeof window.SettingsStore.load === 'function') {
-                const saved = window.SettingsStore.load();
-                if (saved) {
-                    if (saved.sequenceLength != null) {
-                        this.sequenceLength = this.normalizeSequenceLength(saved.sequenceLength);
-                    }
-                    if (saved.scaleType) this.scaleType = saved.scaleType;
-                    if (saved.dictationType) {
-                        this.dictationType = saved.dictationType === 'harmonic' ? 'harmonic' : 'melodic';
-                    }
-                    if (saved.mode) this.mode = saved.mode;
-                    if (saved.tonic) this.tonic = saved.tonic;
-                    if (saved.timbre) this.timbre = this.audioModule.setTimbre(saved.timbre);
-                    if (saved.staffFont) this.staffFont = saved.staffFont;
-                    if (saved.disabledKeysStyle) {
-                        this.disabledKeysStyle = saved.disabledKeysStyle === 'invisible' ? 'invisible' : 'hatched';
-                    }
-                    if (saved.answerRevealMode) {
-                        this.answerRevealMode = saved.answerRevealMode === 'skip' ? 'skip' : 'show';
-                    }
-                    if (saved.inputMode) {
-                        this.inputMode = saved.inputMode === 'staff' ? 'staff' : 'keyboard';
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn('Failed to load saved settings:', e);
+        if (typeof this.keyboardModule.setAudioPreviewService === 'function') {
+            const idlePhase = (typeof ROUND_PHASES !== 'undefined' && ROUND_PHASES.IDLE) ? ROUND_PHASES.IDLE : 'idle';
+            const awaitInputPhase = (typeof ROUND_PHASES !== 'undefined' && ROUND_PHASES.AWAIT_INPUT)
+                ? ROUND_PHASES.AWAIT_INPUT
+                : 'await_input';
+            this.keyboardModule.setAudioPreviewService(this.audioPreview, {
+                enableHover: true,
+                playOptions: {
+                    phaseGuard: { allowed: [idlePhase, awaitInputPhase] },
+                    allowWhilePlaying: false,
+                },
+                hoverOptions: {
+                    phaseGuard: { allowed: [idlePhase] },
+                    allowWhilePlaying: false,
+                    duration: 0.35,
+                },
+            });
         }
+
+        this.settingsManager = typeof DictationSettings === 'function'
+            ? new DictationSettings({
+                store: (typeof window !== 'undefined' ? window.SettingsStore : null),
+                defaults: {
+                    sequenceLength: this.sequenceLength,
+                    scaleType: this.scaleType,
+                    dictationType: this.dictationType,
+                    mode: this.mode,
+                    tonic: this.tonic,
+                    timbre: this.timbre,
+                    staffFont: this.staffFont,
+                    disabledKeysStyle: this.disabledKeysStyle,
+                    answerRevealMode: this.answerRevealMode,
+                    inputMode: this.inputMode,
+                },
+                minSequenceLength: MIN_SEQUENCE_LENGTH,
+                maxSequenceLength: MAX_SEQUENCE_LENGTH,
+                defaultSequenceLength: DEFAULT_SEQUENCE_LENGTH,
+            })
+            : null;
+
+        if (this.settingsManager) {
+            const restoredSettings = this.settingsManager.loadInitialSettings();
+            this.applyLoadedSettings(restoredSettings);
+        }
+
+        this.storageModule = new StorageModule(this.scoringModule, this.settingsManager);
 
         this.sequenceLength = this.normalizeSequenceLength(this.sequenceLength);
         this.synchronizeTonicOptions({ updateUI: false });
@@ -267,7 +282,56 @@ class MelodicDictation {
         this.updateStaffSubmitState();
     }
 
+    applyLoadedSettings(settings = {}) {
+        if (!settings || typeof settings !== 'object') {
+            return;
+        }
+        if (settings.sequenceLength != null) {
+            this.sequenceLength = this.normalizeSequenceLength(settings.sequenceLength);
+        }
+        if (settings.scaleType) {
+            this.scaleType = settings.scaleType;
+        }
+        if (settings.dictationType) {
+            this.dictationType = settings.dictationType === 'harmonic' ? 'harmonic' : 'melodic';
+        }
+        if (settings.mode) {
+            this.mode = settings.mode;
+        }
+        if (settings.tonic) {
+            this.tonic = settings.tonic;
+        }
+        if (settings.timbre) {
+            try {
+                const applied = this.audioModule.setTimbre(settings.timbre);
+                if (applied) {
+                    this.timbre = applied;
+                } else {
+                    this.timbre = settings.timbre;
+                }
+            } catch (error) {
+                console.warn('Failed to apply saved timbre:', error);
+                this.timbre = settings.timbre;
+            }
+        }
+        if (settings.staffFont) {
+            this.staffFont = settings.staffFont;
+        }
+        if (settings.disabledKeysStyle) {
+            this.disabledKeysStyle = settings.disabledKeysStyle === 'invisible' ? 'invisible' : 'hatched';
+        }
+        if (settings.answerRevealMode) {
+            this.answerRevealMode = settings.answerRevealMode === 'skip' ? 'skip' : 'show';
+        }
+        if (settings.inputMode) {
+            this.inputMode = settings.inputMode === 'staff' ? 'staff' : 'keyboard';
+        }
+    }
+
     normalizeSequenceLength(rawValue) {
+        if (this.settingsManager && typeof this.settingsManager.normalizeSequenceLength === 'function') {
+            return this.settingsManager.normalizeSequenceLength(rawValue);
+        }
         const parsed = Number.parseInt(rawValue, 10);
         if (!Number.isFinite(parsed)) return DEFAULT_SEQUENCE_LENGTH;
         return Math.min(
@@ -1151,29 +1215,19 @@ class MelodicDictation {
      * Persist current settings to localStorage and store a simple hash
      */
     async persistSettings() {
-        try {
-            const settings = {
-                sequenceLength: this.sequenceLength,
-                scaleType: this.scaleType,
-                dictationType: this.dictationType,
-                mode: this.mode,
-                tonic: this.tonic,
-                timbre: this.timbre,
-                staffFont: this.staffFont,
-                disabledKeysStyle: this.disabledKeysStyle,
-                answerRevealMode: this.answerRevealMode,
-                inputMode: this.inputMode
-            };
-            if (window.SettingsStore && typeof window.SettingsStore.save === 'function') {
-                window.SettingsStore.save(settings);
-                if (typeof window.SettingsStore.sha256Hex === 'function') {
-                    const hex = await window.SettingsStore.sha256Hex(JSON.stringify(settings));
-                    if (hex) window.SettingsStore.setHash(hex);
-                }
-            }
-        } catch (err) {
-            console.warn('Persist settings failed:', err);
-        }
+        if (!this.settingsManager) return;
+        await this.settingsManager.persist({
+            sequenceLength: this.sequenceLength,
+            scaleType: this.scaleType,
+            dictationType: this.dictationType,
+            mode: this.mode,
+            tonic: this.tonic,
+            timbre: this.timbre,
+            staffFont: this.staffFont,
+            disabledKeysStyle: this.disabledKeysStyle,
+            answerRevealMode: this.answerRevealMode,
+            inputMode: this.inputMode,
+        });
     }
 
     /**

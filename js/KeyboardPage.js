@@ -100,8 +100,17 @@
 
     const audio = new (window.AudioModule || function(){})();
     const theory = new (window.MusicTheoryModule || function(){})();
+    const previewService = new (window.AudioPreviewService || function(){})({
+      audioModule: audio,
+      musicTheory: theory,
+    });
     const KeyboardCtor = (window.KeyboardModule || function(){});
     const keyboard = new KeyboardCtor(theory, audio);
+    keyboard.setAudioPreviewService?.(previewService, {
+      enableHover: true,
+      hoverOptions: { allowWhilePlaying: true },
+      playOptions: { allowWhilePlaying: true },
+    });
     keyboard.setLabelIncludesOctave?.(true);
     keyboard.setAllowOverlap?.(true);
     const staff = new (window.StaffModule || function(){})();

@@ -38,6 +38,16 @@ class KeyboardModule {
         this.sustainCounts = new Map(); // note -> refcount
         this.pointerNoteMap = new Map(); // pointerId -> note
         this.touchNoteMap = new Map(); // touchId -> note
+        this.audioPreviewService = null;
+        this.previewConfig = {
+            playOptions: {},
+            hoverOptions: null,
+            enableHover: false,
+        };
+        this.lastHoverPreviewNote = null;
+        this.boundHoverPreview = null;
+        this.boundHoverLeave = null;
+        this.hoverEventMode = null;
 
         this.applyDisabledKeysStyle();
 
@@ -96,6 +106,21 @@ class KeyboardModule {
     /** Set whether overlapping sounds are allowed (polyphony). */
     setAllowOverlap(flag) {
         this.allowOverlap = !!flag;
+    }
+
+    setAudioPreviewService(service, options = {}) {
+        this.audioPreviewService = service || null;
+        this.previewConfig = {
+            playOptions: options.playOptions || {},
+            hoverOptions: options.hoverOptions || null,
+            enableHover: Boolean(options.enableHover),
+        };
+        this.lastHoverPreviewNote = null;
+        if (this.audioPreviewService && this.previewConfig.enableHover) {
+            this.attachHoverPreview();
+        } else {
+            this.detachHoverPreview();
+        }
     }
 
     /**
@@ -171,6 +196,106 @@ class KeyboardModule {
         }
         this.applyModeLayout();
         this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
+    }
+
+    attachHoverPreview() {
+        if (!this.previewConfig.enableHover || !this.audioPreviewService) {
+            return;
+        }
+        this.pianoKeysContainer = this.pianoKeysContainer || document.querySelector('.piano-keys');
+        if (!this.pianoKeysContainer) {
+            return;
+        }
+        if (this.boundHoverPreview) {
+            return;
+        }
+        const usePointer = typeof window !== 'undefined' && 'PointerEvent' in window;
+        this.hoverEventMode = usePointer ? 'pointer' : 'mouse';
+        const overEvent = usePointer ? 'pointerover' : 'mouseover';
+        const outEvent = usePointer ? 'pointerout' : 'mouseout';
+        this.boundHoverPreview = (event) => {
+            if (!this.previewConfig.enableHover || !this.audioPreviewService) {
+                return;
+            }
+            if (this.hoverEventMode === 'pointer' && event.pointerType && event.pointerType !== 'mouse') {
+                return;
+            }
+            const target = event.target && event.target.closest
+                ? event.target.closest('.white-key, .black-key')
+                : null;
+            if (!target || target.classList.contains('disabled')) {
+                return;
+            }
+            const note = target.dataset ? target.dataset.note : null;
+            if (!note || note === this.lastHoverPreviewNote) {
+                return;
+            }
+            this.lastHoverPreviewNote = note;
+            this.previewNote(note);
+        };
+        this.boundHoverLeave = (event) => {
+            if (this.hoverEventMode === 'pointer' && event.pointerType && event.pointerType !== 'mouse') {
+                return;
+            }
+            const related = event.relatedTarget;
+            if (!related || !this.pianoKeysContainer.contains(related)) {
+                this.lastHoverPreviewNote = null;
+            } else if (!related.closest || !related.closest('.white-key, .black-key')) {
+                this.lastHoverPreviewNote = null;
+            }
+        };
+        this.pianoKeysContainer.addEventListener(overEvent, this.boundHoverPreview);
+        this.pianoKeysContainer.addEventListener(outEvent, this.boundHoverLeave);
+    }
+
+    detachHoverPreview() {
+        if (!this.boundHoverPreview || !this.pianoKeysContainer) {
+            this.boundHoverPreview = null;
+            this.boundHoverLeave = null;
+            this.hoverEventMode = null;
+            this.lastHoverPreviewNote = null;
+            return;
+        }
+        const overEvent = this.hoverEventMode === 'pointer' ? 'pointerover' : 'mouseover';
+        const outEvent = this.hoverEventMode === 'pointer' ? 'pointerout' : 'mouseout';
+        this.pianoKeysContainer.removeEventListener(overEvent, this.boundHoverPreview);
+        this.pianoKeysContainer.removeEventListener(outEvent, this.boundHoverLeave);
+        this.boundHoverPreview = null;
+        this.boundHoverLeave = null;
+        this.hoverEventMode = null;
+        this.lastHoverPreviewNote = null;
+    }
+
+    previewNote(note, overrides = {}) {
+        if (!note || !this.audioPreviewService || typeof this.audioPreviewService.previewPitch !== 'function') {
+            return null;
+        }
+        const merged = {
+            ...(this.previewConfig.hoverOptions || {}),
+            ...overrides,
+        };
+        return this.audioPreviewService.previewPitch(note, merged);
+    }
+
+    playNoteSound(actualNote, overrides = {}) {
+        if (!actualNote) {
+            return null;
+        }
+        if (this.audioPreviewService && typeof this.audioPreviewService.previewPitch === 'function') {
+            const merged = {
+                ...(this.previewConfig.playOptions || {}),
+                ...overrides,
+            };
+            const previewResult = this.audioPreviewService.previewPitch(actualNote, merged);
+            if (previewResult) {
+                return previewResult;
+            }
+        }
+        const frequency = this.musicTheory.getNoteFrequency(actualNote);
+        if (!frequency || !this.audioModule || typeof this.audioModule.playTone !== 'function') {
+            return null;
+        }
+        return this.audioModule.playTone(frequency, overrides.duration || 0.5);
     }
 
     /**
@@ -720,12 +845,11 @@ class KeyboardModule {
         }
         
         // Play the note
-        const frequency = this.musicTheory.getNoteFrequency(actualNote);
-        if (!frequency) {
-            return;
+        const playback = this.playNoteSound(actualNote);
+        if (playback && typeof playback.then === 'function') {
+            await playback;
         }
-        await this.audioModule.playTone(frequency, 0.5);
-        
+
         // Call the callback with the actual note played
         if (onNotePlayed) {
             onNotePlayed(actualNote);
@@ -951,6 +1075,8 @@ class KeyboardModule {
             this.pianoKeysContainer.addEventListener('click', this.boundKeyHandler);
             this.managePressedVisually = true;
         }
+
+        this.attachHoverPreview();
     }
 
     /**

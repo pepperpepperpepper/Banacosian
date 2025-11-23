@@ -85,4 +85,10 @@ class AudioPreviewService {
     }
 }
 
-window.AudioPreviewService = AudioPreviewService;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = AudioPreviewService;
+} else if (typeof window !== 'undefined') {
+    window.AudioPreviewService = AudioPreviewService;
+} else if (typeof globalThis !== 'undefined') {
+    globalThis.AudioPreviewService = AudioPreviewService;
+}
