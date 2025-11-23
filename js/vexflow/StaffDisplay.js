@@ -35,6 +35,8 @@ function styleForStateFromTheme(state, theme) {
       return choose(theme?.correct, { fillStyle: '#4CAF50', strokeStyle: '#4CAF50' });
     case 'incorrect':
       return choose(theme?.incorrect, { fillStyle: '#F44336', strokeStyle: '#F44336' });
+    case 'draft':
+      return choose(theme?.muted || theme?.accent, { fillStyle: '#90A4AE', strokeStyle: '#90A4AE' });
     case 'highlight':
       // animated replay sweep (orange)
       return choose(theme?.answer || theme?.accent, { fillStyle: '#FF9800', strokeStyle: '#FF9800' });
@@ -141,6 +143,7 @@ export class VexflowStaffDisplay {
       ? { num: meter.num, den: meter.den }
       : { ...DEFAULT_METER };
     this.sequenceEntries = [];
+    this.interactionRegistrar = null;
     this.highlightEntry = null;
     this.overlayEntries = null; // optional full-answer overlay
     this.widthOptions = normalizeStaffSizing({
@@ -355,12 +358,10 @@ export class VexflowStaffDisplay {
         const specs = this.sequenceEntries
           .map((entry) => this.toSpec(entry))
           .filter(Boolean);
-        if (specs.length > 0) {
-          voices.push({
-            clef: this.clef,
-            noteSpecs: specs,
-          });
-        }
+        voices.push({
+          clef: this.clef,
+          noteSpecs: specs,
+        });
         if (Array.isArray(this.overlayEntries) && this.overlayEntries.length > 0) {
           const overlaySpecs = this.overlayEntries
             .map((entry) => this.toSpec({ ...entry, state: entry.state || 'answer' }))
@@ -391,7 +392,16 @@ export class VexflowStaffDisplay {
         applyStaffSizingToState(state, this.widthOptions);
         return resolveStaffScale(state);
       },
-      registerInteractions: null,
+      registerInteractions: this.interactionRegistrar
+        ? ({ context: vfContext, voices, baseMessage, scale }) => (
+            this.interactionRegistrar({
+              context: vfContext,
+              voices,
+              baseMessage,
+              scale,
+            })
+          )
+        : null,
       applyTheme: applyVexflowTheme,
       allowEmptyVoices: true,
     });
@@ -401,6 +411,14 @@ export class VexflowStaffDisplay {
     }
 
     return result;
+  }
+
+  setInteractionRegistrar(callback) {
+    if (typeof callback === 'function') {
+      this.interactionRegistrar = callback;
+    } else {
+      this.interactionRegistrar = null;
+    }
   }
 }
 

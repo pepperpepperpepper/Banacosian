@@ -35,6 +35,10 @@
                     <option value="melodic" selected>Dictation Mode: Melodic</option>
                     <option value="harmonic">Dictation Mode: Harmonic</option>
                 </select>
+                <select id="inputMode" class="select-pill ui-pill">
+                    <option value="keyboard" selected>Input: Keyboard</option>
+                    <option value="staff">Input: Staff</option>
+                </select>
                 <select id="mode" class="select-pill ui-pill">
                     <option value="ionian" selected>Ionian</option>
                     <option value="dorian">Dorian</option>
@@ -79,7 +83,11 @@
             data-staff-scale="3"
         ></div>
 
-        <div class="piano">
+        <div class="staff-input-controls" id="staffInputControls" hidden>
+            <button class="control-btn ui-pill" id="staffSubmitBtn" disabled>Submit</button>
+        </div>
+
+        <div class="piano" id="pianoContainer">
             <div class="piano-keys" aria-label="Interactive piano keyboard"></div>
         </div>
 

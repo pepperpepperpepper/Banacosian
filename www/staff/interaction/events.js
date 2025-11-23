@@ -147,17 +147,18 @@ export function attachSvgInteractionHandlers(svg, container, baseMessage) {
   };
   const downHandler = (event) => handleSvgPointerDown(event, svg, handlers);
   handlers.pointerDown = downHandler;
-  svg.addEventListener('pointerdown', downHandler, { passive: false });
-  svg.addEventListener('mousedown', downHandler, { passive: false });
+  if (HAS_POINTER_EVENTS) {
+    svg.addEventListener('pointerdown', downHandler, { passive: false });
+  } else {
+    svg.addEventListener('mousedown', downHandler, { passive: false });
+    svg.addEventListener('touchstart', downHandler, { passive: false });
+  }
   svg.addEventListener('click', (event) => {
     logStructured('[VexflowInteraction] click event observed', {
       target: event.target?.tagName,
       className: event.target?.className?.baseVal || event.target?.className,
     });
   }, { passive: true });
-  if (!HAS_POINTER_EVENTS) {
-    svg.addEventListener('touchstart', downHandler, { passive: false });
-  }
   if (container && container !== svg) {
     const containerDownHandler = (event) => {
       if (event.target !== container) return;

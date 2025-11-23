@@ -60,6 +60,22 @@
   margin: 0;
 }
 
+.staff-input-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin: 8px 0 4px;
+  align-items: center;
+}
+
+.staff-input-controls[hidden] {
+  display: none !important;
+}
+
+.staff-input-controls .control-btn {
+  flex: 0 0 auto;
+}
+
 @media (min-width: 1024px) {
   .vexflow-display {
     max-width: 800px;
