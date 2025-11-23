@@ -5,6 +5,15 @@
 const MIN_SEQUENCE_LENGTH = 2;
 const MAX_SEQUENCE_LENGTH = 5;
 const DEFAULT_SEQUENCE_LENGTH = 3;
+const ROUND_PHASES = Object.freeze({
+    IDLE: 'idle',
+    REFERENCE_PROMPT: 'reference_prompt',
+    REFERENCE_NOTES: 'reference_notes',
+    SEQUENCE_PLAYBACK: 'sequence_playback',
+    AWAIT_INPUT: 'await_input',
+    RESULT_FEEDBACK: 'result_feedback',
+    NEXT_SEQUENCE_COUNTDOWN: 'next_sequence_countdown',
+});
 
 class MelodicDictation {
     constructor() {
@@ -43,6 +52,9 @@ class MelodicDictation {
         this.lastAppliedInputMode = null;
         this.practiceSequence = [];
         this.activeStaffPointers = new Map();
+        this.roundPhase = ROUND_PHASES.IDLE;
+        this.roundPhaseVerbose = false;
+        this.initializeRoundPhaseDebug();
 
         // Load saved settings (if any) before configuring modules
         try {
@@ -246,6 +258,79 @@ class MelodicDictation {
             return activeLength;
         }
         return this.getPracticeStackLimit();
+    }
+
+    initializeRoundPhaseDebug() {
+        if (typeof window === 'undefined') return;
+        try {
+            const params = new URLSearchParams(window.location.search || '');
+            if (params.has('stateDebug')) {
+                this.roundPhaseVerbose = params.get('stateDebug') !== '0';
+            } else if (window.localStorage) {
+                const stored = window.localStorage.getItem('dictationStateDebug');
+                this.roundPhaseVerbose = stored === 'true';
+            }
+        } catch (error) {
+            console.warn('Unable to evaluate stateDebug flag:', error);
+            this.roundPhaseVerbose = false;
+        }
+        window.DictationDebug = window.DictationDebug || {};
+        window.DictationDebug.setRoundPhaseVerbose = (enabled) => {
+            const flag = Boolean(enabled);
+            this.roundPhaseVerbose = flag;
+            try {
+                if (window.localStorage) {
+                    window.localStorage.setItem('dictationStateDebug', flag ? 'true' : 'false');
+                }
+            } catch (storageError) {
+                console.warn('Unable to persist stateDebug flag:', storageError);
+            }
+            console.info(`[RoundPhase] verbose logging ${flag ? 'enabled' : 'disabled'}.`);
+        };
+        window.DictationDebug.toggleRoundPhaseVerbose = () => {
+            window.DictationDebug.setRoundPhaseVerbose(!this.roundPhaseVerbose);
+        };
+        if (this.roundPhaseVerbose) {
+            console.info('[RoundPhase] verbose logging enabled via settings.');
+            console.info('[RoundPhase] initial state:', this.roundPhase);
+        }
+    }
+
+    setRoundPhase(nextPhase, options = {}) {
+        const allowed = Object.values(ROUND_PHASES);
+        const resolved = allowed.includes(nextPhase) ? nextPhase : ROUND_PHASES.IDLE;
+        const previousPhase = this.roundPhase;
+        this.roundPhase = resolved;
+        if (this.roundPhaseVerbose) {
+            console.info('[RoundPhase]', `${previousPhase} -> ${resolved}`, {
+                feedback: options.feedback || null,
+                feedbackClass: options.feedbackClass || 'feedback',
+            });
+        }
+        const { feedback, feedbackClass = 'feedback' } = options;
+        if (feedback && this.uiModule && typeof this.uiModule.updateFeedback === 'function') {
+            this.uiModule.updateFeedback(feedback, feedbackClass);
+        }
+    }
+
+    getRoundPhase() {
+        return this.roundPhase;
+    }
+
+    beginNextSequenceCountdown(seconds, onComplete) {
+        this.setRoundPhase(ROUND_PHASES.NEXT_SEQUENCE_COUNTDOWN);
+        if (!this.uiModule || typeof this.uiModule.startCountdown !== 'function') {
+            if (typeof onComplete === 'function') {
+                onComplete();
+            }
+            return;
+        }
+        this.uiModule.startCountdown(seconds, () => {
+            this.setRoundPhase(ROUND_PHASES.IDLE);
+            if (typeof onComplete === 'function') {
+                onComplete();
+            }
+        });
     }
 
     trimPracticeSequenceToLimit(limit) {
@@ -502,7 +587,10 @@ class MelodicDictation {
         const availableNotes = this.buildSequenceNotePool();
         if (!Array.isArray(availableNotes) || availableNotes.length === 0) {
             console.error('Unable to derive note pool for mode/tonic', { mode: this.mode, tonic: this.tonic });
-            this.uiModule.updateFeedback('Unable to generate a sequence for this mode/tonic. Please adjust settings.', 'incorrect');
+            this.setRoundPhase(ROUND_PHASES.IDLE, {
+                feedback: 'Unable to generate a sequence for this mode/tonic. Please adjust settings.',
+                feedbackClass: 'incorrect',
+            });
             this.audioModule.setIsPlaying(false);
             this.uiModule.setPlayButtonState(false);
             return;
@@ -515,10 +603,11 @@ class MelodicDictation {
         
         // Update displays
         this.uiModule.updateSequenceDisplay(this.currentSequence, { dictationType: this.dictationType });
-        this.playSequence();
-        
         const scaleText = this.mode ? ` (${this.mode} mode)` : '';
-        this.uiModule.updateFeedback(`Listen carefully${scaleText}...`);
+        this.setRoundPhase(ROUND_PHASES.REFERENCE_PROMPT, {
+            feedback: `Listen carefully${scaleText}...`,
+        });
+        this.playSequence();
         this.uiModule.setPlayButtonState(false);
     }
 
@@ -588,7 +677,9 @@ class MelodicDictation {
             }
         }
         
-        this.uiModule.updateFeedback(`Playing reference notes (${tonicName})...`);
+        this.setRoundPhase(ROUND_PHASES.REFERENCE_NOTES, {
+            feedback: `Playing reference notes (${tonicName})...`,
+        });
 
         const referenceNotes = [tonic1, tonic2, tonic1];
         let referencePreviewPromise = Promise.resolve();
@@ -622,7 +713,7 @@ class MelodicDictation {
         }
         
         const sequenceLabel = this.dictationType === 'harmonic' ? 'Now the harmony...' : 'Now the sequence...';
-        this.uiModule.updateFeedback(sequenceLabel);
+        this.setRoundPhase(ROUND_PHASES.SEQUENCE_PLAYBACK, { feedback: sequenceLabel });
         await this.delay(500);
         
         // Then play the actual sequence
@@ -663,8 +754,13 @@ class MelodicDictation {
         // Resume timer after playback so user thinking time is measured
         try { if (typeof this.scoringModule.resumeSequenceTimer === 'function') this.scoringModule.resumeSequenceTimer(); } catch {}
         
+        const awaitMessage = this.inputMode === 'staff'
+            ? 'Click the staff to enter your answer.'
+            : 'Now play it back on the keyboard!';
         if (this.userSequence.length === 0) {
-            this.uiModule.updateFeedback('Now play it back on the keyboard!');
+            this.setRoundPhase(ROUND_PHASES.AWAIT_INPUT, { feedback: awaitMessage });
+        } else {
+            this.setRoundPhase(ROUND_PHASES.AWAIT_INPUT);
         }
     }
 
@@ -936,9 +1032,15 @@ class MelodicDictation {
         );
         
         if (result.isCorrect) {
-            this.uiModule.updateFeedback(`Perfect! Well done! (${result.sequenceTimeFormatted}) 🎉`, 'correct');
+            this.setRoundPhase(ROUND_PHASES.RESULT_FEEDBACK, {
+                feedback: `Perfect! Well done! (${result.sequenceTimeFormatted}) 🎉`,
+                feedbackClass: 'correct',
+            });
         } else {
-            this.uiModule.updateFeedback(`Not quite right. Try again! (${result.sequenceTimeFormatted})`, 'incorrect');
+            this.setRoundPhase(ROUND_PHASES.RESULT_FEEDBACK, {
+                feedback: `Not quite right. Try again! (${result.sequenceTimeFormatted})`,
+                feedbackClass: 'incorrect',
+            });
         }
         
         // Update displays
@@ -977,7 +1079,7 @@ class MelodicDictation {
             this.completeRound();
         } else {
             // Start countdown for next sequence
-            this.uiModule.startCountdown(result.isCorrect ? 1 : 4, () => {
+            this.beginNextSequenceCountdown(result.isCorrect ? 1 : 4, () => {
                 this.generateNewSequence();
             });
         }
@@ -1011,10 +1113,10 @@ class MelodicDictation {
         );
         
         // Show completion message
-        this.uiModule.updateFeedback(
-            `Round Complete! ${roundResult.accuracy}% accuracy in ${roundResult.duration}. Click "Start" to begin the next round.`,
-            'correct'
-        );
+        this.setRoundPhase(ROUND_PHASES.IDLE, {
+            feedback: `Round Complete! ${roundResult.accuracy}% accuracy in ${roundResult.duration}. Click "Start" to begin the next round.`,
+            feedbackClass: 'correct',
+        });
         
         // Reset timer display
         document.getElementById('timer').textContent = '00:00';
