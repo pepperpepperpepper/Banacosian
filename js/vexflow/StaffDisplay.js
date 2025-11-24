@@ -41,8 +41,8 @@ function styleForStateFromTheme(state, theme) {
       // animated replay sweep (orange)
       return choose(theme?.answer || theme?.accent, { fillStyle: '#FF9800', strokeStyle: '#FF9800' });
     case 'answer':
-      // static correction overlay (yellow)
-      return choose(theme?.correction || theme?.answer, { fillStyle: '#FFEB3B', strokeStyle: '#FFEB3B' });
+      // static correction overlay (green, consistent with correct answers)
+      return choose(theme?.correction || theme?.answer, { fillStyle: '#4CAF50', strokeStyle: '#4CAF50' });
     default:
       return undefined;
   }

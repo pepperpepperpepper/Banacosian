@@ -12,8 +12,8 @@
   /* Answer/evaluation colors (used for correct/incorrect/answer highlight) */
   --notation-correct: var(--app-success, #4caf50);
   --notation-incorrect: var(--app-danger, #f44336);
-  /* Correction (static overlay of right pitches): distinct yellow */
-  --notation-correction: #ffeb3b;
+  /* Correction (static overlay of right pitches): align with standard correct green */
+  --notation-correction: var(--notation-correct, #4caf50);
   /* Highlight (animated replay sweep): orange */
   --notation-answer: var(--app-warning, #ff9800);
 
