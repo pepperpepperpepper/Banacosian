@@ -125,6 +125,10 @@
   color: var(--app-text-primary);
 }
 
+#mode option.mode-option-primary {
+  font-weight: 700;
+}
+
 .difficulty-selector {
   display: flex;
   align-items: center;

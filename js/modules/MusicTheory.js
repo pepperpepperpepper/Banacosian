@@ -72,7 +72,21 @@ class MusicTheoryModule {
             'lydian': 3,
             'mixolydian': 4,
             'aeolian': 5,
-            'locrian': 6
+            'locrian': 6,
+            'melodic-minor': 5,
+            'dorian-b2': 1,
+            'lydian-augmented': 3,
+            'lydian-dominant': 3,
+            'mixolydian-b6': 4,
+            'locrian-sharp2': 6,
+            'altered': 6,
+            'harmonic-minor': 5,
+            'locrian-sharp6': 6,
+            'ionian-sharp5': 0,
+            'dorian-sharp4': 1,
+            'phrygian-dominant': 2,
+            'lydian-sharp2': 3,
+            'super-locrian-bb7': 6
         };
         this.majorKeySpellings = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
         this.majorPitchTraversal = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5];
@@ -127,7 +141,21 @@ class MusicTheoryModule {
             'chromatic': { tonic: 'C4' },
             'half-whole': { tonic: 'C4' },
             'whole-half': { tonic: 'C4' },
-            'whole-tone': { tonic: 'C4' }
+            'whole-tone': { tonic: 'C4' },
+            'melodic-minor': { tonic: 'C4' },
+            'dorian-b2': { tonic: 'C4' },
+            'lydian-augmented': { tonic: 'C4' },
+            'lydian-dominant': { tonic: 'C4' },
+            'mixolydian-b6': { tonic: 'C4' },
+            'locrian-sharp2': { tonic: 'C4' },
+            'altered': { tonic: 'C4' },
+            'harmonic-minor': { tonic: 'C4' },
+            'locrian-sharp6': { tonic: 'C4' },
+            'ionian-sharp5': { tonic: 'C4' },
+            'dorian-sharp4': { tonic: 'C4' },
+            'phrygian-dominant': { tonic: 'C4' },
+            'lydian-sharp2': { tonic: 'C4' },
+            'super-locrian-bb7': { tonic: 'C4' }
         };
 
         // Mode patterns (semitone intervals from tonic)
@@ -142,8 +170,24 @@ class MusicTheoryModule {
             'chromatic': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
             'half-whole': [0, 1, 3, 4, 6, 7, 9, 10],
             'whole-half': [0, 2, 3, 5, 6, 8, 9, 11],
-            'whole-tone': [0, 2, 4, 6, 8, 10]
+            'whole-tone': [0, 2, 4, 6, 8, 10],
+            'melodic-minor': [0, 2, 3, 5, 7, 9, 11],
+            'dorian-b2': [0, 1, 3, 5, 7, 9, 10],
+            'lydian-augmented': [0, 2, 4, 6, 8, 9, 11],
+            'lydian-dominant': [0, 2, 4, 6, 7, 9, 10],
+            'mixolydian-b6': [0, 2, 4, 5, 7, 8, 10],
+            'locrian-sharp2': [0, 2, 3, 5, 6, 8, 10],
+            'altered': [0, 1, 3, 4, 6, 8, 10],
+            'harmonic-minor': [0, 2, 3, 5, 7, 8, 11],
+            'locrian-sharp6': [0, 1, 3, 5, 6, 9, 10],
+            'ionian-sharp5': [0, 2, 4, 5, 8, 9, 11],
+            'dorian-sharp4': [0, 2, 3, 6, 7, 9, 10],
+            'phrygian-dominant': [0, 1, 4, 5, 7, 8, 10],
+            'lydian-sharp2': [0, 3, 4, 6, 7, 9, 11],
+            'super-locrian-bb7': [0, 1, 3, 4, 6, 8, 9]
         };
+
+        this.minorLikeModes = new Set(['melodic-minor', 'harmonic-minor']);
 
         this.notes = Object.keys(this.noteFrequencies).sort(
             (a, b) => this.noteToSemitone(a) - this.noteToSemitone(b)
@@ -449,6 +493,14 @@ class MusicTheoryModule {
         }
 
         if (normalizedMode === 'aeolian') {
+            const base = normalizedDisplay || normalizedTonic;
+            if (base) {
+                return `${base}m`;
+            }
+            return 'Cm';
+        }
+
+        if (this.minorLikeModes && this.minorLikeModes.has(normalizedMode)) {
             const base = normalizedDisplay || normalizedTonic;
             if (base) {
                 return `${base}m`;
@@ -811,7 +863,21 @@ class MusicTheoryModule {
             'chromatic': ['chromatic'],
             'half-whole': ['dominant diminished', 'diminished whole tone'],
             'whole-half': ['diminished', 'whole-half diminished'],
-            'whole-tone': ['whole tone', 'whole-tone']
+            'whole-tone': ['whole tone', 'whole-tone'],
+            'melodic-minor': ['melodic minor', 'jazz minor'],
+            'dorian-b2': ['dorian b2', 'dorian b9'],
+            'lydian-augmented': ['lydian augmented', 'lydian #5'],
+            'lydian-dominant': ['lydian dominant', 'overtone scale'],
+            'mixolydian-b6': ['mixolydian b6', 'hindu scale'],
+            'locrian-sharp2': ['locrian #2', 'locrian sharp 2'],
+            'altered': ['altered', 'super locrian'],
+            'harmonic-minor': ['harmonic minor'],
+            'locrian-sharp6': ['locrian #6', 'locrian sharp 6'],
+            'ionian-sharp5': ['ionian #5', 'ionian augmented'],
+            'dorian-sharp4': ['dorian #4', 'dorian sharp 4'],
+            'phrygian-dominant': ['phrygian dominant', 'spanish gypsy'],
+            'lydian-sharp2': ['lydian #2', 'lydian sharp 2'],
+            'super-locrian-bb7': ['super locrian bb7', 'ultra locrian']
         };
 
         return aliasMap[normalized] ? aliasMap[normalized].slice() : [normalized];
