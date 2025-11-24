@@ -410,3 +410,26 @@
     main();
   }
 })();
+    // Ensure audio unlock happens on the earliest possible user gesture (pointerdown capture)
+    (function setupGlobalAudioUnlock(){
+      const getCtx = () => (typeof audio.getAudioContext === 'function' ? audio.getAudioContext() : audio.audioContext);
+      const unlock = async () => {
+        const ctx = getCtx();
+        if (!ctx) return;
+        if (ctx.state === 'suspended') {
+          try { await ctx.resume(); } catch (e) { /* ignore */ }
+        }
+        if (ctx.state === 'running') {
+          document.removeEventListener('pointerdown', unlock, { capture: true });
+          document.removeEventListener('mousedown', unlock);
+          document.removeEventListener('touchstart', unlock);
+          document.removeEventListener('click', unlock);
+          document.removeEventListener('keydown', unlock);
+        }
+      };
+      document.addEventListener('pointerdown', unlock, { capture: true });
+      document.addEventListener('mousedown', unlock);
+      document.addEventListener('touchstart', unlock);
+      document.addEventListener('click', unlock);
+      document.addEventListener('keydown', unlock);
+    })();
