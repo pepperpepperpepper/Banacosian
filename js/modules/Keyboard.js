@@ -58,6 +58,17 @@ class KeyboardModule {
 
         if (typeof window !== 'undefined') {
             window.addEventListener('resize', this.handleResize);
+            // Clean up state if the tab is hidden or the page is being backgrounded
+            this._boundResetIfHidden = () => {
+                try {
+                    if (document && document.visibilityState === 'hidden') {
+                        this.reset();
+                    }
+                } catch (_) { this.reset(); }
+            };
+            this._boundResetOnPageHide = () => { this.reset(); };
+            document.addEventListener('visibilitychange', this._boundResetIfHidden);
+            window.addEventListener('pagehide', this._boundResetOnPageHide);
         }
     }
 
@@ -74,6 +85,9 @@ class KeyboardModule {
         
         // Reset sustain counts
         this.sustainCounts.clear();
+        if (this.audioModule && typeof this.audioModule.stopAllSustain === 'function') {
+            try { this.audioModule.stopAllSustain(); } catch (_) {}
+        }
 
         // Reset visual state
         if (this.pianoKeysContainer) {

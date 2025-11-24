@@ -43,8 +43,9 @@ class AudioModule {
      * @param {number} duration 
      */
     async playPreviewTone(frequency, duration = 0.5) {
-        // Polyphony restored: We do NOT stop the previous voice here.
-        
+        // Monophonic preview: stop the previous preview voice before starting a new one
+        try { this._stopActivePreviewVoice(0.03); } catch (_) {}
+
         if (!this.audioContext) {
             await this.initializeAudio();
         }
@@ -77,6 +78,12 @@ class AudioModule {
 
         oscillator.start(now);
         oscillator.stop(now + duration);
+
+        // Track as active preview voice so the next preview can fade this one first
+        this.activePreviewVoice = { osc: oscillator, gain: gainNode };
+        try {
+            oscillator.onended = () => { if (this.activePreviewVoice && this.activePreviewVoice.osc === oscillator) this.activePreviewVoice = null; };
+        } catch (_) {}
     }
 
     /**
@@ -434,6 +441,28 @@ class AudioModule {
      */
     getAudioContext() {
         return this.audioContext;
+    }
+
+    /**
+     * Stop currently active preview voice (if any) with a short release.
+     * @param {number} releaseSec
+     */
+    _stopActivePreviewVoice(releaseSec = 0.04) {
+        const voice = this.activePreviewVoice;
+        if (!voice || !this.audioContext) return;
+        try {
+            const now = this.audioContext.currentTime;
+            if (voice.gain && voice.gain.gain) {
+                const current = voice.gain.gain.value;
+                voice.gain.gain.cancelScheduledValues(now);
+                voice.gain.gain.setValueAtTime(current, now);
+                voice.gain.gain.linearRampToValueAtTime(0.0001, now + Math.max(0.005, releaseSec));
+            }
+            if (voice.osc) {
+                voice.osc.stop(now + Math.max(0.01, releaseSec + 0.005));
+            }
+        } catch (_) {}
+        this.activePreviewVoice = null;
     }
 }
 
