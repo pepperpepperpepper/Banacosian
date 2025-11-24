@@ -48,6 +48,11 @@ class KeyboardModule {
         this.boundHoverPreview = null;
         this.boundHoverLeave = null;
         this.hoverEventMode = null;
+        // Hover safety gates to prevent auto-play on tab restore/page load
+        this.hoverPrimed = false; // set to true after a real pointer/mouse move
+        this.activationBlockUntil = 0; // timestamp until which hover is ignored
+        this.boundHoverPrimeMove = null;
+        this.boundVisibilityReset = null;
 
         this.applyDisabledKeysStyle();
 
@@ -239,8 +244,39 @@ class KeyboardModule {
         this.hoverEventMode = usePointer ? 'pointer' : 'mouse';
         const overEvent = usePointer ? 'pointerover' : 'mouseover';
         const outEvent = usePointer ? 'pointerout' : 'mouseout';
+        // Initialize gating window: ignore hover for a short time after attach
+        try {
+            const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            this.activationBlockUntil = now + 350;
+        } catch { this.activationBlockUntil = Date.now() + 350; }
+        this.hoverPrimed = false;
+        if (!this.boundHoverPrimeMove) {
+            this.boundHoverPrimeMove = () => { this.hoverPrimed = true; };
+            if (usePointer) {
+                window.addEventListener('pointermove', this.boundHoverPrimeMove, { passive: true });
+            } else {
+                window.addEventListener('mousemove', this.boundHoverPrimeMove, { passive: true });
+            }
+        }
+        if (!this.boundVisibilityReset) {
+            this.boundVisibilityReset = () => {
+                this.hoverPrimed = false;
+                try {
+                    const now2 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+                    this.activationBlockUntil = now2 + 350;
+                } catch { this.activationBlockUntil = Date.now() + 350; }
+                this.lastHoverPreviewNote = null;
+            };
+            document.addEventListener('visibilitychange', this.boundVisibilityReset);
+            window.addEventListener('pageshow', this.boundVisibilityReset);
+        }
         this.boundHoverPreview = (event) => {
             if (!this.previewConfig.enableHover || !this.audioPreviewService) {
+                return;
+            }
+            // Require actual movement and respect initial activation block
+            const nowTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            if (!this.hoverPrimed || nowTs < this.activationBlockUntil) {
                 return;
             }
             if (this.hoverEventMode === 'pointer' && event.pointerType && event.pointerType !== 'mouse') {
@@ -286,6 +322,19 @@ class KeyboardModule {
         const outEvent = this.hoverEventMode === 'pointer' ? 'pointerout' : 'mouseout';
         this.pianoKeysContainer.removeEventListener(overEvent, this.boundHoverPreview);
         this.pianoKeysContainer.removeEventListener(outEvent, this.boundHoverLeave);
+        if (this.boundHoverPrimeMove) {
+            if (this.hoverEventMode === 'pointer') {
+                window.removeEventListener('pointermove', this.boundHoverPrimeMove);
+            } else {
+                window.removeEventListener('mousemove', this.boundHoverPrimeMove);
+            }
+            this.boundHoverPrimeMove = null;
+        }
+        if (this.boundVisibilityReset) {
+            document.removeEventListener('visibilitychange', this.boundVisibilityReset);
+            window.removeEventListener('pageshow', this.boundVisibilityReset);
+            this.boundVisibilityReset = null;
+        }
         this.boundHoverPreview = null;
         this.boundHoverLeave = null;
         this.hoverEventMode = null;
