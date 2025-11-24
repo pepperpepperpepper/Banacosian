@@ -396,6 +396,8 @@ class MelodicDictation {
                     document.removeEventListener('keydown', unlockAudio);
                     document.removeEventListener('touchstart', unlockAudio);
                     document.removeEventListener('mousedown', unlockAudio);
+                    // Remove the capture listener as well
+                    document.removeEventListener('pointerdown', unlockAudio, { capture: true });
                 }
             }
         };
@@ -403,11 +405,22 @@ class MelodicDictation {
         document.addEventListener('keydown', unlockAudio);
         document.addEventListener('touchstart', unlockAudio);
         document.addEventListener('mousedown', unlockAudio);
+        // Ensure unlock runs before any component prevents default mouse events
+        document.addEventListener('pointerdown', unlockAudio, { capture: true });
 
-        // Ensure AudioContext is closed on reload/unload to prevent artifacts
-        window.addEventListener('beforeunload', () => {
-            if (this.audioModule && this.audioModule.audioContext) {
-                this.audioModule.audioContext.close().catch(() => {});
+        // Ensure AudioContext is closed on reload/unload/background to prevent artifacts
+        const handleAudioCleanup = () => {
+            if (this.audioModule) {
+                this.audioModule.reset();
+            }
+        };
+        window.addEventListener('beforeunload', handleAudioCleanup);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                handleAudioCleanup();
+                if (this.keyboardModule && typeof this.keyboardModule.reset === 'function') {
+                    this.keyboardModule.reset();
+                }
             }
         });
 

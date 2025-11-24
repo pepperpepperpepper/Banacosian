@@ -411,6 +411,24 @@ class AudioModule {
     }
 
     /**
+     * Reset the audio module, closing the context and clearing active voices.
+     * Useful for cleanup on page unload or tab switch to prevent ghost notes.
+     */
+    async reset() {
+        this.activeSustainVoices.clear();
+        this.pendingSustainStarts.clear();
+        if (this.audioContext) {
+            const ctx = this.audioContext;
+            this.audioContext = null; // Nullify immediately
+            try {
+                await ctx.close();
+            } catch (e) {
+                // Ignore errors if already closed
+            }
+        }
+    }
+
+    /**
      * Get the audio context
      * @returns {AudioContext|null}
      */

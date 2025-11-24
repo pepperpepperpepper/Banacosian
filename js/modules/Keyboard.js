@@ -56,7 +56,33 @@ class KeyboardModule {
         }
     }
 
-    /** Start sustaining a note with reference counting so multiple pointers can hold it. */
+    /**
+     * Reset the keyboard state.
+     * Clears all active pointers, stops sustains, and resets visual state.
+     */
+    reset() {
+        // Clear pointer maps
+        this.pointerDownMap.clear();
+        this.pointerTypeMap.clear();
+        this.pointerNoteMap.clear();
+        this.touchNoteMap.clear();
+        
+        // Reset sustain counts
+        this.sustainCounts.clear();
+
+        // Reset visual state
+        if (this.pianoKeysContainer) {
+            const pressedKeys = this.pianoKeysContainer.querySelectorAll('.pressed');
+            pressedKeys.forEach(key => {
+                key.classList.remove('pressed');
+                key.removeAttribute('data-touch-id');
+            });
+        }
+    }
+
+    /**
+     * Start sustaining a note with reference counting so multiple pointers can hold it.
+     */
     startSustainForNote(actualNote) {
         if (!actualNote) return;
         // Respect mode filtering when not chromatic

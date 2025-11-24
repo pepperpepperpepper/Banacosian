@@ -31,6 +31,17 @@ class AudioPreviewService {
         if (!this.musicTheory || typeof this.musicTheory.getNoteFrequency !== 'function') {
             return false;
         }
+        // Only allow previews when the AudioContext is actually running.
+        try {
+            const ctx = (typeof this.audioModule.getAudioContext === 'function')
+                ? this.audioModule.getAudioContext()
+                : (this.audioModule.audioContext || null);
+            if (!ctx || !ctx.state || ctx.state !== 'running') {
+                return false;
+            }
+        } catch (_) {
+            return false;
+        }
         const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
         if (now - this.lastPreviewTime < this.minIntervalMs) {
             return false;
