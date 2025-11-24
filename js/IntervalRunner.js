@@ -7,7 +7,7 @@
   const USER_SPEED_MIN = 0.4;
   const USER_SPEED_MAX = 1.6;
   const USER_SPEED_STEP = 0.1;
-  const DEFAULT_USER_SPEED = 0.7;
+  const DEFAULT_USER_SPEED = 0.8;
 
   function buildChoices(container, onChoose, allowedSet) {
     const order = [1,2,3,4,5,6,7,8,9,10,11,12];
@@ -50,6 +50,7 @@
 
     // Runner preference persistence
     const RUNNER_SETTINGS_KEY = 'runner:settings:v1';
+    const RUNNER_SPEED_PREF_KEY = 'runner:user-speed-pref:v1';
     function loadRunnerSettings() {
       try { const raw = localStorage.getItem(RUNNER_SETTINGS_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
     }
@@ -59,6 +60,26 @@
         const next = { ...prev, ...partial, _meta: { v: 1, updatedAt: new Date().toISOString() } };
         localStorage.setItem(RUNNER_SETTINGS_KEY, JSON.stringify(next));
       } catch {}
+    }
+    function loadStoredSpeedPreference(savedSettings) {
+      try {
+        const raw = localStorage.getItem(RUNNER_SPEED_PREF_KEY);
+        if (raw !== null) {
+          const parsed = Number(raw);
+          if (!Number.isNaN(parsed)) {
+            return CLAMP(parsed, USER_SPEED_MIN, USER_SPEED_MAX);
+          }
+        }
+      } catch {}
+      if (savedSettings && typeof savedSettings.userSpeed === 'number' && !Number.isNaN(savedSettings.userSpeed)) {
+        return CLAMP(savedSettings.userSpeed, USER_SPEED_MIN, USER_SPEED_MAX);
+      }
+      return null;
+    }
+    function persistUserSpeedPreference(value) {
+      const safe = CLAMP(value, USER_SPEED_MIN, USER_SPEED_MAX);
+      try { localStorage.setItem(RUNNER_SPEED_PREF_KEY, String(safe)); } catch {}
+      try { saveRunnerSettings({ userSpeed: safe }); } catch {}
     }
     // Optional: allow providing a custom sprite via data-sprite on the canvas, URL, or localStorage
     let spriteImg = null; let spriteReady = false; let wantProceduralLegs = false; let spriteScale = 1.0;
@@ -255,12 +276,13 @@
       return CLAMP(raw, USER_SPEED_MIN, USER_SPEED_MAX);
     }
 
-    function applyUserSpeed(next) {
+    function applyUserSpeed(next, options) {
+      const persist = !options || options.persist !== false;
       const clamped = CLAMP(next, USER_SPEED_MIN, USER_SPEED_MAX);
       const stepped = Math.round(clamped / USER_SPEED_STEP) * USER_SPEED_STEP;
       const rounded = Number(stepped.toFixed(2));
       state.userSpeed = rounded;
-      saveRunnerSettings({ userSpeed: state.userSpeed });
+      if (persist) persistUserSpeedPreference(state.userSpeed);
       updateHud();
       updateSpeedButtonsDisabledState();
     }
@@ -270,7 +292,7 @@
         ? state.userSpeed
         : DEFAULT_USER_SPEED;
       const next = current + (deltaSteps * USER_SPEED_STEP);
-      applyUserSpeed(next);
+      applyUserSpeed(next, { persist: true });
     }
 
     function updateSpeedButtonsDisabledState() {
@@ -316,17 +338,19 @@
         if ($type && saved.type && $type.querySelector(`option[value="${saved.type}"]`)) $type.value = saved.type;
         if ($dir && saved.direction && $dir.querySelector(`option[value="${saved.direction}"]`)) $dir.value = saved.direction;
         if ($startMode && saved.startMode && $startMode.querySelector(`option[value="${saved.startMode}"]`)) $startMode.value = saved.startMode;
-        let initialSpeed = DEFAULT_USER_SPEED;
-        if (typeof saved.userSpeed === 'number' && !Number.isNaN(saved.userSpeed)) {
-          initialSpeed = saved.userSpeed;
-        } else if (saved.speedSetting && ['slow','normal','fast'].includes(saved.speedSetting)) {
+      }
+      let initialSpeed = loadStoredSpeedPreference(saved);
+      if (typeof initialSpeed !== 'number' || Number.isNaN(initialSpeed)) {
+        if (saved && saved.speedSetting && ['slow','normal','fast'].includes(saved.speedSetting)) {
           // Backwards-compat mapping from older string speedSetting
           if (saved.speedSetting === 'slow') initialSpeed = 0.7;
           else if (saved.speedSetting === 'fast') initialSpeed = 1.4;
           else initialSpeed = 1.0;
+        } else {
+          initialSpeed = DEFAULT_USER_SPEED;
         }
-        state.userSpeed = CLAMP(initialSpeed, USER_SPEED_MIN, USER_SPEED_MAX);
       }
+      state.userSpeed = CLAMP(initialSpeed, USER_SPEED_MIN, USER_SPEED_MAX);
     })();
 
     state.type = ($type?.value === 'harmonic') ? 'harmonic' : 'melodic';
