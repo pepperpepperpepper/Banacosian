@@ -41,6 +41,9 @@
                     : ((event) => event),
                 convertToSvgCoords: domHelpers?.convertToSvgCoords,
                 findClosestPitchForY: pitchHelpers?.findClosestPitchForY,
+                midiToKeySpec: typeof pitchHelpers?.midiToKeySpec === 'function'
+                    ? pitchHelpers.midiToKeySpec
+                    : null,
             };
             if (typeof helpers.convertToSvgCoords !== 'function' || typeof helpers.findClosestPitchForY !== 'function') {
                 console.warn('[StaffModule] staff input helpers incomplete');
@@ -311,9 +314,34 @@
                 midiMin: this.staffInputState.midiMin,
                 midiMax: this.staffInputState.midiMax,
             });
-            if (pitchInfo?.spec) {
-                note = formatSpecToNote(pitchInfo.spec);
+            const quantizer = this.staffInputState?.pitchQuantizer || null;
+            if (pitchInfo && typeof quantizer === 'function' && Number.isFinite(pitchInfo.midi)) {
+                const lastMidi = Number.isFinite(existingPointerMeta?.quantizedMidi)
+                    ? existingPointerMeta.quantizedMidi
+                    : (Number.isFinite(existingPointerMeta?.midi) ? existingPointerMeta.midi : null);
+                const resolvedMidi = quantizer({
+                    previewMidi: pitchInfo.midi,
+                    baseMidi: Number.isFinite(lastMidi) ? lastMidi : pitchInfo.midi,
+                    lastMidi: Number.isFinite(lastMidi) ? lastMidi : pitchInfo.midi,
+                    direction: Number.isFinite(lastMidi)
+                        ? Math.sign(pitchInfo.midi - lastMidi) || 0
+                        : 0,
+                });
+                if (Number.isFinite(resolvedMidi)) {
+                    pitchInfo.midi = resolvedMidi;
+                    if (typeof helpers.midiToKeySpec === 'function') {
+                        const spec = helpers.midiToKeySpec(resolvedMidi, {
+                            preference: this.staffInputState?.accidentalPreference,
+                        });
+                        if (spec) {
+                            pitchInfo.spec = spec;
+                        }
+                    }
+                }
             }
+        }
+        if (pitchInfo?.spec) {
+            note = formatSpecToNote(pitchInfo.spec);
         }
         if (phase !== 'end' && !note) return;
         if (typeof event.preventDefault === 'function') {
@@ -371,6 +399,14 @@
                 note: note ?? existingPointerMeta?.note ?? null,
                 staffIndex,
                 insertIndex,
+                midi: Number.isFinite(pitchInfo?.midi)
+                    ? pitchInfo.midi
+                    : (Number.isFinite(existingPointerMeta?.midi) ? existingPointerMeta.midi : null),
+                quantizedMidi: Number.isFinite(pitchInfo?.midi)
+                    ? pitchInfo.midi
+                    : (Number.isFinite(existingPointerMeta?.quantizedMidi)
+                        ? existingPointerMeta.quantizedMidi
+                        : (Number.isFinite(existingPointerMeta?.midi) ? existingPointerMeta.midi : null)),
             });
         }
     }

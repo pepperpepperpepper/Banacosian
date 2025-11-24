@@ -2,6 +2,7 @@ import {
   decideAccidentalForKey,
   formatPitchLabel,
   findClosestPitchForY,
+  midiToKeySpec,
 } from './music-helpers.js';
 import {
   INITIAL_NOTE_COUNT,
@@ -11,12 +12,35 @@ import {
   getRenderState,
   triggerRender,
   setStatusText,
+  getDragQuantizer,
 } from './interaction-state.js';
 import { selectableRegistry } from './interaction-selectable.js';
 import { clearSelection } from './interaction-selection.js';
 import { logStructured } from '/js/shared/utils.js';
 
 const MAX_TOTAL_NOTES = INITIAL_NOTE_COUNT + MAX_ADDITIONAL_NOTES;
+
+function quantizePitchInfo(pitchInfo) {
+  if (!pitchInfo || typeof pitchInfo !== 'object') return pitchInfo;
+  if (!Number.isFinite(pitchInfo.midi)) return pitchInfo;
+  const quantizer = getDragQuantizer();
+  if (typeof quantizer !== 'function') return pitchInfo;
+  const resolvedMidi = quantizer({
+    previewMidi: pitchInfo.midi,
+    baseMidi: pitchInfo.midi,
+    lastMidi: pitchInfo.midi,
+    direction: 0,
+  });
+  if (!Number.isFinite(resolvedMidi)) return pitchInfo;
+  if (resolvedMidi === pitchInfo.midi) return pitchInfo;
+  const spec = midiToKeySpec(resolvedMidi);
+  if (!spec) return pitchInfo;
+  return {
+    ...pitchInfo,
+    midi: resolvedMidi,
+    spec,
+  };
+}
 
 function computeLineFromCoords(coords, renderState) {
   if (!coords || !renderState) return null;
@@ -134,11 +158,12 @@ export function tryAddNoteAtCoords({ coords, scaledCoords, baseMessage }) {
     console.warn('[VexflowAdd] aborted: could not derive pitch from Y', { coords, metrics });
     return false;
   }
+  const quantizedPitch = quantizePitchInfo(pitchInfo) || pitchInfo;
   logStructured('[VexflowAdd] pitch derived', {
     line,
     lineSource: lineInfo?.method || null,
     clef: clefContext,
-    pitchInfo,
+    pitchInfo: quantizedPitch,
     source: pitchInfo.props ? {
       keyProps: {
         line: pitchInfo.props.line,
@@ -166,8 +191,8 @@ export function tryAddNoteAtCoords({ coords, scaledCoords, baseMessage }) {
   const clef = template?.clef || metrics?.clef || voice.clef || 'treble';
   const strokePx = template?.strokePx;
 
-  const { midi } = pitchInfo;
-  const derived = pitchInfo.spec;
+  const { midi } = quantizedPitch;
+  const derived = quantizedPitch.spec;
   const accidentalSymbol = decideAccidentalForKey(derived, renderState.keySig);
   const label = formatPitchLabel({
     key: derived.key,
