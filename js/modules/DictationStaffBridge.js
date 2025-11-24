@@ -222,12 +222,10 @@
 
                 // Choose the key signature to display on the stave. Use the tonic spelling from MusicTheory.
                 const keySigMode = app.scaleType === 'chromatic' ? 'chromatic' : app.mode;
-                const keySigPreference = app.musicTheory.getKeySignaturePreference(keySigMode, app.tonic);
-                let keySig = app.musicTheory.getDisplayTonicName(keySigMode, app.tonic) || 'C';
-                if (app.scaleType === 'chromatic' && (!keySig || !/^[A-G][b#]?$/.test(keySig))) {
-                    keySig = keySigPreference === 'flat' ? `${app.tonic}b` : `${app.tonic}#`;
-                }
-                app.staffModule.setKeySignature(keySig);
+                const keySigContext = app.musicTheory.getKeySignatureContext(keySigMode, app.tonic) || {};
+                const keySigPreference = keySigContext.preference;
+                const keySigSpec = keySigContext.keySignatureSpec || keySigContext.displayTonic || 'C';
+                app.staffModule.setKeySignature(keySigSpec);
                 if (typeof app.staffModule.setAccidentalPreference === 'function') {
                     app.staffModule.setAccidentalPreference(
                         keySigPreference === 'flat' ? 'flat' : 'sharp',

@@ -435,6 +435,37 @@ class MusicTheoryModule {
         };
     }
 
+    determineKeySignatureSpec(mode, displayTonic, tonic, resolvedSignature = null) {
+        const normalizedMode = (mode || 'ionian').toLowerCase();
+        const normalizedDisplay = this.standardizeNoteName(displayTonic);
+        const normalizedTonic = this.standardizeNoteName(tonic) || normalizedDisplay;
+
+        if (normalizedMode === 'chromatic') {
+            return 'C';
+        }
+
+        if (normalizedMode === 'ionian') {
+            return normalizedDisplay || normalizedTonic || 'C';
+        }
+
+        if (normalizedMode === 'aeolian') {
+            const base = normalizedDisplay || normalizedTonic;
+            if (base) {
+                return `${base}m`;
+            }
+            return 'Cm';
+        }
+
+        if (resolvedSignature && resolvedSignature.majorTonic) {
+            const normalizedMajor = this.standardizeNoteName(resolvedSignature.majorTonic);
+            if (normalizedMajor) {
+                return normalizedMajor;
+            }
+        }
+
+        return normalizedDisplay || normalizedTonic || 'C';
+    }
+
     /**
      * Determine accidental preference for a tonic based purely on its spelling
      * @param {string} tonic - Tonic note name (without octave)
@@ -530,7 +561,14 @@ class MusicTheoryModule {
 
         const chromaDisplayMap = this.computeChromaDisplayMap(normalizedMode, displayTonic || normalizedTonic);
 
-        const context = { preference, displayTonic, chromaDisplayMap };
+        const keySignatureSpec = this.determineKeySignatureSpec(
+            normalizedMode,
+            displayTonic,
+            normalizedTonic,
+            resolvedSignature,
+        );
+
+        const context = { preference, displayTonic, chromaDisplayMap, keySignatureSpec };
         this.keySignatureCache.set(cacheKey, context);
         return context;
     }
