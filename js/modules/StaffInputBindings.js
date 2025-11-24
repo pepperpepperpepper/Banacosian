@@ -337,6 +337,23 @@
         if (phase === 'start' && staffIndex == null && Number.isInteger(insertIndex)) {
             staffIndex = insertIndex;
         }
+        if (
+            phase === 'start'
+            && typeof this.staffInputState.pointerInsertGuard === 'function'
+        ) {
+            const allowPointer = this.staffInputState.pointerInsertGuard({
+                phase,
+                staffIndex,
+                insertIndex,
+                note,
+                pointerId,
+                coords,
+            });
+            if (allowPointer === false) {
+                pointerNotes.delete(pointerKey);
+                return;
+            }
+        }
         if (typeof this.staffInputState.onInput === 'function') {
             this.staffInputState.onInput(note, {
                 pitchInfo,

@@ -31,6 +31,8 @@
                     targetLength: app.currentSequence.length,
                     requiresSubmit: app.inputMode === 'staff' && app.currentSequence.length > 0,
                     allowAnswerFifo: !app.hasActiveSequence(),
+                    allowAnswerPreview: !app.hasActiveSequence(),
+                    allowAnswerComparison: !app.hasActiveSequence(),
                 }),
                 previewService: app.audioPreview,
                 onPracticeChange: (sequence) => {
@@ -40,7 +42,10 @@
                     app.uiModule.updateUserSequenceDisplay(
                         sequence,
                         app.currentSequence,
-                        { dictationType: app.dictationType },
+                        {
+                            dictationType: app.dictationType,
+                            allowComparison: Boolean(meta?.allowComparison),
+                        },
                     );
                     if (!meta.requiresSubmit) {
                         this.tryUpdateStaffComparison(sequence);

@@ -52,6 +52,7 @@ class StaffInputController {
             onInput: (note, meta = {}) => {
                 this.handleStaffInput(note, meta);
             },
+            pointerInsertGuard: (guardMeta = {}) => this.shouldAllowPointerInsert(guardMeta),
         };
         if (Number.isFinite(options.midiMin)) payload.midiMin = options.midiMin;
         if (Number.isFinite(options.midiMax)) payload.midiMax = options.midiMax;
@@ -140,6 +141,7 @@ class StaffInputController {
             this.resetPracticeSequence();
             return true;
         }
+        const allowAnswerPreview = this.shouldAllowAnswerPreview(meta);
         const staffIndex = this.normalizeIndex(meta.staffIndex);
         const insertIndex = this.normalizeInsertIndex(meta.insertIndex, sequence.length);
         const isDelete = meta.operation === 'delete';
@@ -189,6 +191,7 @@ class StaffInputController {
         const requiresSubmit = this.requiresSubmit();
         const targetLength = this.targetLength();
         const allowAnswerFifo = this.shouldAllowAnswerFifo(meta);
+        const allowAnswerPreview = this.shouldAllowAnswerPreview(meta);
         const staffIndex = this.normalizeIndex(meta.staffIndex);
         const isDelete = meta.operation === 'delete';
         if (isDelete) {
@@ -213,13 +216,15 @@ class StaffInputController {
             if (!requiresSubmit) {
                 this.onComparisonUpdate(sequence.slice());
             }
-            this.preview(note);
+            if (allowAnswerPreview) {
+                this.preview(note);
+            }
             this.evaluateAnswerState(sequence, { requiresSubmit, targetLength });
             return true;
         }
         if (answerLimit > 0 && sequence.length >= answerLimit) {
             if (!allowAnswerFifo) {
-                this.rejectAnswerInsertion(meta, { answerLimit, targetLength });
+                this.rejectAnswerInsertion(meta);
                 return true;
             }
             const removed = sequence.shift();
@@ -235,7 +240,9 @@ class StaffInputController {
                 this.onComparisonUpdate(sequence.slice());
             }
             this.removeOldestStaffEntries(1);
-            this.preview(note);
+            if (allowAnswerPreview) {
+                this.preview(note);
+            }
             this.evaluateAnswerState(sequence, { requiresSubmit, targetLength });
             return true;
         }
@@ -245,7 +252,9 @@ class StaffInputController {
         if (!requiresSubmit) {
             this.onComparisonUpdate(sequence.slice());
         }
-        this.preview(note);
+        if (allowAnswerPreview) {
+            this.preview(note);
+        }
         this.evaluateAnswerState(sequence, { requiresSubmit, targetLength });
         return true;
     }
@@ -297,21 +306,48 @@ class StaffInputController {
         return true;
     }
 
-    rejectAnswerInsertion(meta = {}, { answerLimit, targetLength }) {
-        this.revertStaffInsertion(meta);
-        if (typeof this.onFeedback === 'function') {
-            const limitLabel = Number.isInteger(targetLength) && targetLength > 0
-                ? targetLength
-                : answerLimit;
-            const boundedLabel = Number.isInteger(limitLabel) && limitLabel > 0
-                ? limitLabel
-                : this.answerLimit;
-            if (Number.isInteger(boundedLabel) && boundedLabel > 0) {
-                this.onFeedback(`Answer already has ${boundedLabel} notes. Remove one to make changes.`);
-            } else {
-                this.onFeedback('Answer stack is full. Remove a note to continue.');
-            }
+    shouldAllowAnswerPreview(meta = {}) {
+        if (meta && Object.prototype.hasOwnProperty.call(meta, 'allowAnswerPreview')) {
+            return Boolean(meta.allowAnswerPreview);
         }
+        const context = typeof this.getContext === 'function' ? this.getContext() : {};
+        if (context && Object.prototype.hasOwnProperty.call(context, 'allowAnswerPreview')) {
+            return Boolean(context.allowAnswerPreview);
+        }
+        return true;
+    }
+
+    hasReachedAnswerCapacity() {
+        const limit = this.answerLimit > 0 ? this.answerLimit : this.normalizeLimit(this.getAnswerLimit());
+        if (limit <= 0) return false;
+        const sequence = this.getAnswerSequence();
+        return Array.isArray(sequence) && sequence.length >= limit;
+    }
+
+    shouldAllowPointerInsert(meta = {}) {
+        if (this.phase !== 'answer') return true;
+        if (this.shouldAllowAnswerFifo(meta)) return true;
+        if (!this.hasReachedAnswerCapacity()) return true;
+        const staffIndex = this.normalizeIndex(meta.staffIndex);
+        if (Number.isInteger(staffIndex) && staffIndex >= 0) {
+            return true;
+        }
+        return false;
+    }
+
+    shouldAllowAnswerComparison(meta = {}) {
+        if (meta && Object.prototype.hasOwnProperty.call(meta, 'allowComparison')) {
+            return Boolean(meta.allowComparison);
+        }
+        const context = typeof this.getContext === 'function' ? this.getContext() : {};
+        if (context && Object.prototype.hasOwnProperty.call(context, 'allowAnswerComparison')) {
+            return Boolean(context.allowAnswerComparison);
+        }
+        return false;
+    }
+
+    rejectAnswerInsertion(meta = {}) {
+        this.revertStaffInsertion(meta);
     }
 
     revertStaffInsertion(meta = {}) {
@@ -356,7 +392,11 @@ class StaffInputController {
     emitAnswerChange(meta = {}) {
         if (typeof this.onAnswerChange !== 'function') return;
         const sequence = this.getAnswerSequence();
-        this.onAnswerChange(Array.isArray(sequence) ? sequence.slice() : [], meta);
+        const nextMeta = { ...meta };
+        if (!Object.prototype.hasOwnProperty.call(nextMeta, 'allowComparison')) {
+            nextMeta.allowComparison = this.shouldAllowAnswerComparison(meta);
+        }
+        this.onAnswerChange(Array.isArray(sequence) ? sequence.slice() : [], nextMeta);
     }
 
     normalizeIndex(value) {

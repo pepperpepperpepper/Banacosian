@@ -326,8 +326,12 @@ class StaffModule {
         this.staffInputState.onInput = onInput;
         this.staffInputState.midiMin = Number.isFinite(options.midiMin) ? options.midiMin : 36;
         this.staffInputState.midiMax = Number.isFinite(options.midiMax) ? options.midiMax : 96;
+        this.staffInputState.pointerInsertGuard = typeof options.pointerInsertGuard === 'function'
+            ? options.pointerInsertGuard
+            : null;
         this.staffInputState.enabled = enabled;
         if (!enabled) {
+            this.staffInputState.pointerInsertGuard = null;
             this.detachStaffInputListeners();
             await this.disableInteractionStaffInput();
             return;
