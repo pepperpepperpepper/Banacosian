@@ -22,6 +22,7 @@ import {
   readStaffConfigFromDataset,
   applyStaffSizingToState,
 } from '/js/vexflow/core/config.js';
+import { setMidiNotePreference } from '/js/vexflow/core/helpers/pitch.js';
 
 const fontSelect = document.getElementById('font-select');
 const keySelect = document.getElementById('key-select');
@@ -279,6 +280,7 @@ function applyKeySignatureToVoices(voices, keySig) {
 
 function updateInteractionPitchClasses(keySig) {
   const canonical = canonicalizeKeySignature(keySig) || 'C';
+  setMidiNotePreference(resolveAccidentalPreferenceForKey(canonical));
   const pitchClasses = buildPitchClassesForKeySignature(canonical);
   setPitchClassConfig({
     pitchClasses,
@@ -308,4 +310,10 @@ function buildPitchClassesForKeySignature(canonical) {
     return ((base + alteration) % 12 + 12) % 12;
   });
   return Array.from(new Set(classes));
+}
+
+function resolveAccidentalPreferenceForKey(keySig) {
+  const canonical = canonicalizeKeySignature(keySig) || 'C';
+  const flatKeys = new Set(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb']);
+  return flatKeys.has(canonical) ? 'flat' : 'sharp';
 }

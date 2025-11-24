@@ -29,6 +29,9 @@
             app.keyboardModule.setScaleType(app.scaleType);
             app.keyboardModule.updateKeyboardVisibility();
             app.keyboardModule.positionBlackKeys();
+            if (typeof app.syncStaffTonality === 'function') {
+                app.syncStaffTonality();
+            }
             if (typeof app.updateStaffPitchQuantizer === 'function') {
                 app.updateStaffPitchQuantizer();
             }

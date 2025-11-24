@@ -277,6 +277,13 @@ class MusicTheoryModule {
             return normalized;
         }
         const displayName = this.getDisplayNoteName(normalized, mode, tonic);
+        if (!displayName && (mode || '').toLowerCase() === 'chromatic') {
+            const pref = this.getKeySignaturePreference('chromatic', tonic);
+            const chromaticName = this.getChromaticDisplayName(normalized, pref);
+            const octaveMatch = normalized.match(/(-?\d+)$/);
+            const octave = octaveMatch ? octaveMatch[1] : '';
+            return `${chromaticName}${octave}`;
+        }
         const spelledName = this.standardizeNoteName(displayName);
         if (!spelledName) {
             return normalized;
@@ -556,11 +563,21 @@ class MusicTheoryModule {
         }
 
         const index = ((value % 12) + 12) % 12;
+        const normalizedMode = (mode || '').toLowerCase();
         const context = this.getKeySignatureContext(mode, tonic);
         const { preference, chromaDisplayMap } = context;
 
-        if (Array.isArray(chromaDisplayMap) && chromaDisplayMap[index]) {
+        if (normalizedMode !== 'chromatic'
+            && Array.isArray(chromaDisplayMap)
+            && chromaDisplayMap[index]) {
             return chromaDisplayMap[index];
+        }
+
+        if (normalizedMode === 'chromatic') {
+            const effectivePreference = preference === 'flat' ? 'flat' : 'sharp';
+            return effectivePreference === 'flat'
+                ? this.flatNoteNames[index]
+                : this.sharpNoteNames[index];
         }
 
         if (preference === 'flat') {

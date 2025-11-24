@@ -474,19 +474,31 @@ class MelodicDictation {
      */
     syncStaffTonality() {
         try {
+            const spellerMode = this.scaleType === 'chromatic' ? 'chromatic' : this.mode;
+            const spellerTonic = this.tonic;
             // Configure a speller that maps any incoming note to the display spelling for the active mode/tonic
             this.staffModule.setNoteSpeller((note) => (
                 this.musicTheory.spellNoteForStaff(
                     note,
-                    this.mode,
-                    this.tonic,
+                    spellerMode,
+                    spellerTonic,
                     { preserveExplicitAccidentals: false },
                 )
             ));
 
             // Choose the key signature to display on the stave. Use the tonic spelling from MusicTheory.
-            const keySig = this.musicTheory.getDisplayTonicName(this.mode, this.tonic) || 'C';
+            const keySigMode = this.scaleType === 'chromatic' ? 'chromatic' : this.mode;
+            const keySigPreference = this.musicTheory.getKeySignaturePreference(keySigMode, this.tonic);
+            let keySig = this.musicTheory.getDisplayTonicName(keySigMode, this.tonic) || 'C';
+            if (this.scaleType === 'chromatic' && (!keySig || !/^[A-G][b#]?$/.test(keySig))) {
+                keySig = keySigPreference === 'flat' ? `${this.tonic}b` : `${this.tonic}#`;
+            }
             this.staffModule.setKeySignature(keySig);
+            if (typeof this.staffModule.setAccidentalPreference === 'function') {
+                this.staffModule.setAccidentalPreference(
+                    keySigPreference === 'flat' ? 'flat' : 'sharp',
+                );
+            }
             this.updateStaffPitchQuantizer();
         } catch (e) {
             console.warn('Failed to sync staff tonality:', e);

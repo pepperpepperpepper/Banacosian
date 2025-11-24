@@ -184,6 +184,7 @@ class StaffModule {
         if (hasDocument) {
             this.initializeDisplay();
         }
+        this.setAccidentalPreference('flat');
     }
 
     shouldStemless(mode = this.dictationMode) {
@@ -198,6 +199,24 @@ class StaffModule {
         } else {
             this.noteSpeller = null;
         }
+    }
+
+    setAccidentalPreference(preference) {
+        const normalized = this.normalizeAccidentalPreference(preference);
+        this.staffInputState.accidentalPreference = normalized;
+        const globalScope = typeof window !== 'undefined' ? window : null;
+        const setter = globalScope?.VexflowPitch?.setMidiNotePreference;
+        if (typeof setter === 'function') {
+            setter(normalized);
+        }
+    }
+
+    normalizeAccidentalPreference(value) {
+        if (!value) return null;
+        const normalized = String(value).toLowerCase();
+        if (normalized === 'flat') return 'flat';
+        if (normalized === 'sharp' || normalized === 'natural') return 'sharp';
+        return null;
     }
 
     spell(note) {

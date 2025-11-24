@@ -185,6 +185,10 @@
         && spellerTonic) {
         const mode = state.keySignature ? 'ionian' : 'chromatic';
         staff.setNoteSpeller((note) => theory.spellNoteForStaff(note, mode, spellerTonic));
+        if (typeof staff.setAccidentalPreference === 'function') {
+          const pref = theory.getKeySignaturePreference(mode, spellerTonic);
+          staff.setAccidentalPreference(pref === 'flat' ? 'flat' : 'sharp');
+        }
       }
     };
 

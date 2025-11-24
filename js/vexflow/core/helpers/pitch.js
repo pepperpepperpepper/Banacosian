@@ -28,6 +28,21 @@ export const SEMITONE_TO_FLAT = [
   { letter: 'b', accidental: null },
 ];
 
+export const SEMITONE_TO_SHARP = [
+  { letter: 'c', accidental: null },
+  { letter: 'c', accidental: '#' },
+  { letter: 'd', accidental: null },
+  { letter: 'd', accidental: '#' },
+  { letter: 'e', accidental: null },
+  { letter: 'f', accidental: null },
+  { letter: 'f', accidental: '#' },
+  { letter: 'g', accidental: null },
+  { letter: 'g', accidental: '#' },
+  { letter: 'a', accidental: null },
+  { letter: 'a', accidental: '#' },
+  { letter: 'b', accidental: null },
+];
+
 export const ACCIDENTAL_MAP = {
   sharp: '#',
   flat: 'b',
@@ -92,7 +107,32 @@ export function keyToMidi(key, accidental = null) {
   return 12 * (octave + 1) + base + accidentalOffset;
 }
 
-export function midiToKeySpec(midi) {
+let midiNotePreference = 'flat';
+
+function normalizePreference(value) {
+  if (!value) return null;
+  const normalized = String(value).toLowerCase();
+  if (normalized === 'flat') return 'flat';
+  if (normalized === 'sharp') return 'sharp';
+  if (normalized === 'natural') return 'sharp';
+  return null;
+}
+
+function selectSemitoneInfo(semitone, override) {
+  const pref = override || midiNotePreference || 'flat';
+  if (pref === 'sharp') {
+    return SEMITONE_TO_SHARP[semitone] || SEMITONE_TO_SHARP[0];
+  }
+  return SEMITONE_TO_FLAT[semitone] || SEMITONE_TO_FLAT[0];
+}
+
+export function setMidiNotePreference(preference) {
+  const normalized = normalizePreference(preference) || 'flat';
+  midiNotePreference = normalized;
+  return midiNotePreference;
+}
+
+export function midiToKeySpec(midi, options = {}) {
   if (!Number.isFinite(midi)) {
     return {
       key: 'c/4',
@@ -104,7 +144,8 @@ export function midiToKeySpec(midi) {
   }
   const rounded = Math.round(midi);
   const semitone = mod(rounded, 12);
-  const info = SEMITONE_TO_FLAT[semitone] || SEMITONE_TO_FLAT[0];
+  const preferred = normalizePreference(options.preference);
+  const info = selectSemitoneInfo(semitone, preferred);
   const letter = info.letter || 'c';
   const octave = Math.floor(rounded / 12) - 1;
   const key = `${letter}/${octave}`;
@@ -250,4 +291,11 @@ export function findClosestPitchForY(targetY, clef = 'treble', options = {}) {
     } : null,
   });
   return best;
+}
+
+if (typeof window !== 'undefined') {
+  window.VexflowPitch = window.VexflowPitch || {};
+  window.VexflowPitch.setMidiNotePreference = setMidiNotePreference;
+  window.VexflowPitch.formatPitchLabel = formatPitchLabel;
+  window.VexflowPitch.findClosestPitchForY = findClosestPitchForY;
 }
