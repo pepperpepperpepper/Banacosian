@@ -188,6 +188,7 @@ class StaffInputController {
         const answerLimit = this.answerLimit > 0 ? this.answerLimit : this.normalizeLimit(this.getAnswerLimit());
         const requiresSubmit = this.requiresSubmit();
         const targetLength = this.targetLength();
+        const allowAnswerFifo = this.shouldAllowAnswerFifo(meta);
         const staffIndex = this.normalizeIndex(meta.staffIndex);
         const isDelete = meta.operation === 'delete';
         if (isDelete) {
@@ -217,6 +218,10 @@ class StaffInputController {
             return true;
         }
         if (answerLimit > 0 && sequence.length >= answerLimit) {
+            if (!allowAnswerFifo) {
+                this.rejectAnswerInsertion(meta, { answerLimit, targetLength });
+                return true;
+            }
             const removed = sequence.shift();
             sequence.push(note);
             this.setAnswerSequence(sequence);
@@ -279,6 +284,67 @@ class StaffInputController {
             return context.targetLength;
         }
         return this.answerLimit;
+    }
+
+    shouldAllowAnswerFifo(meta = {}) {
+        if (meta && Object.prototype.hasOwnProperty.call(meta, 'allowAnswerFifo')) {
+            return Boolean(meta.allowAnswerFifo);
+        }
+        const context = typeof this.getContext === 'function' ? this.getContext() : {};
+        if (context && Object.prototype.hasOwnProperty.call(context, 'allowAnswerFifo')) {
+            return Boolean(context.allowAnswerFifo);
+        }
+        return true;
+    }
+
+    rejectAnswerInsertion(meta = {}, { answerLimit, targetLength }) {
+        this.revertStaffInsertion(meta);
+        if (typeof this.onFeedback === 'function') {
+            const limitLabel = Number.isInteger(targetLength) && targetLength > 0
+                ? targetLength
+                : answerLimit;
+            const boundedLabel = Number.isInteger(limitLabel) && limitLabel > 0
+                ? limitLabel
+                : this.answerLimit;
+            if (Number.isInteger(boundedLabel) && boundedLabel > 0) {
+                this.onFeedback(`Answer already has ${boundedLabel} notes. Remove one to make changes.`);
+            } else {
+                this.onFeedback('Answer stack is full. Remove a note to continue.');
+            }
+        }
+    }
+
+    revertStaffInsertion(meta = {}) {
+        const index = this.inferStaffRemovalIndex(meta);
+        if (!Number.isInteger(index) || index < 0) return;
+        if (!this.staffModule || typeof this.staffModule.removeNoteAt !== 'function') return;
+        try {
+            this.staffModule.removeNoteAt(index);
+        } catch (error) {
+            console.warn('[StaffInputController] Unable to revert staff insertion:', error);
+        }
+    }
+
+    inferStaffRemovalIndex(meta = {}) {
+        const staffCount = (this.staffModule && typeof this.staffModule.getStaffNotesCount === 'function')
+            ? this.staffModule.getStaffNotesCount()
+            : null;
+        const candidate = this.normalizeIndex(
+            Object.prototype.hasOwnProperty.call(meta, 'insertIndex')
+                ? meta.insertIndex
+                : meta.staffIndex,
+        );
+        if (candidate != null) {
+            if (Number.isInteger(staffCount) && staffCount > 0) {
+                if (candidate >= staffCount) return staffCount - 1;
+                if (candidate < 0) return 0;
+            }
+            return Math.max(0, candidate);
+        }
+        if (Number.isInteger(staffCount) && staffCount > 0) {
+            return staffCount - 1;
+        }
+        return null;
     }
 
     emitPracticeChange(meta = {}) {

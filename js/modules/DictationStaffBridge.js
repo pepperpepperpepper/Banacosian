@@ -30,6 +30,7 @@
                 getContext: () => ({
                     targetLength: app.currentSequence.length,
                     requiresSubmit: app.inputMode === 'staff' && app.currentSequence.length > 0,
+                    allowAnswerFifo: !app.hasActiveSequence(),
                 }),
                 previewService: app.audioPreview,
                 onPracticeChange: (sequence) => {
