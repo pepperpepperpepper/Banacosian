@@ -92,6 +92,9 @@
             },
         });
         controller.setEnabled(true);
+        if (typeof this.applyAccidentalPreferenceToHelpers === 'function') {
+            this.applyAccidentalPreferenceToHelpers();
+        }
         if (typeof this.applyPitchQuantizerToInteraction === 'function') {
             this.applyPitchQuantizerToInteraction();
         }

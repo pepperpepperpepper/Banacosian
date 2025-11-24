@@ -204,11 +204,7 @@ class StaffModule {
     setAccidentalPreference(preference) {
         const normalized = this.normalizeAccidentalPreference(preference);
         this.staffInputState.accidentalPreference = normalized;
-        const globalScope = typeof window !== 'undefined' ? window : null;
-        const setter = globalScope?.VexflowPitch?.setMidiNotePreference;
-        if (typeof setter === 'function') {
-            setter(normalized);
-        }
+        this.applyAccidentalPreferenceToHelpers();
     }
 
     normalizeAccidentalPreference(value) {
@@ -217,6 +213,15 @@ class StaffModule {
         if (normalized === 'flat') return 'flat';
         if (normalized === 'sharp' || normalized === 'natural') return 'sharp';
         return null;
+    }
+
+    applyAccidentalPreferenceToHelpers() {
+        const preference = this.staffInputState?.accidentalPreference;
+        const globalScope = typeof window !== 'undefined' ? window : null;
+        const setter = globalScope?.VexflowPitch?.setMidiNotePreference;
+        if (typeof setter === 'function' && preference) {
+            setter(preference);
+        }
     }
 
     spell(note) {

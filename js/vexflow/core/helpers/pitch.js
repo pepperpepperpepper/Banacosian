@@ -148,7 +148,8 @@ export function midiToKeySpec(midi, options = {}) {
   const info = selectSemitoneInfo(semitone, preferred);
   const letter = info.letter || 'c';
   const octave = Math.floor(rounded / 12) - 1;
-  const key = `${letter}/${octave}`;
+  const accidental = info.accidental || '';
+  const key = accidental ? `${letter}${accidental}/${octave}` : `${letter}/${octave}`;
   return {
     key,
     letter,

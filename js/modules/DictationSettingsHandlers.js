@@ -6,9 +6,73 @@
             this.app = appInstance;
         }
 
+        applyLoadedSettings(settings = {}) {
+            const app = this.app;
+            if (!settings || typeof settings !== 'object') {
+                return;
+            }
+            if (settings.sequenceLength != null) {
+                app.sequenceLength = this.normalizeSequenceLength(settings.sequenceLength);
+            }
+            if (settings.scaleType) {
+                app.scaleType = settings.scaleType;
+            }
+            if (settings.dictationType) {
+                app.dictationType = settings.dictationType === 'harmonic' ? 'harmonic' : 'melodic';
+            }
+            if (settings.mode) {
+                app.mode = settings.mode;
+            }
+            if (settings.tonic) {
+                app.tonic = settings.tonic;
+            }
+            if (settings.timbre) {
+                try {
+                    const applied = app.audioModule.setTimbre(settings.timbre);
+                    if (applied) {
+                        app.timbre = applied;
+                    } else {
+                        app.timbre = settings.timbre;
+                    }
+                } catch (error) {
+                    console.warn('Failed to apply saved timbre:', error);
+                    app.timbre = settings.timbre;
+                }
+            }
+            if (settings.staffFont) {
+                app.staffFont = settings.staffFont;
+            }
+            if (settings.disabledKeysStyle) {
+                app.disabledKeysStyle = settings.disabledKeysStyle === 'invisible' ? 'invisible' : 'hatched';
+            }
+            if (settings.answerRevealMode) {
+                app.answerRevealMode = settings.answerRevealMode === 'skip' ? 'skip' : 'show';
+            }
+            if (settings.inputMode) {
+                app.inputMode = settings.inputMode === 'staff' ? 'staff' : 'keyboard';
+            }
+        }
+
+        normalizeSequenceLength(rawValue) {
+            const app = this.app;
+            if (app.settingsManager && typeof app.settingsManager.normalizeSequenceLength === 'function') {
+                return app.settingsManager.normalizeSequenceLength(rawValue);
+            }
+            const parsed = Number.parseInt(rawValue, 10);
+            const MIN_SEQUENCE_LENGTH = (typeof MIN_SEQUENCE_LENGTH !== 'undefined') ? MIN_SEQUENCE_LENGTH : 2;
+            const MAX_SEQUENCE_LENGTH = (typeof MAX_SEQUENCE_LENGTH !== 'undefined') ? MAX_SEQUENCE_LENGTH : 5;
+            const DEFAULT_SEQUENCE_LENGTH = (typeof DEFAULT_SEQUENCE_LENGTH !== 'undefined') ? DEFAULT_SEQUENCE_LENGTH : 3;
+
+            if (!Number.isFinite(parsed)) return DEFAULT_SEQUENCE_LENGTH;
+            return Math.min(
+                Math.max(parsed, MIN_SEQUENCE_LENGTH),
+                MAX_SEQUENCE_LENGTH,
+            );
+        }
+
         handleDifficultyChange(event) {
             const app = this.app;
-            const normalized = app.normalizeSequenceLength(
+            const normalized = this.normalizeSequenceLength(
                 event && event.target ? event.target.value : app.sequenceLength,
             );
             app.sequenceLength = normalized;
@@ -29,11 +93,11 @@
             app.keyboardModule.setScaleType(app.scaleType);
             app.keyboardModule.updateKeyboardVisibility();
             app.keyboardModule.positionBlackKeys();
-            if (typeof app.syncStaffTonality === 'function') {
-                app.syncStaffTonality();
+            if (app.staffBridge && typeof app.staffBridge.syncStaffTonality === 'function') {
+                app.staffBridge.syncStaffTonality();
             }
-            if (typeof app.updateStaffPitchQuantizer === 'function') {
-                app.updateStaffPitchQuantizer();
+            if (app.staffBridge && typeof app.staffBridge.updateStaffPitchQuantizer === 'function') {
+                app.staffBridge.updateStaffPitchQuantizer();
             }
             app.persistSettings();
         }
@@ -142,7 +206,9 @@
                 app.uiModule.setTonicValue(app.tonic);
                 app.keyboardModule.updateKeyboardVisibility();
                 app.keyboardModule.positionBlackKeys();
-                app.syncStaffTonality();
+                if (app.staffBridge && typeof app.staffBridge.syncStaffTonality === 'function') {
+                    app.staffBridge.syncStaffTonality();
+                }
 
                 app.uiController.hideStatusArea();
                 app.currentSequence = [];
@@ -184,7 +250,9 @@
                 app.uiModule.setTonicValue(app.tonic);
                 app.keyboardModule.updateKeyboardVisibility();
                 app.keyboardModule.positionBlackKeys();
-                app.syncStaffTonality();
+                if (app.staffBridge && typeof app.staffBridge.syncStaffTonality === 'function') {
+                    app.staffBridge.syncStaffTonality();
+                }
 
                 app.uiController.hideStatusArea();
                 app.currentSequence = [];

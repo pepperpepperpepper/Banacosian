@@ -100,7 +100,10 @@
 
         getPracticeStackLimit() {
             const app = this.app;
-            return app.normalizeSequenceLength(app.sequenceLength);
+            if (app.settingsHandlers && typeof app.settingsHandlers.normalizeSequenceLength === 'function') {
+                return app.settingsHandlers.normalizeSequenceLength(app.sequenceLength);
+            }
+            return 3; // Fallback
         }
 
         getAnswerStackLimit() {
@@ -191,6 +194,168 @@
             if (shouldUpdateComparison) {
                 this.tryUpdateStaffComparison(sequence);
             }
+        }
+
+        /**
+         * Keep the staff's key signature and enharmonic spelling aligned with the current mode/tonic.
+         */
+        syncStaffTonality() {
+            const app = this.app;
+            try {
+                const spellerMode = app.scaleType === 'chromatic' ? 'chromatic' : app.mode;
+                const spellerTonic = app.tonic;
+                // Configure a speller that maps any incoming note to the display spelling for the active mode/tonic
+                app.staffModule.setNoteSpeller((note) => (
+                    app.musicTheory.spellNoteForStaff(
+                        note,
+                        spellerMode,
+                        spellerTonic,
+                        { preserveExplicitAccidentals: false },
+                    )
+                ));
+
+                // Choose the key signature to display on the stave. Use the tonic spelling from MusicTheory.
+                const keySigMode = app.scaleType === 'chromatic' ? 'chromatic' : app.mode;
+                const keySigPreference = app.musicTheory.getKeySignaturePreference(keySigMode, app.tonic);
+                let keySig = app.musicTheory.getDisplayTonicName(keySigMode, app.tonic) || 'C';
+                if (app.scaleType === 'chromatic' && (!keySig || !/^[A-G][b#]?$/.test(keySig))) {
+                    keySig = keySigPreference === 'flat' ? `${app.tonic}b` : `${app.tonic}#`;
+                }
+                app.staffModule.setKeySignature(keySig);
+                if (typeof app.staffModule.setAccidentalPreference === 'function') {
+                    app.staffModule.setAccidentalPreference(
+                        keySigPreference === 'flat' ? 'flat' : 'sharp',
+                    );
+                }
+                this.updateStaffPitchQuantizer();
+            } catch (e) {
+                console.warn('Failed to sync staff tonality:', e);
+            }
+        }
+
+        updateStaffPitchQuantizer() {
+            const app = this.app;
+            if (!app.staffModule || typeof app.staffModule.setPitchQuantizer !== 'function') {
+                return;
+            }
+
+            const midiMin = Number.isFinite(app.staffModule?.staffInputState?.midiMin)
+                ? app.staffModule.staffInputState.midiMin
+                : 36;
+            const midiMax = Number.isFinite(app.staffModule?.staffInputState?.midiMax)
+                ? app.staffModule.staffInputState.midiMax
+                : 96;
+
+            if (!app.musicTheory) {
+                if (typeof app.staffModule.setPitchClassConfig === 'function') {
+                    app.staffModule.setPitchClassConfig(null);
+                }
+                if (typeof window !== 'undefined') {
+                    window.__EarStaffQuantizerDebug = {
+                        active: false,
+                        scaleType: app.scaleType,
+                        mode: app.mode,
+                        tonic: app.tonic,
+                        reason: 'no-music-theory',
+                        timestamp: Date.now(),
+                    };
+                }
+                return;
+            }
+
+            if (app.scaleType === 'chromatic') {
+                const chromaticPitchClasses = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+                if (typeof app.staffModule.setPitchClassConfig === 'function') {
+                    app.staffModule.setPitchClassConfig({
+                        pitchClasses: chromaticPitchClasses,
+                        midiMin,
+                        midiMax,
+                    });
+                }
+                if (typeof window !== 'undefined') {
+                    window.__EarStaffQuantizerDebug = {
+                        active: true,
+                        scaleType: app.scaleType,
+                        mode: app.mode,
+                        tonic: app.tonic,
+                        pitchClasses: chromaticPitchClasses,
+                        timestamp: Date.now(),
+                    };
+                }
+                return;
+            }
+
+            let allowedNotes = [];
+            try {
+                allowedNotes = app.musicTheory.generateDiatonicNotes(app.mode, app.tonic) || [];
+            } catch (error) {
+                console.warn('Unable to build diatonic notes for staff quantizer:', error);
+                allowedNotes = [];
+            }
+            if (!Array.isArray(allowedNotes) || allowedNotes.length === 0) {
+                app.staffModule.setPitchQuantizer(null);
+                return;
+            }
+            const pitchClasses = new Set();
+            allowedNotes.forEach((note) => {
+                if (!note || typeof note !== 'string') return;
+                try {
+                    const midi = app.musicTheory.noteToSemitone(note);
+                    if (typeof midi === 'number' && Number.isFinite(midi)) {
+                        const normalized = ((Math.round(midi) % 12) + 12) % 12;
+                        pitchClasses.add(normalized);
+                    }
+                } catch (error) {
+                    console.warn('Unable to convert note for quantizer:', note, error);
+                }
+            });
+            if (pitchClasses.size === 0) {
+                if (typeof window !== 'undefined') {
+                    window.__EarStaffQuantizerDebug = {
+                        active: false,
+                        scaleType: app.scaleType,
+                        mode: app.mode,
+                        tonic: app.tonic,
+                        reason: 'noPitchClasses',
+                        timestamp: Date.now(),
+                    };
+                }
+                if (typeof app.staffModule.setPitchClassConfig === 'function') {
+                    app.staffModule.setPitchClassConfig(null);
+                }
+                return;
+            }
+            const pitchClassList = Array.from(pitchClasses);
+            if (typeof app.staffModule.setPitchClassConfig === 'function') {
+                app.staffModule.setPitchClassConfig({
+                    pitchClasses: pitchClassList,
+                    midiMin,
+                    midiMax,
+                });
+            }
+            if (typeof window !== 'undefined') {
+                window.__EarStaffQuantizerDebug = {
+                    active: true,
+                    scaleType: app.scaleType,
+                    mode: app.mode,
+                    tonic: app.tonic,
+                    pitchClasses: pitchClassList,
+                    timestamp: Date.now(),
+                };
+            }
+        }
+
+        /**
+         * Convert an internal note identifier to a display label
+         * @param {string} note
+         * @returns {string}
+         */
+        formatNoteLabel(note) {
+            const app = this.app;
+            if (!note || typeof note !== 'string' || note === '?') {
+                return note || '';
+            }
+            return app.musicTheory.getDisplayNoteName(note, app.mode, app.tonic) || note;
         }
     }
 
