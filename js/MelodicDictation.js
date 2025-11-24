@@ -142,46 +142,6 @@ class MelodicDictation {
     }
 
     /**
-     * Passthrough helpers expected by other modules
-     */
-    clearStaffInputTracking(options = {}) {
-        if (this.staffBridge && typeof this.staffBridge.clearStaffInputTracking === 'function') {
-            this.staffBridge.clearStaffInputTracking(options);
-            return;
-        }
-        // Fallback: clear practice and optionally reset staff visuals
-        const { clearPractice = false, resetStaff = false } = options || {};
-        if (clearPractice) {
-            this.practiceSequence = [];
-            if (typeof this.renderPracticePreviewSequence === 'function') {
-                this.renderPracticePreviewSequence([]);
-            }
-        }
-        if (resetStaff && this.staffModule) {
-            this.staffModule.clearStaffNotes();
-            this.staffModule.clearTonicHighlights();
-            if (this.uiModule && typeof this.uiModule.updateUserSequenceDisplay === 'function') {
-                this.uiModule.updateUserSequenceDisplay([], this.currentSequence || [], { dictationType: this.dictationType });
-            }
-        }
-    }
-
-    updateStaffSubmitState() {
-        if (this.staffBridge && typeof this.staffBridge.updateStaffSubmitState === 'function') {
-            this.staffBridge.updateStaffSubmitState();
-            return;
-        }
-        // Fallback: disable submit button via UI controller if available
-        if (this.uiController && typeof this.uiController.setStaffSubmitEnabled === 'function') {
-            const shouldEnable = this.inputMode === 'staff'
-                && this.staffPendingSubmission
-                && Array.isArray(this.currentSequence)
-                && this.currentSequence.length > 0;
-            this.uiController.setStaffSubmitEnabled(!!shouldEnable);
-        }
-    }
-
-    /**
      * Initialize the application
      */
     async initialize() {
