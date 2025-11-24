@@ -381,6 +381,36 @@ class MelodicDictation {
      * Setup all event listeners
      */
     setupEventListeners() {
+        // Global audio unlock to ensure context resumes on first interaction
+        const unlockAudio = async () => {
+            if (this.audioModule && this.audioModule.audioContext) {
+                if (this.audioModule.audioContext.state === 'suspended') {
+                    try {
+                        this.audioModule.audioContext.resume();
+                    } catch (e) {
+                        console.warn('Audio resume failed', e);
+                    }
+                }
+                if (this.audioModule.audioContext.state === 'running') {
+                    document.removeEventListener('click', unlockAudio);
+                    document.removeEventListener('keydown', unlockAudio);
+                    document.removeEventListener('touchstart', unlockAudio);
+                    document.removeEventListener('mousedown', unlockAudio);
+                }
+            }
+        };
+        document.addEventListener('click', unlockAudio);
+        document.addEventListener('keydown', unlockAudio);
+        document.addEventListener('touchstart', unlockAudio);
+        document.addEventListener('mousedown', unlockAudio);
+
+        // Ensure AudioContext is closed on reload/unload to prevent artifacts
+        window.addEventListener('beforeunload', () => {
+            if (this.audioModule && this.audioModule.audioContext) {
+                this.audioModule.audioContext.close().catch(() => {});
+            }
+        });
+
         // Setup UI event listeners
         this.uiController.bindEventHandlers({
             onNewSequence: () => this.sequenceController.generateNewSequence(),

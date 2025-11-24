@@ -71,7 +71,13 @@ class AudioPreviewService {
         const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
         this.lastPreviewTime = now;
         try {
-            const playPromise = this.audioModule.playTone(frequency, duration);
+            let playPromise;
+            if (typeof this.audioModule.playPreviewTone === 'function') {
+                playPromise = this.audioModule.playPreviewTone(frequency, duration);
+            } else {
+                playPromise = this.audioModule.playTone(frequency, duration);
+            }
+            
             if (playPromise && typeof playPromise.catch === 'function') {
                 playPromise.catch((error) => {
                     console.warn('[AudioPreview] playback failed:', error);
