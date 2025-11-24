@@ -18,12 +18,15 @@ class AudioModule {
         this.activeSustainVoices = new Map();
         // Pending sustain starts that may still be initializing AudioContext
         this.pendingSustainStarts = new Map(); // key -> { cancel: boolean }
+        // Track the active preview voice to enforce monophonic previews
+        this.activePreviewVoice = null;
     }
 
     /**
      * Initialize the Web Audio API context
      */
     async initializeAudio() {
+        if (this.audioContext) return; // Prevent double init
         try {
             this.audioContext = new (window.AudioContext ||
                 window.webkitAudioContext)();
@@ -37,6 +40,56 @@ class AudioModule {
     }
 
     /**
+     * Play a single tone for preview purposes.
+     * Modified to allow polyphony (chords) by NOT stopping previous voices.
+     * @param {number} frequency 
+     * @param {number} duration 
+     */
+    async playPreviewTone(frequency, duration = 0.5) {
+        // Monophonic preview: stop the previous preview voice before starting a new one
+        try { this._stopActivePreviewVoice(0.03); } catch (_) {}
+
+        if (!this.audioContext) {
+            await this.initializeAudio();
+        }
+
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
+
+        if (typeof frequency !== 'number' || !Number.isFinite(frequency)) {
+            return;
+        }
+
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        const timbre = this.getTimbreConfig(this.currentTimbreId);
+        const waveform = timbre.type || 'sine';
+        const peakGain = typeof timbre.peakGain === 'number' ? timbre.peakGain : 0.3;
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+        oscillator.type = waveform;
+
+        const now = this.audioContext.currentTime;
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(peakGain, now + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(Math.max(peakGain * 0.03, 0.015), now + duration);
+
+        oscillator.start(now);
+        oscillator.stop(now + duration);
+
+        // Track as active preview voice so the next preview can fade this one first
+        this.activePreviewVoice = { osc: oscillator, gain: gainNode };
+        try {
+            oscillator.onended = () => { if (this.activePreviewVoice && this.activePreviewVoice.osc === oscillator) this.activePreviewVoice = null; };
+        } catch (_) {}
+    }
+
+    /**
      * Play a tone with specified frequency and duration
      * @param {number} frequency - The frequency in Hz
      * @param {number} duration - The duration in seconds (default: 0.5)
@@ -47,8 +100,8 @@ class AudioModule {
             await this.initializeAudio();
         }
 
-        if (this.audioContext.state === "suspended") {
-            await this.audioContext.resume();
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
         }
 
         if (typeof frequency !== "number" || !Number.isFinite(frequency)) {
@@ -163,8 +216,8 @@ class AudioModule {
         if (!this.audioContext) {
             await this.initializeAudio();
         }
-        if (this.audioContext.state === "suspended") {
-            await this.audioContext.resume();
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
         }
 
         const sanitized = frequencies
@@ -220,7 +273,7 @@ class AudioModule {
             await this.initializeAudio();
         }
         if (this.audioContext.state === 'suspended') {
-            await this.audioContext.resume();
+            this.audioContext.resume();
         }
 
         const sanitized = frequencies
@@ -456,11 +509,51 @@ class AudioModule {
     }
 
     /**
+     * Reset the audio module, closing the context and clearing active voices.
+     * Useful for cleanup on page unload or tab switch to prevent ghost notes.
+     */
+    async reset() {
+        this.activeSustainVoices.clear();
+        this.pendingSustainStarts.clear();
+        if (this.audioContext) {
+            const ctx = this.audioContext;
+            this.audioContext = null; // Nullify immediately
+            try {
+                await ctx.close();
+            } catch (e) {
+                // Ignore errors if already closed
+            }
+        }
+    }
+
+    /**
      * Get the audio context
      * @returns {AudioContext|null}
      */
     getAudioContext() {
         return this.audioContext;
+    }
+
+    /**
+     * Stop currently active preview voice (if any) with a short release.
+     * @param {number} releaseSec
+     */
+    _stopActivePreviewVoice(releaseSec = 0.04) {
+        const voice = this.activePreviewVoice;
+        if (!voice || !this.audioContext) return;
+        try {
+            const now = this.audioContext.currentTime;
+            if (voice.gain && voice.gain.gain) {
+                const current = voice.gain.gain.value;
+                voice.gain.gain.cancelScheduledValues(now);
+                voice.gain.gain.setValueAtTime(current, now);
+                voice.gain.gain.linearRampToValueAtTime(0.0001, now + Math.max(0.005, releaseSec));
+            }
+            if (voice.osc) {
+                voice.osc.stop(now + Math.max(0.01, releaseSec + 0.005));
+            }
+        } catch (_) {}
+        this.activePreviewVoice = null;
     }
 }
 

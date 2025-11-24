@@ -65,8 +65,12 @@
   background: currentColor;
   animation: interval-ripple 550ms ease-out;
 }
+
 @keyframes interval-ripple {
-  to { transform: scale(12); opacity: 0; }
+  to {
+    transform: scale(12);
+    opacity: 0;
+  }
 }
 
 .control-btn {

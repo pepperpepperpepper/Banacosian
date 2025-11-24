@@ -2,8 +2,13 @@
  * Storage Module - Handles Google Drive integration and data persistence
  */
 class StorageModule {
-    constructor(scoringModule) {
+    constructor(scoringModule, settingsManager = null) {
         this.scoringModule = scoringModule;
+        this.settingsManager = settingsManager || null;
+    }
+
+    setSettingsManager(manager) {
+        this.settingsManager = manager || null;
     }
 
     /**
@@ -144,7 +149,7 @@ class StorageModule {
      * @returns {Object} Settings object
      */
     getCurrentSettings(sequenceLength, scaleType, dictationType, mode, tonic, timbre, staffFont, disabledKeysStyle, answerRevealMode, inputMode) {
-        return {
+        const snapshot = {
             sequenceLength: sequenceLength,
             scaleType: scaleType,
             dictationType: dictationType,
@@ -156,6 +161,10 @@ class StorageModule {
             answerRevealMode: answerRevealMode,
             inputMode: inputMode
         };
+        if (this.settingsManager && typeof this.settingsManager.buildSnapshot === 'function') {
+            return this.settingsManager.buildSnapshot(snapshot);
+        }
+        return snapshot;
     }
 }
 

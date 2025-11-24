@@ -62,7 +62,7 @@
 
 .staff-input-controls {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 12px;
   margin: 8px 0 4px;
   align-items: center;
@@ -74,6 +74,26 @@
 
 .staff-input-controls .control-btn {
   flex: 0 0 auto;
+}
+
+#staffSubmitBtn {
+  font-size: clamp(1.2rem, 2vw, 2rem);
+  padding: 1.25rem 3rem;
+  min-width: min(420px, 90vw);
+  width: auto;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  margin: 16px auto;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#staffSubmitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (min-width: 1024px) {

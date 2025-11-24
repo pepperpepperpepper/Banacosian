@@ -256,13 +256,15 @@ class MusicTheoryModule {
 
     /**
      * Spell a note for staff rendering while respecting mode/tonic preference.
-     * Notes with explicit accidentals are preserved; naturals are re-spelled using the preference map.
+     * Optionally re-spells explicit accidentals so staff notation matches the active key signature.
      * @param {string} note
      * @param {string} mode
      * @param {string} tonic
+     * @param {{preserveExplicitAccidentals?: boolean}} [options]
      * @returns {string}
      */
-    spellNoteForStaff(note, mode, tonic) {
+    spellNoteForStaff(note, mode, tonic, options = {}) {
+        const { preserveExplicitAccidentals = true } = options || {};
         if (!note || typeof note !== 'string') {
             return note;
         }
@@ -271,10 +273,17 @@ class MusicTheoryModule {
         if (midi === null) {
             return normalized;
         }
-        if (this.noteHasExplicitAccidental(normalized)) {
+        if (preserveExplicitAccidentals && this.noteHasExplicitAccidental(normalized)) {
             return normalized;
         }
         const displayName = this.getDisplayNoteName(normalized, mode, tonic);
+        if (!displayName && (mode || '').toLowerCase() === 'chromatic') {
+            const pref = this.getKeySignaturePreference('chromatic', tonic);
+            const chromaticName = this.getChromaticDisplayName(normalized, pref);
+            const octaveMatch = normalized.match(/(-?\d+)$/);
+            const octave = octaveMatch ? octaveMatch[1] : '';
+            return `${chromaticName}${octave}`;
+        }
         const spelledName = this.standardizeNoteName(displayName);
         if (!spelledName) {
             return normalized;
@@ -554,11 +563,21 @@ class MusicTheoryModule {
         }
 
         const index = ((value % 12) + 12) % 12;
+        const normalizedMode = (mode || '').toLowerCase();
         const context = this.getKeySignatureContext(mode, tonic);
         const { preference, chromaDisplayMap } = context;
 
-        if (Array.isArray(chromaDisplayMap) && chromaDisplayMap[index]) {
+        if (normalizedMode !== 'chromatic'
+            && Array.isArray(chromaDisplayMap)
+            && chromaDisplayMap[index]) {
             return chromaDisplayMap[index];
+        }
+
+        if (normalizedMode === 'chromatic') {
+            const effectivePreference = preference === 'flat' ? 'flat' : 'sharp';
+            return effectivePreference === 'flat'
+                ? this.flatNoteNames[index]
+                : this.sharpNoteNames[index];
         }
 
         if (preference === 'flat') {

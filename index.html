@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Dictation - Ear Training</title>
     <link rel="stylesheet" href="css/styles.css">
-    <script src="/js/shared/blockContextMenu.js"></script>
 </head>
 <body>
             <div class="container ui-card">
@@ -15,7 +17,7 @@
         
         <div class="game-controls">
             <div class="main-action-row">
-                <button class="control-btn ui-pill" id="newSequenceBtn">Start</button>
+                <button class="control-btn ui-pill" id="newSequenceBtn">Start Game</button>
                 <button class="control-btn ui-pill" id="playSequenceBtn" disabled>Replay</button>
                 <button class="control-btn ui-pill" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel" aria-haspopup="true">Settings</button>
             </div>
@@ -131,24 +133,75 @@
 
         <div class="instructions">
             <strong>How to play:</strong><br>
-            1. Choose sequence length and click "Start"<br>
+            1. Choose sequence length and click "Start Game"<br>
             2. Listen carefully to the melody or chord<br>
-            3. Play it back on the piano keyboard<br>
+            3. Play it back on your selected input method<br>
             4. Get feedback after completing the sequence<br>
             5. Use "Replay" to hear the original again
         </div>
     </div>
     <!-- Modular JavaScript files -->
-    <script src="https://cdn.jsdelivr.net/npm/tonal@4.14.2/browser/tonal.min.js"></script>
-    <script src="js/modules/Audio.js"></script>
-    <script src="js/modules/MusicTheory.js"></script>
-    <script src="js/modules/Keyboard.js"></script>
-    <script src="js/modules/Staff.js"></script>
-    <script src="js/modules/Scoring.js"></script>
-    <script src="js/modules/SettingsStore.js"></script>
-    <script src="js/modules/MidiInput.js"></script>
-    <script src="js/modules/Storage.js"></script>
-    <script src="js/modules/UI.js"></script>
-    <script src="js/MelodicDictation.js"></script>
+    <script>
+        (function loadAppScriptsSequentially() {
+            const cacheTag = window.__EarCacheTag || (window.__EarCacheTag = `cb=${Date.now().toString(36)}`);
+            const scripts = [
+                '/js/shared/blockContextMenu.js',
+                'https://cdn.jsdelivr.net/npm/tonal@4.14.2/browser/tonal.min.js',
+                'js/modules/Audio.js',
+                'js/modules/AudioPreview.js',
+                'js/modules/MusicTheory.js',
+                'js/modules/Keyboard.js',
+                'js/modules/StaffNoteUtils.js',
+                'js/modules/StaffDisplayRuntime.js',
+                'js/modules/StaffInteractionBridge.js',
+                'js/modules/StaffSequenceManager.js',
+                'js/modules/StaffPlaybackController.js',
+                'js/modules/StaffInputBindings.js',
+                'js/modules/StaffFeedbackController.js',
+                'js/modules/StaffSharedUtils.js',
+                'js/modules/Staff.js',
+                'js/modules/StaffInputController.js',
+                'js/modules/Scoring.js',
+                'js/modules/SettingsStore.js',
+                'js/modules/MidiInput.js',
+                'js/modules/Storage.js',
+                'js/modules/RoundPhaseController.js',
+                'js/modules/UI.js',
+                'js/modules/DictationUIController.js',
+                'js/modules/DictationSettings.js',
+                'js/modules/DictationSettingsHandlers.js',
+                'js/modules/DictationSequenceController.js',
+                'js/modules/DictationStaffBridge.js',
+                'js/modules/DictationInputManager.js',
+                'js/MelodicDictation.js'
+            ];
+            const isAbsolute = (src) => /^https?:\/\//i.test(src);
+            const target = document.body || document.head;
+            if (!target) return;
+
+            function appendNext(index) {
+                if (index >= scripts.length) return;
+                const originalSrc = scripts[index];
+                if (typeof originalSrc !== 'string' || originalSrc.trim() === '') {
+                    appendNext(index + 1);
+                    return;
+                }
+                const src = isAbsolute(originalSrc)
+                    ? originalSrc
+                    : `${originalSrc}${originalSrc.includes('?') ? '&' : '?'}${cacheTag}`;
+                const script = document.createElement('script');
+                script.src = src;
+                script.async = false;
+                script.onload = () => appendNext(index + 1);
+                script.onerror = (event) => {
+                    console.error('[ScriptLoader] Failed to load script:', src, event);
+                    appendNext(index + 1);
+                };
+                target.appendChild(script);
+            }
+
+            appendNext(0);
+        })();
+    </script>
 </body>
 </html>

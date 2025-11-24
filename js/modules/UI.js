@@ -327,7 +327,8 @@ class UIModule {
         title.style.fontSize = '0.9em';
         userDisplay.appendChild(title);
 
-        const counts = dictationType === 'harmonic'
+        const allowComparison = options.allowComparison !== false;
+        const counts = allowComparison && dictationType === 'harmonic'
             ? this.buildNoteCounts(currentSequence)
             : null;
 
@@ -342,13 +343,14 @@ class UIModule {
             noteEl.textContent = displayLabel;
             
             // Add comparison styling if we have a target sequence
-            if (currentSequence && dictationType === 'melodic' && hasUserNote && index < currentSequence.length) {
+            const hasTargetSequence = allowComparison && currentSequence && currentSequence.length > 0;
+            if (hasTargetSequence && dictationType === 'melodic' && hasUserNote && index < currentSequence.length) {
                 if (note === currentSequence[index]) {
                     noteEl.classList.add('correct');
                 } else {
                     noteEl.classList.add('incorrect');
                 }
-            } else if (currentSequence && dictationType === 'harmonic' && hasUserNote) {
+            } else if (hasTargetSequence && dictationType === 'harmonic' && hasUserNote) {
                 const key = this.normalizeNoteKey(note);
                 const remaining = counts ? counts.get(key) || 0 : 0;
                 if (remaining > 0) {

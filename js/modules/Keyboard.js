@@ -38,15 +38,70 @@ class KeyboardModule {
         this.sustainCounts = new Map(); // note -> refcount
         this.pointerNoteMap = new Map(); // pointerId -> note
         this.touchNoteMap = new Map(); // touchId -> note
+        this.audioPreviewService = null;
+        this.previewConfig = {
+            playOptions: {},
+            hoverOptions: null,
+            enableHover: false,
+        };
+        this.lastHoverPreviewNote = null;
+        this.boundHoverPreview = null;
+        this.boundHoverLeave = null;
+        this.hoverEventMode = null;
+        // Hover safety gates to prevent auto-play on tab restore/page load
+        this.hoverPrimed = false; // set to true after a real pointer/mouse move
+        this.activationBlockUntil = 0; // timestamp until which hover is ignored
+        this.boundHoverPrimeMove = null;
+        this.boundVisibilityReset = null;
 
         this.applyDisabledKeysStyle();
 
         if (typeof window !== 'undefined') {
             window.addEventListener('resize', this.handleResize);
+            // Clean up state if the tab is hidden or the page is being backgrounded
+            this._boundResetIfHidden = () => {
+                try {
+                    if (document && document.visibilityState === 'hidden') {
+                        this.reset();
+                    }
+                } catch (_) { this.reset(); }
+            };
+            this._boundResetOnPageHide = () => { this.reset(); };
+            document.addEventListener('visibilitychange', this._boundResetIfHidden);
+            window.addEventListener('pagehide', this._boundResetOnPageHide);
         }
     }
 
-    /** Start sustaining a note with reference counting so multiple pointers can hold it. */
+    /**
+     * Reset the keyboard state.
+     * Clears all active pointers, stops sustains, and resets visual state.
+     */
+    reset() {
+        // Clear pointer maps
+        this.pointerDownMap.clear();
+        this.pointerTypeMap.clear();
+        this.pointerNoteMap.clear();
+        this.touchNoteMap.clear();
+        
+        // Reset sustain counts
+        this.sustainCounts.clear();
+        if (this.audioModule && typeof this.audioModule.stopAllSustain === 'function') {
+            try { this.audioModule.stopAllSustain(); } catch (_) {}
+        }
+
+        // Reset visual state
+        if (this.pianoKeysContainer) {
+            const pressedKeys = this.pianoKeysContainer.querySelectorAll('.pressed');
+            pressedKeys.forEach(key => {
+                key.classList.remove('pressed');
+                key.removeAttribute('data-touch-id');
+            });
+        }
+    }
+
+    /**
+     * Start sustaining a note with reference counting so multiple pointers can hold it.
+     */
     startSustainForNote(actualNote) {
         if (!actualNote) return;
         // Respect mode filtering when not chromatic
@@ -96,6 +151,21 @@ class KeyboardModule {
     /** Set whether overlapping sounds are allowed (polyphony). */
     setAllowOverlap(flag) {
         this.allowOverlap = !!flag;
+    }
+
+    setAudioPreviewService(service, options = {}) {
+        this.audioPreviewService = service || null;
+        this.previewConfig = {
+            playOptions: options.playOptions || {},
+            hoverOptions: options.hoverOptions || null,
+            enableHover: Boolean(options.enableHover),
+        };
+        this.lastHoverPreviewNote = null;
+        if (this.audioPreviewService && this.previewConfig.enableHover) {
+            this.attachHoverPreview();
+        } else {
+            this.detachHoverPreview();
+        }
     }
 
     /**
@@ -173,6 +243,150 @@ class KeyboardModule {
         this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
     }
 
+    attachHoverPreview() {
+        if (!this.previewConfig.enableHover || !this.audioPreviewService) {
+            return;
+        }
+        this.pianoKeysContainer = this.pianoKeysContainer || document.querySelector('.piano-keys');
+        if (!this.pianoKeysContainer) {
+            return;
+        }
+        if (this.boundHoverPreview) {
+            return;
+        }
+        const usePointer = typeof window !== 'undefined' && 'PointerEvent' in window;
+        this.hoverEventMode = usePointer ? 'pointer' : 'mouse';
+        const overEvent = usePointer ? 'pointerover' : 'mouseover';
+        const outEvent = usePointer ? 'pointerout' : 'mouseout';
+        // Initialize gating window: ignore hover for a short time after attach
+        try {
+            const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            this.activationBlockUntil = now + 350;
+        } catch { this.activationBlockUntil = Date.now() + 350; }
+        this.hoverPrimed = false;
+        if (!this.boundHoverPrimeMove) {
+            this.boundHoverPrimeMove = () => { this.hoverPrimed = true; };
+            if (usePointer) {
+                window.addEventListener('pointermove', this.boundHoverPrimeMove, { passive: true });
+            } else {
+                window.addEventListener('mousemove', this.boundHoverPrimeMove, { passive: true });
+            }
+        }
+        if (!this.boundVisibilityReset) {
+            this.boundVisibilityReset = () => {
+                this.hoverPrimed = false;
+                try {
+                    const now2 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+                    this.activationBlockUntil = now2 + 350;
+                } catch { this.activationBlockUntil = Date.now() + 350; }
+                this.lastHoverPreviewNote = null;
+            };
+            document.addEventListener('visibilitychange', this.boundVisibilityReset);
+            window.addEventListener('pageshow', this.boundVisibilityReset);
+        }
+        this.boundHoverPreview = (event) => {
+            if (!this.previewConfig.enableHover || !this.audioPreviewService) {
+                return;
+            }
+            // Require actual movement and respect initial activation block
+            const nowTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            if (!this.hoverPrimed || nowTs < this.activationBlockUntil) {
+                return;
+            }
+            if (this.hoverEventMode === 'pointer' && event.pointerType && event.pointerType !== 'mouse') {
+                return;
+            }
+            const target = event.target && event.target.closest
+                ? event.target.closest('.white-key, .black-key')
+                : null;
+            if (!target || target.classList.contains('disabled')) {
+                return;
+            }
+            const note = target.dataset ? target.dataset.note : null;
+            if (!note || note === this.lastHoverPreviewNote) {
+                return;
+            }
+            this.lastHoverPreviewNote = note;
+            this.previewNote(note);
+        };
+        this.boundHoverLeave = (event) => {
+            if (this.hoverEventMode === 'pointer' && event.pointerType && event.pointerType !== 'mouse') {
+                return;
+            }
+            const related = event.relatedTarget;
+            if (!related || !this.pianoKeysContainer.contains(related)) {
+                this.lastHoverPreviewNote = null;
+            } else if (!related.closest || !related.closest('.white-key, .black-key')) {
+                this.lastHoverPreviewNote = null;
+            }
+        };
+        this.pianoKeysContainer.addEventListener(overEvent, this.boundHoverPreview);
+        this.pianoKeysContainer.addEventListener(outEvent, this.boundHoverLeave);
+    }
+
+    detachHoverPreview() {
+        if (!this.boundHoverPreview || !this.pianoKeysContainer) {
+            this.boundHoverPreview = null;
+            this.boundHoverLeave = null;
+            this.hoverEventMode = null;
+            this.lastHoverPreviewNote = null;
+            return;
+        }
+        const overEvent = this.hoverEventMode === 'pointer' ? 'pointerover' : 'mouseover';
+        const outEvent = this.hoverEventMode === 'pointer' ? 'pointerout' : 'mouseout';
+        this.pianoKeysContainer.removeEventListener(overEvent, this.boundHoverPreview);
+        this.pianoKeysContainer.removeEventListener(outEvent, this.boundHoverLeave);
+        if (this.boundHoverPrimeMove) {
+            if (this.hoverEventMode === 'pointer') {
+                window.removeEventListener('pointermove', this.boundHoverPrimeMove);
+            } else {
+                window.removeEventListener('mousemove', this.boundHoverPrimeMove);
+            }
+            this.boundHoverPrimeMove = null;
+        }
+        if (this.boundVisibilityReset) {
+            document.removeEventListener('visibilitychange', this.boundVisibilityReset);
+            window.removeEventListener('pageshow', this.boundVisibilityReset);
+            this.boundVisibilityReset = null;
+        }
+        this.boundHoverPreview = null;
+        this.boundHoverLeave = null;
+        this.hoverEventMode = null;
+        this.lastHoverPreviewNote = null;
+    }
+
+    previewNote(note, overrides = {}) {
+        if (!note || !this.audioPreviewService || typeof this.audioPreviewService.previewPitch !== 'function') {
+            return null;
+        }
+        const merged = {
+            ...(this.previewConfig.hoverOptions || {}),
+            ...overrides,
+        };
+        return this.audioPreviewService.previewPitch(note, merged);
+    }
+
+    playNoteSound(actualNote, overrides = {}) {
+        if (!actualNote) {
+            return null;
+        }
+        if (this.audioPreviewService && typeof this.audioPreviewService.previewPitch === 'function') {
+            const merged = {
+                ...(this.previewConfig.playOptions || {}),
+                ...overrides,
+            };
+            const previewResult = this.audioPreviewService.previewPitch(actualNote, merged);
+            if (previewResult) {
+                return previewResult;
+            }
+        }
+        const frequency = this.musicTheory.getNoteFrequency(actualNote);
+        if (!frequency || !this.audioModule || typeof this.audioModule.playTone !== 'function') {
+            return null;
+        }
+        return this.audioModule.playTone(frequency, overrides.duration || 0.5);
+    }
+
     /**
      * Render the physical keyboard based on the provided layout
      * @param {Object} layout - Keyboard layout descriptor
@@ -199,6 +413,25 @@ class KeyboardModule {
         const whiteDetails = (layout && layout.whiteKeyDetails && layout.whiteKeyDetails.length > 0)
             ? layout.whiteKeyDetails
             : (layout && layout.physicalWhiteKeys ? layout.physicalWhiteKeys.map(note => ({ note })) : (layout && layout.whiteKeys ? layout.whiteKeys.map(note => ({ note })) : []));
+        const blackDetails = (layout && layout.blackKeys) ? layout.blackKeys : [];
+
+        const whiteNotchInfo = whiteDetails.map(() => ({ left: false, right: false }));
+        if (whiteNotchInfo.length > 0 && blackDetails.length > 0) {
+            blackDetails.forEach((detail) => {
+                const precedingIndex = (typeof detail.precedingIndex === 'number')
+                    ? detail.precedingIndex
+                    : (typeof detail.precedingIndex === 'string' ? parseInt(detail.precedingIndex, 10) : null);
+                const followingIndex = (typeof detail.followingIndex === 'number')
+                    ? detail.followingIndex
+                    : (typeof detail.followingIndex === 'string' ? parseInt(detail.followingIndex, 10) : null);
+                if (Number.isInteger(precedingIndex) && whiteNotchInfo[precedingIndex]) {
+                    whiteNotchInfo[precedingIndex].right = true;
+                }
+                if (Number.isInteger(followingIndex) && whiteNotchInfo[followingIndex]) {
+                    whiteNotchInfo[followingIndex].left = true;
+                }
+            });
+        }
 
         whiteDetails.forEach((detail, index) => {
             const keyEl = document.createElement('div');
@@ -216,6 +449,13 @@ class KeyboardModule {
                 keyEl.dataset.displayLabel = detail.displayName;
             } else {
                 keyEl.removeAttribute('data-display-label');
+            }
+            const notchInfo = whiteNotchInfo[index];
+            if (notchInfo && notchInfo.left) {
+                keyEl.classList.add('white-key-notch-left');
+            }
+            if (notchInfo && notchInfo.right) {
+                keyEl.classList.add('white-key-notch-right');
             }
             if (usingUnitLayout && typeof detail.leftUnits === 'number' && typeof detail.widthUnits === 'number' && spanUnits) {
                 const leftPercent = ((detail.leftUnits - minLeftUnits) / spanUnits) * 100;
@@ -239,7 +479,6 @@ class KeyboardModule {
         container.appendChild(whiteFragment);
 
         const blackFragment = document.createDocumentFragment();
-        const blackDetails = (layout && layout.blackKeys) ? layout.blackKeys : [];
 
         blackDetails.forEach(detail => {
             const keyEl = document.createElement('div');
@@ -720,12 +959,11 @@ class KeyboardModule {
         }
         
         // Play the note
-        const frequency = this.musicTheory.getNoteFrequency(actualNote);
-        if (!frequency) {
-            return;
+        const playback = this.playNoteSound(actualNote);
+        if (playback && typeof playback.then === 'function') {
+            await playback;
         }
-        await this.audioModule.playTone(frequency, 0.5);
-        
+
         // Call the callback with the actual note played
         if (onNotePlayed) {
             onNotePlayed(actualNote);
@@ -951,6 +1189,8 @@ class KeyboardModule {
             this.pianoKeysContainer.addEventListener('click', this.boundKeyHandler);
             this.managePressedVisually = true;
         }
+
+        this.attachHoverPreview();
     }
 
     /**

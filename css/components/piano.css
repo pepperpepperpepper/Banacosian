@@ -101,6 +101,12 @@
   color: rgba(209, 213, 219, 0.45);
 }
 
+
+:root {
+  --white-key-notch-depth: 62%;
+  --white-key-notch-width: 32%;
+}
+
 .piano.disabled-keys-invisible .flat-key.disabled {
   opacity: 0;
   box-shadow: none;
@@ -115,4 +121,16 @@
 
 .piano.disabled-keys-invisible .flat-key.disabled .key-label {
   visibility: hidden;
+}
+
+.piano.disabled-keys-invisible .white-key.white-key-notch-left:not(.white-key-notch-right) {
+  clip-path: polygon(var(--white-key-notch-width) 0, 100% 0, 100% 100%, 0 100%, 0 var(--white-key-notch-depth), var(--white-key-notch-width) var(--white-key-notch-depth));
+}
+
+.piano.disabled-keys-invisible .white-key.white-key-notch-right:not(.white-key-notch-left) {
+  clip-path: polygon(0 0, calc(100% - var(--white-key-notch-width)) 0, calc(100% - var(--white-key-notch-width)) var(--white-key-notch-depth), 100% var(--white-key-notch-depth), 100% 100%, 0 100%);
+}
+
+.piano.disabled-keys-invisible .white-key.white-key-notch-left.white-key-notch-right {
+  clip-path: polygon(var(--white-key-notch-width) 0, calc(100% - var(--white-key-notch-width)) 0, calc(100% - var(--white-key-notch-width)) var(--white-key-notch-depth), 100% var(--white-key-notch-depth), 100% 100%, 0 100%, 0 var(--white-key-notch-depth), var(--white-key-notch-width) var(--white-key-notch-depth));
 }
