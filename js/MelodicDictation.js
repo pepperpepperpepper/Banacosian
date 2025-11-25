@@ -5,6 +5,7 @@
 const MIN_SEQUENCE_LENGTH = 2;
 const MAX_SEQUENCE_LENGTH = 5;
 const DEFAULT_SEQUENCE_LENGTH = 3;
+const DEFAULT_ANSWER_REVEAL_MODE = 'show';
 class MelodicDictation {
     constructor() {
         // Initialize modules
@@ -29,7 +30,7 @@ class MelodicDictation {
         this.tonic = this.musicTheory.getDefaultTonicLetter(this.mode);
         this.staffFont = 'bravura';
         this.disabledKeysStyle = 'hatched';
-        this.answerRevealMode = 'show';
+        this.answerRevealMode = DEFAULT_ANSWER_REVEAL_MODE;
         this.inputMode = 'keyboard';
         this.availableTonics = this.musicTheory.getAvailableTonicsForMode
             ? this.musicTheory.getAvailableTonicsForMode(this.mode)
@@ -80,7 +81,7 @@ class MelodicDictation {
                     timbre: this.timbre,
                     staffFont: this.staffFont,
                     disabledKeysStyle: this.disabledKeysStyle,
-                    answerRevealMode: this.answerRevealMode,
+                    answerRevealMode: DEFAULT_ANSWER_REVEAL_MODE,
                     inputMode: this.inputMode,
                 },
                 minSequenceLength: MIN_SEQUENCE_LENGTH,

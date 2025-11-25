@@ -483,6 +483,9 @@ class MusicTheoryModule {
         const normalizedMode = (mode || 'ionian').toLowerCase();
         const normalizedDisplay = this.standardizeNoteName(displayTonic);
         const normalizedTonic = this.standardizeNoteName(tonic) || normalizedDisplay;
+        const resolvedMajor = (resolvedSignature && resolvedSignature.majorTonic)
+            ? this.standardizeNoteName(resolvedSignature.majorTonic)
+            : null;
 
         if (normalizedMode === 'chromatic') {
             return 'C';
@@ -493,26 +496,15 @@ class MusicTheoryModule {
         }
 
         if (normalizedMode === 'aeolian') {
-            const base = normalizedDisplay || normalizedTonic;
-            if (base) {
-                return `${base}m`;
-            }
-            return 'Cm';
+            return resolvedMajor || normalizedDisplay || normalizedTonic || 'C';
         }
 
         if (this.minorLikeModes && this.minorLikeModes.has(normalizedMode)) {
-            const base = normalizedDisplay || normalizedTonic;
-            if (base) {
-                return `${base}m`;
-            }
-            return 'Cm';
+            return resolvedMajor || normalizedDisplay || normalizedTonic || 'C';
         }
 
-        if (resolvedSignature && resolvedSignature.majorTonic) {
-            const normalizedMajor = this.standardizeNoteName(resolvedSignature.majorTonic);
-            if (normalizedMajor) {
-                return normalizedMajor;
-            }
+        if (resolvedMajor) {
+            return resolvedMajor;
         }
 
         return normalizedDisplay || normalizedTonic || 'C';

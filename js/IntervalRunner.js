@@ -1,22 +1,59 @@
 /* Interval Runner — endless side-scroller using interval recognition */
 (function () {
-  const INTERVAL_NAMES = { 1:'m2',2:'M2',3:'m3',4:'M3',5:'P4',6:'TT',7:'P5',8:'m6',9:'M6',10:'m7',11:'M7',12:'P8' };
+  const INTERVAL_DEFS = [
+    { value: 1, label: 'm2', description: 'Minor 2nd (1 semitone)' },
+    { value: 2, label: 'M2', description: 'Major 2nd (2 semitones)' },
+    { value: 3, label: 'm3', description: 'Minor 3rd (3 semitones)' },
+    { value: 4, label: 'M3', description: 'Major 3rd (4 semitones)' },
+    { value: 5, label: 'P4', description: 'Perfect 4th (5 semitones)' },
+    { value: 6, label: 'TT', description: 'Tritone (6 semitones)' },
+    { value: 7, label: 'P5', description: 'Perfect 5th (7 semitones)' },
+    { value: 8, label: 'm6', description: 'Minor 6th (8 semitones)' },
+    { value: 9, label: 'M6', description: 'Major 6th (9 semitones)' },
+    { value: 10, label: 'm7', description: 'Minor 7th (10 semitones)' },
+    { value: 11, label: 'M7', description: 'Major 7th (11 semitones)' },
+    { value: 12, label: 'P8', description: 'Perfect Octave (12 semitones)' },
+    { value: 13, label: '♭9', description: 'Flat 9 (13 semitones)' },
+    { value: 14, label: '9', description: 'Major 9 (14 semitones)' },
+    { value: 15, label: '♯9', description: 'Sharp 9 (15 semitones)' },
+    { value: 16, label: '10', description: 'Major 10 (16 semitones)' },
+    { value: 17, label: '11', description: 'Perfect 11 (17 semitones)' },
+    { value: 18, label: '♯11', description: 'Sharp 11 (18 semitones)' },
+    { value: 20, label: '♭13', description: 'Flat 13 (20 semitones)' },
+    { value: 21, label: '13', description: 'Major 13 (21 semitones)' },
+  ];
+  const INTERVAL_VALUE_LIST = INTERVAL_DEFS.map((def) => def.value);
+  const INTERVAL_LABEL_MAP = INTERVAL_DEFS.reduce((acc, def) => {
+    acc[def.value] = def.label;
+    return acc;
+  }, {});
+  const INTERVAL_VALUE_SET = new Set(INTERVAL_VALUE_LIST);
+  const LEGACY_INTERVAL_MAX = 12;
+  const INTERVAL_SPEC_VERSION = 2;
+  const EXTENDED_INTERVAL_VALUES = INTERVAL_DEFS
+    .filter((def) => def.value > LEGACY_INTERVAL_MAX)
+    .map((def) => def.value);
+
+  const intervalLabelFor = (value) => INTERVAL_LABEL_MAP[value] || String(value);
   const TWO_PI = Math.PI * 2;
   const RAND = (min, max) => min + Math.random() * (max - min);
   const CLAMP = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
   const USER_SPEED_MIN = 0.4;
   const USER_SPEED_MAX = 1.6;
   const USER_SPEED_STEP = 0.1;
-  const DEFAULT_USER_SPEED = 0.8;
+  const DEFAULT_USER_SPEED = 0.4;
+  const DEFAULT_TIMBRE_ID = 'triangle';
 
   function buildChoices(container, onChoose, allowedSet) {
-    const order = [1,2,3,4,5,6,7,8,9,10,11,12];
-    const allowed = allowedSet instanceof Set ? order.filter(n => allowedSet.has(n)) : order;
+    const order = INTERVAL_VALUE_LIST;
+    const allowed = allowedSet instanceof Set ? order.filter((n) => allowedSet.has(n)) : order;
     container.textContent = '';
     allowed.forEach(n => {
       const btn = document.createElement('button');
       btn.className = 'control-btn ui-pill interval-choice';
-      btn.textContent = INTERVAL_NAMES[n];
+      const label = intervalLabelFor(n);
+      btn.textContent = label;
+      btn.title = `Select ${label}`;
       btn.dataset.semitones = String(n);
       btn.setAttribute('role','radio'); btn.setAttribute('aria-checked','false'); btn.tabIndex=-1;
       btn.addEventListener('click', () => onChoose(n, btn));
@@ -57,7 +94,12 @@
     function saveRunnerSettings(partial) {
       try {
         const prev = loadRunnerSettings() || {};
-        const next = { ...prev, ...partial, _meta: { v: 1, updatedAt: new Date().toISOString() } };
+        const next = {
+          ...prev,
+          ...partial,
+          intervalSetVersion: INTERVAL_SPEC_VERSION,
+          _meta: { v: 1, updatedAt: new Date().toISOString() }
+        };
         localStorage.setItem(RUNNER_SETTINGS_KEY, JSON.stringify(next));
       } catch {}
     }
@@ -135,7 +177,7 @@
       startMode: 'chromatic',
       anchorNote: 'C4',
       anchorMidi: null,
-      enabledIntervals: new Set([1,2,3,4,5,6,7,8,9,10,11,12]),
+      enabledIntervals: new Set(INTERVAL_VALUE_LIST),
       showGlasses: false,
       useProceduralLegs: wantProceduralLegs,
       // Remember last anchored (interval,direction) to avoid immediate repeats in fixed root mode
@@ -313,6 +355,9 @@
       const saved0 = loadRunnerSettings();
       if (saved0?.timbre && $timbre.querySelector(`option[value="${saved0.timbre}"]`)) {
         $timbre.value = saved0.timbre; audio.setTimbre(saved0.timbre);
+      } else if ($timbre.querySelector(`option[value="${DEFAULT_TIMBRE_ID}"]`)) {
+        $timbre.value = DEFAULT_TIMBRE_ID;
+        audio.setTimbre(DEFAULT_TIMBRE_ID);
       }
       $timbre.addEventListener('change', () => { audio.setTimbre($timbre.value); saveRunnerSettings({ timbre: $timbre.value }); });
     }
@@ -356,13 +401,30 @@
     state.type = ($type?.value === 'harmonic') ? 'harmonic' : 'melodic';
     state.direction = ($dir?.value === 'up' || $dir?.value === 'down') ? $dir.value : 'random';
     state.startMode = ($startMode?.value === 'anchored') ? 'anchored' : 'chromatic';
+
+    function syncAnchorSelectVisibility() {
+      if (!$anchorSelect) return;
+      const anchored = state.startMode === 'anchored';
+      $anchorSelect.hidden = !anchored;
+      $anchorSelect.disabled = !anchored;
+      if (anchored) {
+        $anchorSelect.removeAttribute('aria-hidden');
+      } else {
+        $anchorSelect.setAttribute('aria-hidden', 'true');
+      }
+    }
+    syncAnchorSelectVisibility();
     if (typeof state.userSpeed !== 'number' || Number.isNaN(state.userSpeed)) {
       state.userSpeed = DEFAULT_USER_SPEED;
     }
     state.userSpeed = CLAMP(state.userSpeed, USER_SPEED_MIN, USER_SPEED_MAX);
     $type?.addEventListener('change', () => { state.type = ($type.value === 'harmonic') ? 'harmonic' : 'melodic'; saveRunnerSettings({ type: state.type }); });
     $dir?.addEventListener('change', () => { state.direction = ($dir.value === 'up' || $dir.value === 'down') ? $dir.value : 'random'; saveRunnerSettings({ direction: state.direction }); });
-    $startMode?.addEventListener('change', () => { state.startMode = ($startMode.value === 'anchored') ? 'anchored' : 'chromatic'; saveRunnerSettings({ startMode: state.startMode }); });
+    $startMode?.addEventListener('change', () => {
+      state.startMode = ($startMode.value === 'anchored') ? 'anchored' : 'chromatic';
+      saveRunnerSettings({ startMode: state.startMode });
+      syncAnchorSelectVisibility();
+    });
 
     if ($speedDown) {
       $speedDown.addEventListener('click', () => stepUserSpeed(-1));
@@ -383,32 +445,48 @@
     }
     renderChoiceButtonsFromEnabled();
 
-    // Build interval enable toggles (m2..P8), defaults to enabled
+    // Build interval enable toggles (default: all enabled)
     (function buildIntervalSet() {
       if (!$intervalSet) return;
-      const labels = {1:'m2',2:'M2',3:'m3',4:'M3',5:'P4',6:'TT',7:'P5',8:'m6',9:'M6',10:'m7',11:'M7',12:'P8'};
       $intervalSet.textContent = '';
       const saved = loadRunnerSettings();
       let enabledSaved = null;
+      const savedVersion = Number(saved?.intervalSetVersion) || 1;
       if (saved && Array.isArray(saved.enabledIntervals) && saved.enabledIntervals.length) {
-        enabledSaved = new Set(saved.enabledIntervals.map(Number));
+        const filtered = saved.enabledIntervals
+          .map(Number)
+          .filter((value) => INTERVAL_VALUE_SET.has(value));
+        enabledSaved = new Set(filtered);
         state.enabledIntervals = new Set(enabledSaved);
+        if (savedVersion < INTERVAL_SPEC_VERSION) {
+          EXTENDED_INTERVAL_VALUES.forEach((value) => state.enabledIntervals.add(value));
+        }
+      } else {
+        state.enabledIntervals = new Set(INTERVAL_VALUE_LIST);
       }
-      for (let n=1; n<=12; n+=1) {
-        const id = `runner-int-${n}`;
-        const lab = document.createElement('label'); lab.setAttribute('for', id); lab.title = `Enable ${labels[n]}`;
-        const cb = document.createElement('input'); cb.type='checkbox'; cb.id=id; cb.checked = true; cb.dataset.semitones=String(n);
-        if (enabledSaved) cb.checked = enabledSaved.has(n);
-        const span = document.createElement('span'); span.textContent = labels[n];
+      INTERVAL_DEFS.forEach((def) => {
+        const id = `runner-int-${def.value}`;
+        const lab = document.createElement('label');
+        lab.setAttribute('for', id);
+        lab.title = def.description || `Enable ${def.label}`;
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.id = id;
+        cb.dataset.semitones = String(def.value);
+        cb.checked = state.enabledIntervals.has(def.value);
+        const span = document.createElement('span');
+        span.textContent = def.label;
         cb.addEventListener('change', () => {
-          if (cb.checked) state.enabledIntervals.add(n); else state.enabledIntervals.delete(n);
-          if (state.enabledIntervals.size === 0) { state.enabledIntervals.add(n); cb.checked = true; }
+          if (cb.checked) state.enabledIntervals.add(def.value); else state.enabledIntervals.delete(def.value);
+          if (state.enabledIntervals.size === 0) { state.enabledIntervals.add(def.value); cb.checked = true; }
           renderChoiceButtonsFromEnabled();
           filterPendingDisabledGates();
           saveRunnerSettings({ enabledIntervals: Array.from(state.enabledIntervals) });
         });
-        lab.appendChild(cb); lab.appendChild(span); $intervalSet.appendChild(lab);
-      }
+        lab.appendChild(cb);
+        lab.appendChild(span);
+        $intervalSet.appendChild(lab);
+      });
     })();
 
     // Re-render choices in case saved intervals changed the set
@@ -658,7 +736,7 @@
         const overlapX = (g.x < p.x + p.w) && (g.x + g.w > p.x);
         const overlapY = (p.y + p.h) > (state.groundY - g.h);
         if (overlapX && overlapY && !g.cleared) {
-          const name = INTERVAL_NAMES[g.semitones] || String(g.semitones);
+      const name = intervalLabelFor(g.semitones);
           state.hitMarker = { x: g.x, yTop: state.groundY - g.h, w: g.w, label: name };
           const msg = (g.style === 'brick' && g.answeredCorrect)
             ? 'Jump timing off'
@@ -1033,7 +1111,10 @@
     function getEnabledSemis() { return Array.from(state.enabledIntervals); }
     function pickEnabledSemi() {
       const pool = getEnabledSemis();
-      if (!pool.length) return Math.floor(Math.random()*12)+1;
+      if (!pool.length) {
+        const idx = Math.floor(Math.random() * INTERVAL_VALUE_LIST.length);
+        return INTERVAL_VALUE_LIST[idx];
+      }
       return pool[Math.floor(Math.random()*pool.length)];
     }
 
@@ -1217,7 +1298,7 @@
           gate.other = adjustedOther;
         }
         // Log exactly when the cue fires
-        const name = INTERVAL_NAMES[gate.semitones] || `${gate.semitones}`;
+        const name = intervalLabelFor(gate.semitones);
         console.log(
           `[RunnerCue] id=${gate.id} type=${state.type} dir=${gate.dir} semitones=${gate.semitones}(${name})` +
           ` notes=${a || '?'}→${b || '?'} freqs=${fmt(fa)}→${fmt(fb)}`
@@ -1326,7 +1407,7 @@
       } else {
         btn.classList.add('is-wrong');
         // Always show the correct interval label above the obstacle we just answered for
-        const name = INTERVAL_NAMES[upcoming.semitones] || String(upcoming.semitones);
+        const name = intervalLabelFor(upcoming.semitones);
         state.hitMarker = { x: upcoming.x, yTop: state.groundY - upcoming.h, w: upcoming.w, label: name };
         gameOver('Wrong interval');
       }
