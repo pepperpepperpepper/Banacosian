@@ -2,7 +2,9 @@
   background: var(--app-card-surface);
   padding: 12px;
   border-radius: var(--app-border-radius-md);
-  margin: 10px 0 0;
+  margin: 10px auto 0;
+  width: calc(100% - 20px);
+  max-width: 720px;
   display: none;
 }
 

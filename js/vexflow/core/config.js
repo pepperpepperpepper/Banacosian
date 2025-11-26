@@ -22,10 +22,10 @@ export const DEFAULT_STAFF_SIZING = Object.freeze({
 });
 
 export const DEFAULT_STAFF_PADDING = Object.freeze({
-    horizontalRatio: 0.02,
-    // Reduce vertical padding slightly to trim top/bottom
+    horizontalRatio: 0.004,
+    // Keep slightly trimmed vertical padding but shrink the enforced minimums
     verticalRatio: 0.022,
-    minHorizontal: 14,
+    minHorizontal: 4,
     minVertical: 4,
 });
 
@@ -59,17 +59,21 @@ export function readStaffConfigFromDataset(dataset, defaults = {}) {
     const sizingDefaults = defaults?.sizing || DEFAULT_STAFF_SIZING;
     const scaleDefault = defaults?.scale ?? null;
     const sizing = readStaffSizingFromDataset(dataset, sizingDefaults);
-    const scale = parsePositiveNumber(
-        dataset && typeof dataset === 'object'
-            ? dataset.staffScale ?? scaleDefault
-            : scaleDefault,
-    );
+    const rawScale = dataset && typeof dataset === 'object'
+        ? dataset.staffScale ?? scaleDefault
+        : scaleDefault;
+    const rawScaleY = dataset && typeof dataset === 'object'
+        ? dataset.staffScaleY ?? dataset.staffScale ?? scaleDefault
+        : scaleDefault;
+    const scale = parsePositiveNumber(rawScale);
+    const scaleY = parsePositiveNumber(rawScaleY);
     const pack = parsePositiveNumber(
         dataset && typeof dataset === 'object' ? dataset.staffPack : null,
     );
     return {
         sizing,
         scale: scale && scale > 0 ? scale : null,
+        scaleY: scaleY && scaleY > 0 ? scaleY : (scale && scale > 0 ? scale : null),
         pack: pack && pack > 0 ? pack : null,
     };
 }

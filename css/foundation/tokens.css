@@ -6,8 +6,8 @@
   --app-heading-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 
   /* Layout */
-  --app-max-width: 1200px;
-  --app-content-padding: 30px;
+  --app-max-width: min(1200px, 96vw);
+  --app-content-padding: clamp(10px, 3vw, 32px);
   --app-border-radius-lg: 20px;
   --app-border-radius-md: 15px;
   --app-border-radius-sm: 10px;

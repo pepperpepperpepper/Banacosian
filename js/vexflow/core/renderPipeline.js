@@ -73,13 +73,18 @@ export async function renderPipeline({
 
   const theme = resolveTheme ? resolveTheme(state) : null;
   const staffScale = resolveScale ? resolveScale(state) : state.staffScale;
+  const staffScaleY = Number.isFinite(state.staffScaleY) && state.staffScaleY > 0
+    ? state.staffScaleY
+    : staffScale;
 
   state.staffScale = staffScale;
+  state.staffScaleY = staffScaleY;
 
   const drawResult = drawStaff({
     container,
     theme,
     staffScale,
+    staffScaleY,
     voices,
     meter,
     keySig,
@@ -120,6 +125,7 @@ export async function renderPipeline({
     fontChoice,
     theme,
     staffScale,
+    staffScaleY,
   };
 }
 

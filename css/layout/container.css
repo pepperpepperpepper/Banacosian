@@ -11,6 +11,7 @@
   text-align: center;
   max-width: var(--app-max-width);
   width: min(100%, var(--app-max-width));
+  margin: 0 auto;
 }
 
 .timer-display {

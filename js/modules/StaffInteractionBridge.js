@@ -99,8 +99,12 @@
             this.applyPitchQuantizerToInteraction();
         }
         if (typeof display.setInteractionRegistrar === 'function') {
-            display.setInteractionRegistrar(({ context, voices, baseMessage, scale }) => {
-                controller.register(context, voices, baseMessage, scale, this.containerEl);
+            display.setInteractionRegistrar(({ context, voices, baseMessage, scale, scaleY }) => {
+                controller.register(context, voices, baseMessage, {
+                    scaleX: scale,
+                    scaleY,
+                    container: this.containerEl,
+                });
             });
         }
         this.staffInputState.strategy = 'interaction';

@@ -132,7 +132,11 @@ function assignKeySignatureScale(stave, scale) {
 ensureKeySignatureScalingSupport();
 import { buildLedgerStyle, createVexflowNote } from './noteFactory.js';
 
-export function computeDimensions(container, staffScale, renderState) {
+export function computeDimensions(container, staffScaleX, staffScaleY = staffScaleX, renderState) {
+  const safeScaleX = Number.isFinite(staffScaleX) && staffScaleX > 0 ? staffScaleX : 1;
+  const safeScaleY = Number.isFinite(staffScaleY) && staffScaleY > 0 ? staffScaleY : safeScaleX;
+  const containerWidth = container?.clientWidth ?? 0;
+  const parentWidth = container?.parentElement?.clientWidth ?? 0;
   const configuredMinWidth = parsePositiveNumber(renderState?.minWidth);
   const configuredMaxWidth = parsePositiveNumber(renderState?.maxWidth);
   const configuredTargetWidth = parsePositiveNumber(renderState?.targetWidth);
@@ -140,19 +144,37 @@ export function computeDimensions(container, staffScale, renderState) {
 
   const minWidth = configuredMinWidth ?? 480;
   const targetWidth = configuredTargetWidth ?? null;
-  const measuredWidth = container.clientWidth ? (container.clientWidth / staffScale) : 0;
-  const parentWidth = container.parentElement?.clientWidth
-    ? (container.parentElement.clientWidth / staffScale)
-    : 0;
-  const widthCandidate = targetWidth || measuredWidth || parentWidth || minWidth || 720;
+  const measuredWidth = containerWidth ? (containerWidth / safeScaleX) : 0;
+  const normalizedParentWidth = parentWidth ? (parentWidth / safeScaleX) : 0;
+  const widthCandidate = targetWidth || measuredWidth || normalizedParentWidth || minWidth || 720;
   let baseWidth = widthCandidate;
   if (configuredMaxWidth) {
     baseWidth = Math.min(baseWidth, configuredMaxWidth);
   }
   baseWidth = Math.max(minWidth, baseWidth);
   const baseHeight = configuredBaseHeight ?? 200;
-  const scaledWidth = Math.round(baseWidth * staffScale);
-  const scaledHeight = Math.round(baseHeight * staffScale);
+  const scaledWidth = Math.round(baseWidth * safeScaleX);
+  const scaledHeight = Math.round(baseHeight * safeScaleY);
+  const isProductionEnv = typeof process !== 'undefined'
+    && typeof process.env === 'object'
+    && process.env !== null
+    && process.env.NODE_ENV === 'production';
+  if (!isProductionEnv) {
+    console.debug('[VexflowDraw] sizing', {
+      containerWidth,
+      parentWidth,
+      staffScaleX: safeScaleX,
+      staffScaleY: safeScaleY,
+      measuredWidth,
+      normalizedParentWidth,
+      minWidth,
+      targetWidth,
+      configuredMaxWidth,
+      baseWidth,
+      scaledWidth,
+      scaledHeight,
+    });
+  }
   if (renderState) {
     renderState.computedWidth = baseWidth;
     renderState.computedHeight = baseHeight;
@@ -162,10 +184,12 @@ export function computeDimensions(container, staffScale, renderState) {
     baseHeight,
     scaledWidth,
     scaledHeight,
+    scaleX: safeScaleX,
+    scaleY: safeScaleY,
   };
 }
 
-export function cacheStaffMetrics({ context, stave, baseWidth, staffScale, renderState }) {
+export function cacheStaffMetrics({ context, stave, baseWidth, staffScaleX, staffScaleY, renderState }) {
   try {
     const tables = VexFlow?.Tables;
     const clefProps = tables?.clefProperties ? tables.clefProperties(renderState.primaryClef) : null;
@@ -179,6 +203,8 @@ export function cacheStaffMetrics({ context, stave, baseWidth, staffScale, rende
     const baseXStart = stave.getX?.() ?? 0;
     const staveWidth = stave.getWidth?.() ?? (baseWidth - 48);
     const baseXEnd = baseXStart + staveWidth;
+    const scaleX = Number.isFinite(staffScaleX) && staffScaleX > 0 ? staffScaleX : 1;
+    const scaleY = Number.isFinite(staffScaleY) && staffScaleY > 0 ? staffScaleY : scaleX;
     renderState.staffMetrics = {
       clef: renderState.primaryClef,
       lineShift: clefProps?.lineShift ?? 0,
@@ -187,14 +213,16 @@ export function cacheStaffMetrics({ context, stave, baseWidth, staffScale, rende
       spacing: baseSpacing,
       xStart: baseXStart,
       xEnd: baseXEnd,
-      scale: staffScale,
+      scale: scaleX,
+      scaleX,
+      scaleY,
       staveY: typeof stave.getY === 'function' ? stave.getY() : null,
       scaled: {
-        topY: baseTopY * staffScale,
-        bottomY: baseBottomY * staffScale,
-        spacing: baseSpacing * staffScale,
-        xStart: baseXStart * staffScale,
-        xEnd: baseXEnd * staffScale,
+        topY: baseTopY * scaleY,
+        bottomY: baseBottomY * scaleY,
+        spacing: baseSpacing * scaleY,
+        xStart: baseXStart * scaleX,
+        xEnd: baseXEnd * scaleX,
       },
     };
     renderState.activeStave = stave;
@@ -215,6 +243,7 @@ export function drawStaff({
   container,
   theme,
   staffScale,
+  staffScaleY,
   voices,
   meter,
   keySig,
@@ -224,14 +253,21 @@ export function drawStaff({
   registerInteractions,
   applyTheme,
 }) {
-  const { baseWidth, baseHeight, scaledWidth, scaledHeight } = computeDimensions(container, staffScale, renderState);
+  const safeScaleX = Number.isFinite(staffScale) && staffScale > 0 ? staffScale : 1;
+  const safeScaleY = Number.isFinite(staffScaleY) && staffScaleY > 0 ? staffScaleY : safeScaleX;
+  const { baseWidth, baseHeight, scaledWidth, scaledHeight } = computeDimensions(
+    container,
+    safeScaleX,
+    safeScaleY,
+    renderState,
+  );
   container.innerHTML = '';
 
   const renderer = new Renderer(container, Renderer.Backends.SVG);
   renderer.resize(scaledWidth, scaledHeight);
   const context = renderer.getContext();
   if (typeof context.scale === 'function') {
-    context.scale(staffScale, staffScale);
+    context.scale(safeScaleX, safeScaleY);
   }
   context.setBackgroundFillStyle('transparent');
   if (theme.fill) context.setFillStyle(theme.fill);
@@ -277,7 +313,14 @@ export function drawStaff({
   }
   stave.setContext(context).draw();
 
-  cacheStaffMetrics({ context, stave, baseWidth, staffScale, renderState });
+  cacheStaffMetrics({
+    context,
+    stave,
+    baseWidth,
+    staffScaleX: safeScaleX,
+    staffScaleY: safeScaleY,
+    renderState,
+  });
 
   console.debug('[VexflowDraw] incoming voices', voices);
 
@@ -379,7 +422,8 @@ export function drawStaff({
       context,
       voices: drawnVoices,
       baseMessage,
-      scale: staffScale,
+      scale: safeScaleX,
+      scaleY: safeScaleY,
     });
   }
 
@@ -388,5 +432,7 @@ export function drawStaff({
     vexflowVoices,
     baseMessage,
     warnings,
+    scale: safeScaleX,
+    scaleY: safeScaleY,
   };
 }

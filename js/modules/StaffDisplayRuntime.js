@@ -1,4 +1,37 @@
 (function initStaffDisplayRuntime(globalScope) {
+    function cloneDataset(source) {
+        if (!source || typeof source !== 'object') return null;
+        return { ...source };
+    }
+
+    function resolveResponsiveDataset(dataset) {
+        if (!dataset) return dataset;
+        if (typeof window === 'undefined') return dataset;
+        const viewportWidth = window.innerWidth || document.documentElement?.clientWidth || 0;
+        if (!viewportWidth) return dataset;
+        const breakpoint = Number.parseInt(dataset.staffBreakpoint, 10) || 900;
+        const isMobile = viewportWidth <= breakpoint;
+        const suffix = isMobile ? 'Mobile' : 'Desktop';
+        const responsiveKeys = [
+            'staffScale',
+            'staffScaleY',
+            'staffMinWidth',
+            'staffMaxWidth',
+            'staffTargetWidth',
+            'staffBaseHeight',
+        ];
+        const clone = cloneDataset(dataset);
+        let changed = false;
+        responsiveKeys.forEach((key) => {
+            const responsiveKey = `${key}${suffix}`;
+            const overrideValue = clone[responsiveKey];
+            if (overrideValue != null) {
+                clone[key] = overrideValue;
+                changed = true;
+            }
+        });
+        return changed ? clone : dataset;
+    }
     function ensureRenderRuntime() {
         if (this.renderRuntime) {
             this.renderRuntime.update({ keySig: this.keySignature });
@@ -59,11 +92,13 @@
                 }
                 const { readStaffConfigFromDataset } = configModule || {};
                 const dataset = this.containerEl.dataset || null;
+                const responsiveDataset = resolveResponsiveDataset(dataset);
                 const config = typeof readStaffConfigFromDataset === 'function'
-                    ? readStaffConfigFromDataset(dataset)
+                    ? readStaffConfigFromDataset(responsiveDataset || dataset)
                     : { sizing: { minWidth: null, maxWidth: null, targetWidth: null, baseHeight: null }, scale: null };
                 const sizing = config?.sizing || { minWidth: null, maxWidth: null, targetWidth: null, baseHeight: null };
                 const staffScale = config?.scale ?? null;
+                const staffScaleY = config?.scaleY ?? null;
                 const staffPack = config?.pack ?? null;
                 if (runtime) {
                     runtime.update({
@@ -73,6 +108,7 @@
                         targetWidth: sizing.targetWidth,
                         baseHeight: sizing.baseHeight,
                         staffScale: staffScale ?? runtime.state.staffScale,
+                        staffScaleY: staffScaleY ?? runtime.state.staffScaleY,
                         staffPack: staffPack ?? runtime.state.staffPack,
                     });
                 }
@@ -87,6 +123,7 @@
                     targetWidth: sizing.targetWidth ?? undefined,
                     baseHeight: sizing.baseHeight ?? undefined,
                     staffScale: staffScale ?? undefined,
+                    staffScaleY: staffScaleY ?? undefined,
                 });
                 await display.initialize();
                 await this.refreshStaffInputBindings();

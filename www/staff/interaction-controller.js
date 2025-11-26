@@ -18,7 +18,10 @@ logStructured('[VexflowInteraction] module loaded', {
 });
 
 function registerVexflowInteractions(context, voices, baseMessage, options = {}) {
-  const scale = Number.isFinite(options.scale) && options.scale > 0 ? options.scale : 1;
+  const scaleX = Number.isFinite(options.scaleX) && options.scaleX > 0
+    ? options.scaleX
+    : (Number.isFinite(options.scale) && options.scale > 0 ? options.scale : 1);
+  const scaleY = Number.isFinite(options.scaleY) && options.scaleY > 0 ? options.scaleY : scaleX;
   const container = options.container || null;
   if (!context || typeof context.getSVG === 'function') {
     // Support VexFlow v4 Renderer contexts (getSVG())
@@ -32,7 +35,8 @@ function registerVexflowInteractions(context, voices, baseMessage, options = {})
   logStructured('[VexflowInteraction] register', {
     baseMessage,
     tickableVoiceCount: voices?.length ?? 0,
-    scale,
+    scaleX,
+    scaleY,
     existingHandlers: Boolean(svg.__vexflowInteraction),
   });
 
@@ -62,7 +66,7 @@ function registerVexflowInteractions(context, voices, baseMessage, options = {})
       }
       if (!noteEl) return;
       const baseSpacing = tickable.getStave?.()?.getSpacingBetweenLines?.() ?? 12;
-      const staffSpacing = baseSpacing * scale;
+      const staffSpacing = baseSpacing * scaleY;
       selectableRegistry.add({
         note: tickable,
         noteEl,
@@ -113,7 +117,9 @@ function registerVexflowInteractions(context, voices, baseMessage, options = {})
   }
 
   attachSvgInteractionHandlers(svg, container, baseMessage);
-  svg.__vexflowScale = scale;
+  svg.__vexflowScale = scaleY;
+  svg.__vexflowScaleX = scaleX;
+  svg.__vexflowScaleY = scaleY;
   logStructured('[VexflowInteraction] handlers attached', {
     hasPointerEvents: HAS_POINTER_EVENTS,
     listenerKeys: Object.keys(svg.__vexflowInteraction || {}),
@@ -172,9 +178,18 @@ export function createInteractionController({
     selectionState,
     setEnabled,
     updateDependencies,
-    register: (context, voices, baseMessage, scale, container) => {
+    register: (context, voices, baseMessage, scaleOrOptions, maybeContainer) => {
       if (!isEnabled) return;
-      registerVexflowInteractions(context, voices, baseMessage, { scale, container });
+      let options;
+      if (scaleOrOptions && typeof scaleOrOptions === 'object' && !Array.isArray(scaleOrOptions)) {
+        options = { ...scaleOrOptions };
+      } else {
+        options = {
+          scale: scaleOrOptions,
+          container: maybeContainer,
+        };
+      }
+      registerVexflowInteractions(context, voices, baseMessage, options);
     },
     clearSelection: () => {
       if (!isEnabled) return;

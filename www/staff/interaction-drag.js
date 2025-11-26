@@ -59,12 +59,19 @@ export function beginDrag(event, note, noteEl, pointerTarget, voiceIndex, noteIn
   const renderStateScale = Number.isFinite(renderState?.staffScale) && renderState.staffScale > 0
     ? renderState.staffScale
     : null;
-  const svgScale = Number.isFinite(svg?.__vexflowScale) && svg.__vexflowScale > 0
-    ? svg.__vexflowScale
+  const renderStateScaleY = Number.isFinite(renderState?.staffScaleY) && renderState.staffScaleY > 0
+    ? renderState.staffScaleY
     : null;
-  const staffScale = renderStateScale || svgScale || 1;
+  const svgScaleX = Number.isFinite(svg?.__vexflowScaleX) && svg.__vexflowScaleX > 0
+    ? svg.__vexflowScaleX
+    : null;
+  const svgScaleY = Number.isFinite(svg?.__vexflowScaleY) && svg.__vexflowScaleY > 0
+    ? svg.__vexflowScaleY
+    : null;
+  const staffScaleX = renderStateScale || svgScaleX || 1;
+  const staffScaleY = renderStateScaleY || svgScaleY || staffScaleX;
   const baseSpacing = stave?.getSpacingBetweenLines?.() ?? 12;
-  const staffSpacing = baseSpacing * staffScale;
+  const staffSpacing = baseSpacing * staffScaleY;
   const staffStep = staffSpacing / 2;
   const pxPerSemitone = Math.max(2, staffStep * 0.6);
   const baseMidi = getPrimaryMidi(spec);

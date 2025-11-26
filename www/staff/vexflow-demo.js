@@ -66,7 +66,7 @@ if (typeof window !== 'undefined') {
   });
 }
 
-function applyRuntimeSizing(runtime, sizing, scale) {
+function applyRuntimeSizing(runtime, sizing, scale, scaleY) {
   if (!runtime) return;
   const update = {};
   if (sizing && typeof sizing === 'object') {
@@ -77,6 +77,9 @@ function applyRuntimeSizing(runtime, sizing, scale) {
   }
   if (Number.isFinite(scale)) {
     update.staffScale = scale;
+  }
+  if (Number.isFinite(scaleY)) {
+    update.staffScaleY = scaleY;
   }
   if (Object.keys(update).length > 0) {
     runtime.update(update);
@@ -93,6 +96,7 @@ function createDemoContext(config) {
   const containerConfig = readStaffConfigFromDataset(container.dataset || null);
   const sizingConfig = containerConfig?.sizing || {};
   const configuredScale = containerConfig?.scale ?? null;
+  const configuredScaleY = containerConfig?.scaleY ?? null;
 
   const initialState = {
     interactionEnabled: Boolean(config.interactive),
@@ -102,11 +106,14 @@ function createDemoContext(config) {
   if (Number.isFinite(configuredScale)) {
     initialState.staffScale = configuredScale;
   }
+  if (Number.isFinite(configuredScaleY)) {
+    initialState.staffScaleY = configuredScaleY;
+  }
 
   const runtime = createRenderRuntime({ initialState });
   const renderState = runtime.state;
   applyStaffSizingToState(renderState, sizingConfig);
-  applyRuntimeSizing(runtime, sizingConfig, configuredScale);
+  applyRuntimeSizing(runtime, sizingConfig, configuredScale, configuredScaleY);
 
   const context = {
     ...config,
@@ -118,6 +125,7 @@ function createDemoContext(config) {
     sizingConfig: {
       sizing: sizingConfig,
       scale: configuredScale,
+      scaleY: configuredScaleY,
     },
   };
 
@@ -162,6 +170,7 @@ async function renderDemo(context) {
         context.renderRuntime,
         context.sizingConfig?.sizing,
         context.sizingConfig?.scale,
+        context.sizingConfig?.scaleY,
       );
     }
     const selectionStateForRender = context.interactions?.enabled
@@ -175,14 +184,17 @@ async function renderDemo(context) {
       statusEmptyText: STATUS_EMPTY,
       renderState: context.renderState,
       selectionState: selectionStateForRender,
-      registerInteractions: ({ context: vfContext, voices, baseMessage, scale }) => {
+      registerInteractions: ({ context: vfContext, voices, baseMessage, scale, scaleY }) => {
         if (!context.interactions) return;
         context.interactions.register(
           vfContext,
           voices,
           baseMessage,
-          scale,
-          context.container,
+          {
+            scaleX: scale,
+            scaleY,
+            container: context.container,
+          },
         );
       },
     });

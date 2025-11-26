@@ -652,6 +652,22 @@ class MelodicDictation {
 
 // Initialize the app when DOM is ready (handles scripts injected after DOMContentLoaded)
 function initializeMelodicDictation() {
+    const staffEl = document.getElementById('staff-vexflow');
+    if (staffEl) {
+        const containerRect = staffEl.getBoundingClientRect();
+        console.debug('[Dictation] staff container width', {
+            staffWidth: containerRect?.width ?? null,
+            windowInnerWidth: window.innerWidth,
+            containerClassList: Array.from(staffEl.classList || []),
+            dataset: {
+                scaleX: staffEl.dataset?.staffScale || null,
+                scaleY: staffEl.dataset?.staffScaleY || null,
+                baseHeight: staffEl.dataset?.staffBaseHeight || null,
+            },
+        });
+    } else {
+        console.debug('[Dictation] staff container missing at init');
+    }
     new MelodicDictation();
 }
 

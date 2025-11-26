@@ -47,6 +47,12 @@
   padding: 0;
 }
 
+@media (min-width: 1024px) {
+  .vexflow-display {
+    width: 60%;
+  }
+}
+
 .vexflow-display:focus-visible {
   outline: 2px solid var(--notation-selection, var(--app-info));
   outline-offset: 4px;
@@ -64,7 +70,7 @@
   display: flex;
   justify-content: center;
   gap: 12px;
-  margin: 8px 0 4px;
+  margin: 0 auto;
   align-items: center;
 }
 
@@ -85,7 +91,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   border-radius: 999px;
-  margin: 16px auto;
+  margin: 0 auto 6px;
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -94,10 +100,4 @@
 #staffSubmitBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-@media (min-width: 1024px) {
-  .vexflow-display {
-    max-width: 800px;
-  }
 }

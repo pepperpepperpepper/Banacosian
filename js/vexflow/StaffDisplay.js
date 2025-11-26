@@ -129,6 +129,7 @@ export class VexflowStaffDisplay {
     targetWidth = null,
     baseHeight = null,
     staffScale = null,
+    staffScaleY = null,
   } = {}) {
     if (!container) {
       throw new Error('VexflowStaffDisplay requires a container element.');
@@ -152,9 +153,12 @@ export class VexflowStaffDisplay {
       targetWidth,
       baseHeight,
     });
+    const resolvedScale = parsePositiveNumber(staffScale);
+    const resolvedScaleY = parsePositiveNumber(staffScaleY) || resolvedScale || null;
     const initialState = {
       initialized: true,
-      staffScale: parsePositiveNumber(staffScale),
+      staffScale: resolvedScale,
+      staffScaleY: resolvedScaleY,
       primaryClef: this.clef,
       meter: this.meter,
       keySig: this.keySignature,
@@ -393,12 +397,13 @@ export class VexflowStaffDisplay {
         return resolveStaffScale(state);
       },
       registerInteractions: this.interactionRegistrar
-        ? ({ context: vfContext, voices, baseMessage, scale }) => (
+        ? ({ context: vfContext, voices, baseMessage, scale, scaleY }) => (
             this.interactionRegistrar({
               context: vfContext,
               voices,
               baseMessage,
               scale,
+              scaleY,
             })
           )
         : null,

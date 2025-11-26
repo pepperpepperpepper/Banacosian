@@ -86,12 +86,13 @@ export async function renderVexflowStaff({
     resolveTheme: () => getStaffTheme(),
     resolveScale: (state) => computeStaffScale(state),
     registerInteractions: typeof registerInteractions === 'function'
-      ? ({ context: vfContext, voices, baseMessage, scale }) => {
+      ? ({ context: vfContext, voices, baseMessage, scale, scaleY }) => {
         registerInteractions({
           context: vfContext,
           voices,
           baseMessage,
           scale,
+          scaleY,
           container,
         });
       }

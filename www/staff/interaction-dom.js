@@ -110,9 +110,12 @@ export function convertToSvgCoords(pointerEvent, svg) {
       ? svg.getBoundingClientRect()
       : null,
   );
-  const scale = Number.isFinite(svg.__vexflowScale) && svg.__vexflowScale > 0
-    ? svg.__vexflowScale
-    : 1;
+  const scaleX = Number.isFinite(svg.__vexflowScaleX) && svg.__vexflowScaleX > 0
+    ? svg.__vexflowScaleX
+    : (Number.isFinite(svg.__vexflowScale) && svg.__vexflowScale > 0 ? svg.__vexflowScale : 1);
+  const scaleY = Number.isFinite(svg.__vexflowScaleY) && svg.__vexflowScaleY > 0
+    ? svg.__vexflowScaleY
+    : (Number.isFinite(svg.__vexflowScale) && svg.__vexflowScale > 0 ? svg.__vexflowScale : scaleX);
   logStructured('[VexflowDom] convertToSvgCoords input', {
     clientX,
     clientY,
@@ -120,7 +123,8 @@ export function convertToSvgCoords(pointerEvent, svg) {
     targetTag,
     svgRect,
     viewBox: svg.getAttribute?.('viewBox') || null,
-    appliedScale: scale,
+    appliedScaleX: scaleX,
+    appliedScaleY: scaleY,
   });
   point.x = clientX;
   point.y = clientY;
@@ -138,9 +142,11 @@ export function convertToSvgCoords(pointerEvent, svg) {
   const coords = {
     x: transformed.x,
     y: transformed.y,
-    scaledX: transformed.x * scale,
-    scaledY: transformed.y * scale,
-    scale,
+    scaledX: transformed.x * scaleX,
+    scaledY: transformed.y * scaleY,
+    scale: scaleX,
+    scaleX,
+    scaleY,
   };
   logStructured('[VexflowDom] convertToSvgCoords output', {
     coords: {
@@ -148,11 +154,13 @@ export function convertToSvgCoords(pointerEvent, svg) {
       y: coords.y,
       scaledX: coords.scaledX,
       scaledY: coords.scaledY,
-      scale: coords.scale,
+      scaleX: coords.scaleX,
+      scaleY: coords.scaleY,
     },
     unscaled: { x: coords.x, y: coords.y },
     scaled: { x: coords.scaledX, y: coords.scaledY },
-    scale,
+    scaleX,
+    scaleY,
   });
   return coords;
 }
