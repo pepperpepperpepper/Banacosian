@@ -319,14 +319,31 @@
                 const lastMidi = Number.isFinite(existingPointerMeta?.quantizedMidi)
                     ? existingPointerMeta.quantizedMidi
                     : (Number.isFinite(existingPointerMeta?.midi) ? existingPointerMeta.midi : null);
+                let directionHint = 0;
+                if (Number.isFinite(lastMidi)) {
+                    directionHint = Math.sign(pitchInfo.midi - lastMidi) || 0;
+                } else if (phase === 'start') {
+                    // Bias single-click inserts toward the lower neighbor so sharps don't always round up.
+                    directionHint = -1;
+                }
                 const resolvedMidi = quantizer({
                     previewMidi: pitchInfo.midi,
                     baseMidi: Number.isFinite(lastMidi) ? lastMidi : pitchInfo.midi,
                     lastMidi: Number.isFinite(lastMidi) ? lastMidi : pitchInfo.midi,
-                    direction: Number.isFinite(lastMidi)
-                        ? Math.sign(pitchInfo.midi - lastMidi) || 0
-                        : 0,
+                    direction: directionHint,
                 });
+                if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+                    console.debug('[StaffInput] quantizer decision', {
+                        phase,
+                        pointerId,
+                        previewMidi: pitchInfo.midi,
+                        lastMidi,
+                        directionHint,
+                        resolvedMidi,
+                        allowedPitchClasses: this.staffInputState?.pitchClassConfig?.pitchClasses || null,
+                        scaleType: this.dictationMode || null,
+                    });
+                }
                 if (Number.isFinite(resolvedMidi)) {
                     pitchInfo.midi = resolvedMidi;
                     if (typeof helpers.midiToKeySpec === 'function') {

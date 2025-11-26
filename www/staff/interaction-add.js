@@ -20,16 +20,19 @@ import { logStructured } from '/js/shared/utils.js';
 
 const MAX_TOTAL_NOTES = INITIAL_NOTE_COUNT + MAX_ADDITIONAL_NOTES;
 
-function quantizePitchInfo(pitchInfo) {
+function quantizePitchInfo(pitchInfo, options = {}) {
   if (!pitchInfo || typeof pitchInfo !== 'object') return pitchInfo;
   if (!Number.isFinite(pitchInfo.midi)) return pitchInfo;
   const quantizer = getDragQuantizer();
   if (typeof quantizer !== 'function') return pitchInfo;
+  const biasDirection = Number.isFinite(options.directionHint)
+    ? Math.max(-1, Math.min(1, Math.sign(options.directionHint)))
+    : 0;
   const resolvedMidi = quantizer({
     previewMidi: pitchInfo.midi,
     baseMidi: pitchInfo.midi,
     lastMidi: pitchInfo.midi,
-    direction: 0,
+    direction: biasDirection,
   });
   if (!Number.isFinite(resolvedMidi)) return pitchInfo;
   if (resolvedMidi === pitchInfo.midi) return pitchInfo;
@@ -158,7 +161,7 @@ export function tryAddNoteAtCoords({ coords, scaledCoords, baseMessage }) {
     console.warn('[VexflowAdd] aborted: could not derive pitch from Y', { coords, metrics });
     return false;
   }
-  const quantizedPitch = quantizePitchInfo(pitchInfo) || pitchInfo;
+  const quantizedPitch = quantizePitchInfo(pitchInfo, { directionHint: -1 }) || pitchInfo;
   logStructured('[VexflowAdd] pitch derived', {
     line,
     lineSource: lineInfo?.method || null,
