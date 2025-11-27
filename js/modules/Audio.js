@@ -28,11 +28,14 @@ class AudioModule {
     async initializeAudio() {
         if (this.audioContext) return; // Prevent double init
         try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            console.log('Audio context initialized successfully');
+            this.audioContext = new (window.AudioContext ||
+                window.webkitAudioContext)();
+            console.log("Audio context initialized successfully");
         } catch (error) {
-            console.error('Web Audio API not supported:', error);
-            throw new Error('Your browser does not support the Web Audio API. Please use a modern browser.');
+            console.error("Web Audio API not supported:", error);
+            throw new Error(
+                "Your browser does not support the Web Audio API. Please use a modern browser.",
+            );
         }
     }
 
@@ -92,6 +95,7 @@ class AudioModule {
      * @param {number} duration - The duration in seconds (default: 0.5)
      */
     async playTone(frequency, duration = 0.5) {
+        duration *= 2;
         if (!this.audioContext) {
             await this.initializeAudio();
         }
@@ -100,30 +104,104 @@ class AudioModule {
             this.audioContext.resume();
         }
 
-        if (typeof frequency !== 'number' || !Number.isFinite(frequency)) {
-            console.warn('[AudioModule] Skipping tone with invalid frequency:', frequency);
+        if (typeof frequency !== "number" || !Number.isFinite(frequency)) {
+            console.warn(
+                "[AudioModule] Skipping tone with invalid frequency:",
+                frequency,
+            );
             return;
         }
 
         const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
+        const oscillator2 = this.audioContext.createOscillator();
+        const envelope = this.audioContext.createGain();
+        const gain1 = this.audioContext.createGain();
+        const gain2 = this.audioContext.createGain();
+        const biquadFilter = this.audioContext.createBiquadFilter();
 
         const timbre = this.getTimbreConfig(this.currentTimbreId);
-        const waveform = timbre.type || 'sine';
-        const peakGain = typeof timbre.peakGain === 'number' ? timbre.peakGain : 0.3;
+        const waveform = timbre.type || "sine";
+        const peakGain =
+            typeof timbre.peakGain === "number" ? timbre.peakGain : 0.3;
+        const needsFilter = waveform === "square" || waveform == "sawtooth";
 
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
+        oscillator.connect(gain1);
+        oscillator2.connect(gain2);
+        if (needsFilter) {
+            gain1.connect(biquadFilter);
+            gain2.connect(biquadFilter);
+            biquadFilter.connect(envelope);
+        } else {
+            gain1.connect(envelope);
+            gain2.connect(envelope);
+        }
+        envelope.connect(this.audioContext.destination);
 
-        oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+        // Oscillator at fundamental
+        oscillator.frequency.setValueAtTime(
+            frequency,
+            this.audioContext.currentTime,
+        );
         oscillator.type = waveform;
-
-        gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(peakGain, this.audioContext.currentTime + 0.05);
-        gainNode.gain.exponentialRampToValueAtTime(Math.max(peakGain * 0.03, 0.015), this.audioContext.currentTime + duration);
-
         oscillator.start(this.audioContext.currentTime);
         oscillator.stop(this.audioContext.currentTime + duration);
+
+        // Suboscillator an octave down
+        oscillator2.frequency.setValueAtTime(
+            frequency / 2,
+            this.audioContext.currentTime,
+        );
+        oscillator2.type = needsFilter ? "square" : waveform;
+        oscillator2.start(this.audioContext.currentTime);
+        oscillator2.stop(this.audioContext.currentTime + duration);
+
+        // Mix of Osc + Sub
+        let mix = needsFilter ? 0.5 : 0.7;
+        let mult = needsFilter ? 1 : 1.3;
+        gain1.gain.setValueAtTime(
+            peakGain * mix * mult,
+            this.audioContext.currentTime,
+        );
+        gain2.gain.setValueAtTime(
+            peakGain * (1 - mix) * mult,
+            this.audioContext.currentTime,
+        );
+
+        // VCF for square/saw sound
+        if (needsFilter) {
+            biquadFilter.type = "lowpass";
+            biquadFilter.frequency.setValueAtTime(
+                Math.min(
+                    frequency * Math.pow(2, waveform === "square" ? 4 : 2.2),
+                    22050,
+                ),
+                this.audioContext.currentTime,
+            );
+            biquadFilter.Q.setValueAtTime(1, this.audioContext.currentTime);
+            biquadFilter.frequency.exponentialRampToValueAtTime(
+                frequency,
+                this.audioContext.currentTime + duration / 4,
+            );
+            biquadFilter.frequency.exponentialRampToValueAtTime(
+                frequency / 3,
+                this.audioContext.currentTime + duration,
+            );
+        }
+
+        // VCA Envelope
+        envelope.gain.setValueAtTime(0, this.audioContext.currentTime);
+        envelope.gain.linearRampToValueAtTime(
+            peakGain,
+            this.audioContext.currentTime + 0.05,
+        );
+        envelope.gain.exponentialRampToValueAtTime(
+            Math.max(peakGain * 0.03, 0.015),
+            this.audioContext.currentTime + duration * 0.95,
+        );
+        envelope.gain.exponentialRampToValueAtTime(
+            0.0001,
+            this.audioContext.currentTime + duration,
+        );
     }
 
     /**
@@ -143,16 +221,20 @@ class AudioModule {
         }
 
         const sanitized = frequencies
-            .map((freq) => (typeof freq === 'number' && Number.isFinite(freq) ? freq : null))
-            .filter((freq) => typeof freq === 'number');
+            .map((freq) =>
+                typeof freq === "number" && Number.isFinite(freq) ? freq : null,
+            )
+            .filter((freq) => typeof freq === "number");
         if (sanitized.length === 0) {
             return;
         }
 
         const timbre = this.getTimbreConfig(this.currentTimbreId);
-        const waveform = timbre.type || 'sine';
-        const peakGain = typeof timbre.peakGain === 'number' ? timbre.peakGain : 0.3;
-        const normalizedGain = peakGain / Math.max(1, Math.sqrt(sanitized.length));
+        const waveform = timbre.type || "sine";
+        const peakGain =
+            typeof timbre.peakGain === "number" ? timbre.peakGain : 0.3;
+        const normalizedGain =
+            peakGain / Math.max(1, Math.sqrt(sanitized.length));
 
         const masterGain = this.audioContext.createGain();
         masterGain.connect(this.audioContext.destination);
@@ -164,7 +246,7 @@ class AudioModule {
         masterGain.gain.linearRampToValueAtTime(normalizedGain, now + 0.05);
         masterGain.gain.exponentialRampToValueAtTime(
             Math.max(normalizedGain * 0.03, 0.015),
-            stopAt
+            stopAt,
         );
 
         sanitized.forEach((freq) => {
@@ -252,7 +334,7 @@ class AudioModule {
 
     /**
      * Set the playing state
-     * @param {boolean} isPlaying 
+     * @param {boolean} isPlaying
      */
     setIsPlaying(isPlaying) {
         this.isPlaying = isPlaying;
@@ -263,7 +345,9 @@ class AudioModule {
      * @param {string} timbreId - Timbre identifier
      */
     setTimbre(timbreId) {
-        const config = this.getTimbreConfig(timbreId) || this.getTimbreConfig(this.currentTimbreId);
+        const config =
+            this.getTimbreConfig(timbreId) ||
+            this.getTimbreConfig(this.currentTimbreId);
         if (config) {
             this.currentTimbreId = config.id;
         }
@@ -279,7 +363,11 @@ class AudioModule {
         if (!timbreId) {
             return this.timbreOptions[0] || null;
         }
-        return this.timbreOptions.find(option => option.id === timbreId) || this.timbreOptions[0] || null;
+        return (
+            this.timbreOptions.find((option) => option.id === timbreId) ||
+            this.timbreOptions[0] ||
+            null
+        );
     }
 
     /**
@@ -287,7 +375,10 @@ class AudioModule {
      * @returns {Array<{id:string,label:string}>}
      */
     getAvailableTimbres() {
-        return this.timbreOptions.map(option => ({ id: option.id, label: option.label }));
+        return this.timbreOptions.map((option) => ({
+            id: option.id,
+            label: option.label,
+        }));
     }
 
     /**
@@ -305,7 +396,7 @@ class AudioModule {
      */
     getTimbreLabel(timbreId) {
         const config = this.getTimbreConfig(timbreId);
-        return config ? config.label : '';
+        return config ? config.label : "";
     }
 
     /**
@@ -467,7 +558,7 @@ class AudioModule {
 }
 
 // Export the module
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== "undefined" && module.exports) {
     module.exports = AudioModule;
 } else {
     window.AudioModule = AudioModule;
