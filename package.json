@@ -19,8 +19,8 @@
     "sprite:build:glasses": "node scripts/build_glasses_variants.js",
     "sprite:gen-glasses": "node scripts/generate_glasses_openai.js",
     "sprite:vec-glasses": "node scripts/vectorize_glasses.js",
-    "sprite:overlay-glasses": "node scripts/overlay_glasses.js"
-    ,"sprite:add-legs": "node scripts/add_legs.js"
+    "sprite:overlay-glasses": "node scripts/overlay_glasses.js",
+    "sprite:add-legs": "node scripts/add_legs.js"
   },
   "keywords": [
     "ear-training",
@@ -42,6 +42,7 @@
   "dependencies": {
     "abcjs": "^6.2.2",
     "jsdom": "^27.0.1",
+    "opensheetmusicdisplay": "^1.9.3",
     "tonal": "^4.14.2"
   }
 }

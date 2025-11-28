@@ -25,6 +25,39 @@ const NOTE_REGEX = /^([A-Ga-g])([#x𝄪♯b♭]{0,3})(-?\d+)$/;
 const DEFAULT_METER = Object.freeze({ num: 4, den: 4 });
 const DEFAULT_DURATION = 'q';
 
+function parseMeterSpec(spec) {
+  if (!spec) return null;
+  if (typeof spec === 'string') {
+    const match = /^(\d{1,2})\s*\/\s*(\d{1,2})$/.exec(spec.trim());
+    if (!match) return null;
+    const num = Number.parseInt(match[1], 10);
+    const den = Number.parseInt(match[2], 10);
+    if (Number.isFinite(num) && Number.isFinite(den) && num > 0 && den > 0) {
+      return { num, den };
+    }
+    return null;
+  }
+  if (typeof spec === 'object') {
+    const num = Number(spec.num);
+    const den = Number(spec.den);
+    if (Number.isFinite(num) && Number.isFinite(den) && num > 0 && den > 0) {
+      return { num, den };
+    }
+  }
+  return null;
+}
+
+function normalizeMeterSpec(spec) {
+  const parsed = parseMeterSpec(spec) || DEFAULT_METER;
+  const clampedNum = Math.max(1, Math.min(32, Math.round(parsed.num)));
+  const allowedDenominators = [1, 2, 4, 8, 16];
+  const roundedDen = Math.max(1, Math.min(16, Math.round(parsed.den)));
+  const resolvedDen = allowedDenominators.includes(roundedDen)
+    ? roundedDen
+    : DEFAULT_METER.den;
+  return { num: clampedNum, den: resolvedDen };
+}
+
 function styleForStateFromTheme(state, theme) {
   const choose = (primary, fallback) => (primary ? { fillStyle: primary, strokeStyle: primary } : (fallback || undefined));
   switch (state) {
@@ -140,13 +173,13 @@ export class VexflowStaffDisplay {
     this.keySignature = canonicalizeKeySignature(keySignature) || 'C';
     this.fontId = fontId || DEFAULT_FONT_ID;
     this.fontChoice = getFontChoice(this.fontId);
-    this.meter = meter && Number.isFinite(meter.num) && Number.isFinite(meter.den)
-      ? { num: meter.num, den: meter.den }
-      : { ...DEFAULT_METER };
+    this.meter = normalizeMeterSpec(meter);
+    this.showTimeSignature = false;
     this.sequenceEntries = [];
     this.interactionRegistrar = null;
     this.highlightEntry = null;
     this.overlayEntries = null; // optional full-answer overlay
+    this.finalBarline = null;
     this.widthOptions = normalizeStaffSizing({
       minWidth,
       maxWidth,
@@ -162,6 +195,7 @@ export class VexflowStaffDisplay {
       primaryClef: this.clef,
       meter: this.meter,
       keySig: this.keySignature,
+      showTimeSignature: this.showTimeSignature,
       warnings: [],
       voices: [],
     };
@@ -199,6 +233,26 @@ export class VexflowStaffDisplay {
     if (!fontId || fontId === this.fontId) return;
     this.fontId = fontId;
     this.fontConfigured = false;
+    await this.render();
+  }
+
+  async setTimeSignature(timeSignature) {
+    const next = normalizeMeterSpec(timeSignature);
+    if (this.meter.num === next.num && this.meter.den === next.den) {
+      return;
+    }
+    this.meter = next;
+    this.renderState.meter = this.meter;
+    await this.render();
+  }
+
+  async setTimeSignatureVisibility(visible) {
+    const next = Boolean(visible);
+    if (this.showTimeSignature === next) {
+      return;
+    }
+    this.showTimeSignature = next;
+    this.renderState.showTimeSignature = this.showTimeSignature;
     await this.render();
   }
 
@@ -273,6 +327,18 @@ export class VexflowStaffDisplay {
     return this.render();
   }
 
+  async setFinalBarline(barline) {
+    const normalized = typeof barline === 'string'
+      ? barline.trim().toLowerCase()
+      : (barline || null);
+    if (this.finalBarline === normalized) {
+      return;
+    }
+    this.finalBarline = normalized;
+    this.renderState.finalBarline = this.finalBarline;
+    await this.render();
+  }
+
   getFontLabel() {
     return this.fontChoice?.label || '';
   }
@@ -281,6 +347,12 @@ export class VexflowStaffDisplay {
     if (!entry) return null;
     const theme = getStaffTheme();
     const resolvedStyle = resolveStyle(entry, theme);
+    if (entry.barline) {
+      return {
+        barline: entry.barline,
+        style: resolvedStyle,
+      };
+    }
     if (entry.isRest === true) {
       return {
         isRest: true,
@@ -322,6 +394,10 @@ export class VexflowStaffDisplay {
         style: keyStyles ? undefined : resolvedStyle,
         keyStyles,
         stemless: entry.stemless === true,
+        beams: Array.isArray(entry.beams) ? entry.beams.map((beam) => ({
+          number: Number.isFinite(beam?.number) ? beam.number : 1,
+          type: (beam?.type || '').toString().trim().toLowerCase(),
+        })) : undefined,
       };
     }
     if (!entry.note) return null;
@@ -341,6 +417,10 @@ export class VexflowStaffDisplay {
       midis: [midi],
       style: resolvedStyle,
       stemless: entry.stemless === true,
+      beams: Array.isArray(entry.beams) ? entry.beams.map((beam) => ({
+        number: Number.isFinite(beam?.number) ? beam.number : 1,
+        type: (beam?.type || '').toString().trim().toLowerCase(),
+      })) : undefined,
     };
   }
 
@@ -349,6 +429,8 @@ export class VexflowStaffDisplay {
     this.renderState.primaryClef = this.clef;
     this.renderState.keySig = this.keySignature;
     this.renderState.meter = this.meter;
+    this.renderState.showTimeSignature = this.showTimeSignature;
+    this.renderState.finalBarline = this.finalBarline;
 
     const result = await renderPipeline({
       container: this.container,

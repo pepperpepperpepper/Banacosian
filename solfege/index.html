@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Solfege — Ear Training</title>
+    <link rel="icon" type="image/png" href="/img/favicon.png">
+    <link rel="stylesheet" href="/staff/theme/tokens.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container ui-card">
+        <h1>🎤 Solfege Sessions</h1>
+
+        <div class="game-controls">
+            <div class="main-action-row">
+                <button class="control-btn ui-pill" id="solfegeStartBtn">Start Session</button>
+                <button class="control-btn ui-pill" id="solfegePauseBtn" disabled>Pause</button>
+                <button class="control-btn ui-pill" id="solfegeReplayBtn" disabled>Replay Melody</button>
+                <button class="control-btn ui-pill" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel" aria-haspopup="true">Settings</button>
+            </div>
+            <div class="settings-row" id="settingsPanel" hidden>
+                <select id="solfegeSequenceLength" class="select-pill ui-pill" aria-label="Notes per melody" disabled title="Library melodies currently have a fixed length.">
+                    <option value="2">2 notes</option>
+                    <option value="3" selected>3 notes</option>
+                    <option value="4">4 notes</option>
+                    <option value="5">5 notes</option>
+                    <option value="6">6 notes</option>
+                    <option value="7">7 notes</option>
+                    <option value="8">8 notes</option>
+                </select>
+                <select id="solfegeTonic" class="select-pill ui-pill" aria-label="Select tonic"></select>
+                <select id="solfegeMode" class="select-pill ui-pill" aria-label="Select mode">
+                    <option value="ionian" class="mode-option-primary" selected>Ionian</option>
+                    <option value="dorian">Dorian</option>
+                    <option value="phrygian">Phrygian</option>
+                    <option value="lydian">Lydian</option>
+                    <option value="mixolydian">Mixolydian</option>
+                    <option value="aeolian" class="mode-option-primary">Aeolian</option>
+                    <option value="blues" class="mode-option-primary">Blues</option>
+                    <option value="locrian">Locrian</option>
+                    <option value="chromatic">Chromatic</option>
+                    <option value="half-whole">Half-Whole</option>
+                    <option value="whole-half">Whole-Half</option>
+                    <option value="whole-tone">Whole Tone</option>
+                    <option value="melodic-minor">Melodic Minor</option>
+                    <option value="dorian-b2">Dorian b2</option>
+                    <option value="lydian-augmented">Lydian Augmented</option>
+                    <option value="lydian-dominant">Lydian Dominant</option>
+                    <option value="mixolydian-b6">Mixolydian b6</option>
+                    <option value="locrian-sharp2">Locrian #2</option>
+                    <option value="altered">Altered (Super Locrian)</option>
+                    <option value="harmonic-minor">Harmonic Minor</option>
+                    <option value="locrian-sharp6">Locrian #6</option>
+                    <option value="ionian-sharp5">Ionian #5</option>
+                    <option value="dorian-sharp4">Dorian #4</option>
+                    <option value="phrygian-dominant">Phrygian Dominant</option>
+                    <option value="lydian-sharp2">Lydian #2</option>
+                    <option value="super-locrian-bb7">Super Locrian bb7</option>
+                </select>
+                <select id="solfegeReferenceType" class="select-pill ui-pill" aria-label="Choose reference">
+                    <option value="tonic" selected>Reference: Tonic</option>
+                    <option value="first-note">Reference: First Note</option>
+                </select>
+                <select id="solfegeTimeSignature" class="select-pill ui-pill" aria-label="Select time signature" disabled title="Curated library currently supports 4/4.">
+                    <option value="2/4">Time: 2/4</option>
+                    <option value="3/4">Time: 3/4</option>
+                    <option value="4/4" selected>Time: 4/4</option>
+                    <option value="5/4">Time: 5/4</option>
+                    <option value="6/8">Time: 6/8</option>
+                </select>
+                <select id="solfegeCountOff" class="select-pill ui-pill" aria-label="Count-off length">
+                    <option value="2">2-beat count</option>
+                    <option value="3">3-beat count</option>
+                    <option value="4" selected>4-beat count</option>
+                    <option value="5">5-beat count</option>
+                    <option value="6">6-beat count</option>
+                </select>
+                <select id="solfegeTimbre" class="select-pill ui-pill" aria-label="Select timbre"></select>
+            </div>
+        </div>
+
+        <div class="status-area">
+            <div class="feedback" id="feedback">Press "Start Session" to generate 10 melodies.</div>
+            <div id="countOffDisplay" class="sequence-display" aria-live="polite"></div>
+        </div>
+
+        <div id="sequenceDisplay" class="sequence-display" aria-live="polite"></div>
+        <div id="userSequenceDisplay" class="sequence-display" aria-live="polite"></div>
+
+        <div
+            id="staff-vexflow"
+            class="vexflow-display solfege-staff-display interaction-draggable"
+            role="img"
+            aria-label="Rendered musical staff"
+        ></div>
+
+        <div class="solfege-response-row">
+            <button class="control-btn ui-pill" id="solfegeCorrectBtn" disabled>✅ Nailed it</button>
+            <button class="control-btn ui-pill" id="solfegeWrongBtn" disabled>❌ Needs work</button>
+        </div>
+
+        <div class="timer-display">
+            <div class="timer" id="timer">00:00</div>
+            <div class="round-progress">
+                Score: <span id="correct">0</span> / <span id="total">0</span>
+                (<span id="percentage">0</span>%)
+            </div>
+            <div class="round-accuracy">
+                Current Accuracy: <span id="currentAccuracy">0%</span>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <strong>How it works:</strong><br>
+            1. Pick a tonic, mode, reference type, and timbre. (Curated solfege melodies are currently two bars in 4/4.)<br>
+            2. Each session runs for 10 rounds. You always hear the reference first, then the in-tempo count-off ending with “SING.”<br>
+            3. Stay in time and sing through the written melody during the silent window that follows the count-off.<br>
+            4. As soon as that window ends, the original melody plays back so you can check yourself.<br>
+            5. Mark whether you matched it. A new melody begins immediately after your choice (Replay replays the last answer tone-only).
+        </div>
+
+        <div class="data-controls">
+            <div class="data-row">
+                <a class="control-btn ui-pill" href="/">🎯 Melodic Dictation</a>
+                <a class="control-btn ui-pill" href="/intervals/">🎧 Intervals</a>
+                <a class="control-btn ui-pill" href="/keyboard/">🎹 Keyboard</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function loadSolfegeScriptsSequentially() {
+            const cacheTag = window.__EarCacheTag || (window.__EarCacheTag = `cb=${Date.now().toString(36)}`);
+            const scripts = [
+                '/js/shared/blockContextMenu.js',
+                'https://cdn.jsdelivr.net/npm/tonal@4.14.2/browser/tonal.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.40/Tone.min.js',
+                'https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.3/build/opensheetmusicdisplay.min.js',
+                '/js/modules/Audio.js',
+                '/js/modules/MusicTheory.js',
+                '/js/modules/UI.js',
+                '/js/modules/Scoring.js',
+                '/js/modules/SolfegeLibrary.js',
+                '/js/modules/SolfegeTonePlayer.js',
+                '/js/modules/SolfegeStaff.js',
+                '/js/SolfegeTrainer.js'
+            ];
+            const isAbsolute = (src) => /^https?:\/\//i.test(src);
+            const target = document.body || document.head;
+            if (!target) return;
+
+            function appendNext(index) {
+                if (index >= scripts.length) return;
+                const originalSrc = scripts[index];
+                if (typeof originalSrc !== 'string' || originalSrc.trim() === '') {
+                    appendNext(index + 1);
+                    return;
+                }
+                const src = isAbsolute(originalSrc)
+                    ? originalSrc
+                    : `${originalSrc}${originalSrc.includes('?') ? '&' : '?'}${cacheTag}`;
+                const script = document.createElement('script');
+                script.src = src;
+                script.async = false;
+                script.onload = () => appendNext(index + 1);
+                script.onerror = (event) => {
+                    console.error('[SolfegeLoader] Failed to load script:', src, event);
+                    appendNext(index + 1);
+                };
+                target.appendChild(script);
+            }
+
+            appendNext(0);
+        })();
+    </script>
+</body>
+</html>

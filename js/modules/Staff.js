@@ -59,9 +59,53 @@ if (!StaffSharedUtils || typeof StaffSharedUtils.attachTo !== 'function') {
     throw new Error('StaffSharedUtils dependency missing. Load js/modules/StaffSharedUtils.js before Staff.js');
 }
 
+const DEFAULT_TIME_SIGNATURE = '4/4';
+const ALLOWED_TIME_SIGNATURE_DENOMINATORS = [1, 2, 4, 8, 16];
+
 function normalizePitchClassValue(value) {
     if (!Number.isFinite(value)) return null;
     return ((Math.round(value) % 12) + 12) % 12;
+}
+
+function normalizeTimeSignatureValue(value, fallback = DEFAULT_TIME_SIGNATURE) {
+    const clampNumerator = (num) => {
+        if (!Number.isFinite(num)) return null;
+        return Math.max(1, Math.min(32, Math.round(num)));
+    };
+    const normalizeDenominator = (den) => {
+        if (!Number.isFinite(den)) return null;
+        const rounded = Math.max(1, Math.min(16, Math.round(den)));
+        return ALLOWED_TIME_SIGNATURE_DENOMINATORS.includes(rounded) ? rounded : null;
+    };
+    const fromParts = (num, den) => {
+        const numerator = clampNumerator(num);
+        const denominator = normalizeDenominator(den);
+        if (!numerator || !denominator) return null;
+        return `${numerator}/${denominator}`;
+    };
+    const tryNormalizeString = (input) => {
+        if (typeof input !== 'string') return null;
+        const match = /^(\d{1,2})\s*\/\s*(\d{1,2})$/.exec(input.trim());
+        if (!match) return null;
+        return fromParts(Number.parseInt(match[1], 10), Number.parseInt(match[2], 10));
+    };
+
+    let attempt = null;
+    if (typeof value === 'string') {
+        attempt = tryNormalizeString(value);
+    } else if (value && typeof value === 'object') {
+        attempt = fromParts(Number(value.num), Number(value.den));
+    }
+    if (attempt) return attempt;
+
+    if (fallback && typeof fallback === 'object') {
+        attempt = fromParts(Number(fallback.num), Number(fallback.den));
+        if (attempt) return attempt;
+    } else if (typeof fallback === 'string') {
+        attempt = tryNormalizeString(fallback);
+        if (attempt) return attempt;
+    }
+    return DEFAULT_TIME_SIGNATURE;
 }
 
 function createPitchClassQuantizerFromConfig(config) {
@@ -145,6 +189,9 @@ class StaffModule {
         this.noteEntries = [];
         this.staffNotes = [];
         this.keySignature = 'C';
+        this.timeSignature = DEFAULT_TIME_SIGNATURE;
+        this.displayTimeSignature = false;
+        this.lastAppliedTimeSignature = null;
         this.clef = 'treble';
         this.noteSpeller = null; // optional function(note:string)->string for display spelling
         this.dictationMode = 'melodic';
@@ -377,6 +424,40 @@ class StaffModule {
         });
     }
 
+    setTimeSignature(timeSignature, options = {}) {
+        const normalized = normalizeTimeSignatureValue(timeSignature, this.timeSignature);
+        if (!normalized) {
+            return;
+        }
+        const previous = this.timeSignature;
+        this.timeSignature = normalized;
+        const needsUpdate = options.force === true
+            || this.lastAppliedTimeSignature !== normalized
+            || previous !== normalized;
+        if (!needsUpdate) {
+            return;
+        }
+        this.enqueue(async (display) => {
+            if (typeof display.setTimeSignature === 'function') {
+                await display.setTimeSignature(this.timeSignature);
+                this.lastAppliedTimeSignature = this.timeSignature;
+            }
+        });
+    }
+
+    setTimeSignatureDisplay(visible) {
+        const next = Boolean(visible);
+        if (this.displayTimeSignature === next) {
+            return;
+        }
+        this.displayTimeSignature = next;
+        this.enqueue(async (display) => {
+            if (typeof display.setTimeSignatureVisibility === 'function') {
+                await display.setTimeSignatureVisibility(next);
+            }
+        });
+    }
+
     setDictationMode(mode) {
         const normalized = mode === 'harmonic' ? 'harmonic' : 'melodic';
         if (this.dictationMode === normalized) return;
@@ -388,6 +469,60 @@ class StaffModule {
         if (!fontId || fontId === this.fontPreference) return;
         this.fontPreference = fontId;
         this.enqueue((display) => display.setFont(fontId));
+    }
+
+    normalizeRenderedEntry(entry) {
+        if (!entry) return null;
+        const duration = entry.duration || 'q';
+        const dots = Number.isFinite(entry.dots) ? entry.dots : 0;
+        if (entry.isRest) {
+            return {
+                isRest: true,
+                duration,
+                dots,
+                clef: entry.clef || this.clef,
+            };
+        }
+        const noteCandidates = Array.isArray(entry.notes) && entry.notes.length > 0
+            ? entry.notes.slice()
+            : (entry.note ? [entry.note] : []);
+        const spelled = noteCandidates
+            .map((note) => this.spell(note))
+            .filter((note) => typeof note === 'string' && note);
+        if (spelled.length === 0) {
+            return {
+                isRest: true,
+                duration,
+                dots,
+                clef: entry.clef || this.clef,
+            };
+        }
+        return {
+            note: spelled[0],
+            notes: spelled,
+            duration,
+            dots,
+            stemless: entry.stemless === true,
+            state: entry.state || null,
+            clef: entry.clef || this.clef,
+        };
+    }
+
+    async applyRenderedSequence(entries) {
+        if (!Array.isArray(entries)) return;
+        const normalized = entries
+            .map((entry) => this.normalizeRenderedEntry(entry))
+            .filter(Boolean);
+        this.noteEntries = normalized;
+        this.staffNotes = normalized.map((entry, index) => ({
+            note: entry.note || null,
+            notes: Array.isArray(entry.notes) ? entry.notes.slice() : (entry.note ? [entry.note] : []),
+            index,
+            state: entry.state || null,
+            element: null,
+            isRest: entry.isRest === true,
+        }));
+        await this.enqueue((display) => display.setSequence(this.noteEntries));
     }
 
 }

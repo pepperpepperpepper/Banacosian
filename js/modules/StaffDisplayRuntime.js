@@ -117,6 +117,7 @@
                     statusEl: this.statusEl,
                     clef: this.clef,
                     keySignature: this.keySignature,
+                    meter: this.timeSignature || undefined,
                     fontId: this.fontPreference,
                     minWidth: sizing.minWidth ?? undefined,
                     maxWidth: sizing.maxWidth ?? undefined,

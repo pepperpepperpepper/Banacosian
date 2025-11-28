@@ -3,6 +3,9 @@ import VexFlow, {
   Stave,
   Voice,
   Formatter,
+  Beam,
+  Barline,
+  Fraction,
 } from '/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js';
 import { logStructured, parsePositiveNumber, normalizeDomRect } from '/js/shared/utils.js';
 import {
@@ -132,6 +135,93 @@ function assignKeySignatureScale(stave, scale) {
 ensureKeySignatureScalingSupport();
 import { buildLedgerStyle, createVexflowNote } from './noteFactory.js';
 
+const DEFAULT_METER = Object.freeze({ num: 4, den: 4 });
+
+const BEAMABLE_DURATIONS = new Set(['8', '16', '32', '64', '128', '256']);
+
+function normalizeBarlineKeyword(raw, fallback = null) {
+  if (!raw && fallback == null) return null;
+  const candidate = raw || fallback;
+  if (!candidate) return null;
+  const key = candidate.toString().trim().toLowerCase().replace(/\s+/g, '_');
+  switch (key) {
+    case 'double':
+      return Barline?.type?.DOUBLE ?? null;
+    case 'end':
+    case 'final':
+    case 'lightheavy':
+    case 'light_heavy':
+      return Barline?.type?.END ?? null;
+    case 'repeat_begin':
+    case 'repeat-start':
+    case 'repeatstart':
+      return Barline?.type?.REPEAT_BEGIN ?? null;
+    case 'repeat_end':
+    case 'repeat-stop':
+    case 'repeatstop':
+      return Barline?.type?.REPEAT_END ?? null;
+    case 'repeat_both':
+    case 'repeat':
+      return Barline?.type?.REPEAT_BOTH ?? null;
+    case 'single':
+    default:
+      return Barline?.type?.SINGLE ?? null;
+  }
+}
+
+function isCompoundMeter(meter) {
+  if (!meter) return false;
+  const denominator = Number.isFinite(meter.den) ? meter.den : 4;
+  const numerator = Number.isFinite(meter.num) ? meter.num : 4;
+  return denominator === 8 && numerator >= 6 && numerator % 3 === 0;
+}
+
+function buildBeamGroups(meter) {
+  if (!Fraction) return [];
+  const numerator = Number.isFinite(meter?.num) && meter.num > 0 ? meter.num : 4;
+  const denominator = Number.isFinite(meter?.den) && meter.den > 0 ? meter.den : 4;
+  const groups = [];
+  if (isCompoundMeter(meter)) {
+    const groupCount = Math.max(1, Math.floor(numerator / 3));
+    for (let i = 0; i < groupCount; i += 1) {
+      groups.push(new Fraction(3, 8));
+    }
+    return groups;
+  }
+  const beatFraction = new Fraction(1, denominator);
+  for (let i = 0; i < numerator; i += 1) {
+    groups.push(beatFraction);
+  }
+  return groups;
+}
+
+function isBeamableTickable(tickable) {
+  if (!tickable || !tickable.__smuflSpec) return false;
+  const spec = tickable.__smuflSpec;
+  if (spec.barline || spec.isRest || spec.stemless) return false;
+  const rawDuration = (spec.duration || '').toString().trim().toLowerCase();
+  if (!rawDuration) return false;
+  const normalized = rawDuration.replace(/[^a-z0-9]/g, '');
+  return BEAMABLE_DURATIONS.has(normalized);
+}
+
+function createAutoBeamsForVoice(voice, meter) {
+  if (!voice || typeof voice.getTickables !== 'function' || !Beam) return [];
+  const tickables = voice.getTickables();
+  if (!Array.isArray(tickables) || tickables.length === 0) return [];
+  const beamable = tickables.filter((tickable) => isBeamableTickable(tickable));
+  if (beamable.length === 0) return [];
+  const groups = buildBeamGroups(meter);
+  try {
+    return Beam.generateBeams(beamable, {
+      groups: groups.length > 0 ? groups : undefined,
+    });
+  } catch (error) {
+    console.warn('[VexflowDraw] Unable to auto-beam voice', error);
+    return [];
+  }
+}
+
 export function computeDimensions(container, staffScaleX, staffScaleY = staffScaleX, renderState) {
   const safeScaleX = Number.isFinite(staffScaleX) && staffScaleX > 0 ? staffScaleX : 1;
   const safeScaleY = Number.isFinite(staffScaleY) && staffScaleY > 0 ? staffScaleY : safeScaleX;
@@ -253,6 +343,7 @@ export function drawStaff({
   registerInteractions,
   applyTheme,
 }) {
+  const showTimeSignature = !!(renderState?.showTimeSignature);
   const safeScaleX = Number.isFinite(staffScale) && staffScale > 0 ? staffScale : 1;
   const safeScaleY = Number.isFinite(staffScaleY) && staffScaleY > 0 ? staffScaleY : safeScaleX;
   const { baseWidth, baseHeight, scaledWidth, scaledHeight } = computeDimensions(
@@ -303,9 +394,25 @@ export function drawStaff({
   const primaryClef = voices[0]?.clef || 'treble';
   renderState.primaryClef = primaryClef;
   stave.addClef(primaryClef);
+  const startBarline = normalizeBarlineKeyword(renderState?.startBarline ?? null);
+  const finalBarline = normalizeBarlineKeyword(renderState?.finalBarline ?? null);
+  if (startBarline != null && typeof stave.setBegBarType === 'function') {
+    stave.setBegBarType(startBarline);
+  }
+  if (finalBarline != null && typeof stave.setEndBarType === 'function') {
+    stave.setEndBarType(finalBarline);
+  }
   if (keySig) {
     try { stave.addKeySignature(keySig); } catch (_err) { /* ignore */ }
     assignKeySignatureScale(stave, DEFAULT_KEY_SIGNATURE_SCALE);
+  }
+  if (showTimeSignature && meter && Number.isFinite(meter.num) && Number.isFinite(meter.den)) {
+    const spec = `${Math.max(1, Math.round(meter.num))}/${Math.max(1, Math.round(meter.den))}`;
+    try {
+      stave.setTimeSignature(spec);
+    } catch (err) {
+      console.warn('[VexflowDraw] Unable to set time signature', spec, err);
+    }
   }
   const ledgerStyle = buildLedgerStyle(theme);
   if (ledgerStyle) {
@@ -370,6 +477,7 @@ export function drawStaff({
   });
 
   let drawnVoices = playableVoices;
+  let autoBeams = [];
 
   if (playableVoices.length > 0) {
     try {
@@ -386,18 +494,21 @@ export function drawStaff({
         formatter.format(playableVoices, packedWidth, { alignRests: true, stave, context });
       }
 
+      const meterForBeaming = meter || DEFAULT_METER;
+      autoBeams = playableVoices.reduce((acc, voice) => {
+          const generated = createAutoBeamsForVoice(voice, meterForBeaming);
+          if (generated && generated.length > 0) {
+            acc.push(...generated);
+          }
+          return acc;
+        }, []);
       playableVoices.forEach((voice) => voice.draw(context, stave));
-
-      playableVoices.forEach((voice, voiceIndex) => {
-        const tickables = voice.getTickables ? voice.getTickables() : [];
-        tickables.forEach((tickable, noteIndex) => {
-          console.log('[VexflowDraw] attrs after draw', {
-            voiceIndex,
-            noteIndex,
-            attrs: tickable.getAttrs?.(),
-            rawAttrs: tickable.attrs,
-          });
-        });
+      autoBeams.forEach((beam) => {
+        try {
+          beam.setContext(context).draw();
+        } catch (err) {
+          console.warn('[VexflowDraw] Unable to draw beam', err);
+        }
       });
     } catch (error) {
       console.warn('[VexflowDraw] unable to format voices', error);

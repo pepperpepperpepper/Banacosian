@@ -1,4 +1,4 @@
-import { StaveNote, Accidental } from '/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js';
+import { StaveNote, Accidental, BarNote, Barline } from '/staff/vendor/lib/vexflow-esm/entry/vexflow-debug.js';
 import { keyToMidi } from './helpers/pitch.js';
 
 export function buildLedgerStyle(theme) {
@@ -14,7 +14,47 @@ export function buildLedgerStyle(theme) {
   return Object.keys(ledgerStyle).length > 0 ? ledgerStyle : null;
 }
 
+function normalizeBarlineType(raw) {
+  if (!Barline || !Barline.type) {
+    return null;
+  }
+  if (typeof raw === 'number') {
+    return raw;
+  }
+  if (typeof raw === 'string') {
+    const key = raw.trim().toLowerCase().replace(/\s+/g, '_');
+    switch (key) {
+      case 'double':
+        return Barline.type.DOUBLE;
+      case 'final':
+      case 'end':
+        return Barline.type.END;
+      case 'repeat_begin':
+      case 'repeat-start':
+      case 'repeatstart':
+        return Barline.type.REPEAT_BEGIN;
+      case 'repeat_end':
+      case 'repeat-stop':
+      case 'repeatstop':
+        return Barline.type.REPEAT_END;
+      case 'repeat_both':
+      case 'repeat':
+        return Barline.type.REPEAT_BOTH;
+      case 'single':
+      default:
+        return Barline.type.SINGLE;
+    }
+  }
+  return Barline.type.SINGLE;
+}
+
 export function createVexflowNote(spec, theme) {
+  if (spec.barline) {
+    const barType = normalizeBarlineType(spec.barline) ?? (Barline?.type?.SINGLE);
+    const barNote = new BarNote(barType);
+    barNote.__smuflSpec = spec;
+    return barNote;
+  }
   const isRest = spec.isRest === true;
   const noteStruct = {
     keys: isRest ? ['b/4'] : spec.keys,
