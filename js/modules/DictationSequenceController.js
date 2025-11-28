@@ -52,9 +52,27 @@
                 return;
             }
 
+            // Build a sequence that never repeats the same note back-to-back
+            let lastNote = null;
             for (let i = 0; i < app.sequenceLength; i += 1) {
-                const randomNote = availableNotes[Math.floor(Math.random() * availableNotes.length)];
-                app.currentSequence.push(randomNote);
+                let candidate = null;
+                if (availableNotes.length > 1 && lastNote != null) {
+                    // Try random picks until different from lastNote, with a bounded number of attempts
+                    let attempts = 0;
+                    do {
+                        candidate = availableNotes[Math.floor(Math.random() * availableNotes.length)];
+                        attempts += 1;
+                    } while (candidate === lastNote && attempts < 24);
+                    if (candidate === lastNote) {
+                        // Deterministic fallback to the first different note in the pool
+                        const idx = availableNotes.findIndex((n) => n !== lastNote);
+                        candidate = idx >= 0 ? availableNotes[idx] : lastNote;
+                    }
+                } else {
+                    candidate = availableNotes[Math.floor(Math.random() * availableNotes.length)];
+                }
+                app.currentSequence.push(candidate);
+                lastNote = candidate;
             }
 
             if (app.staffInputController && app.inputMode === 'staff') {
