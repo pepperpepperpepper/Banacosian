@@ -159,3 +159,123 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Ledger Quiz */
+
+.ledger-quiz {
+  gap: var(--app-gap-lg);
+}
+
+.ledger-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-gap-sm);
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+
+.ledger-timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 6px auto 14px;
+  padding: 10px 18px;
+  border-radius: var(--app-border-radius-sm);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: fit-content;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ledger-timer-row .timer-label {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.ledger-timer {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--app-info);
+  letter-spacing: 0.02em;
+}
+
+.ledger-round {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--app-text-primary);
+}
+
+.ledger-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-gap-sm);
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--app-border-radius-sm);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.95rem;
+}
+
+.ledger-staff-card {
+  margin-top: 16px;
+  padding: clamp(14px, 2.4vw, 20px);
+  border-radius: var(--app-border-radius-lg);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 55px rgba(2, 6, 16, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.ledger-staff {
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.ledger-feedback {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 1rem;
+  color: var(--app-text-muted);
+}
+
+.ledger-answer-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.ledger-answer-grid .control-btn {
+  min-width: 68px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ledger-answer-grid .control-btn.is-correct {
+  background: var(--app-success);
+  color: #041014;
+  border-color: transparent;
+}
+
+.ledger-answer-grid .control-btn.is-wrong {
+  background: var(--app-danger);
+}
+
+.ledger-tip {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--app-text-muted);
+}

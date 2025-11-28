@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Ledger Line Quiz — Ear Training</title>
+    <link rel="icon" type="image/png" href="/img/favicon.png">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container ui-card ledger-quiz">
+        <h1>📝 Ledger Line Quiz</h1>
+        <p class="subtitle">Name random ledger-line notes above and below the treble and bass staffs. C major only.</p>
+
+        <div class="ledger-controls">
+            <button class="control-btn ui-pill" id="ledgerStartBtn">Start Quiz</button>
+            <button class="control-btn ui-pill" id="ledgerNextBtn" disabled>Skip</button>
+        </div>
+
+        <div class="ledger-timer-row" aria-live="polite">
+            <div class="timer-label">Time</div>
+            <div id="ledgerTimer" class="ledger-timer">0.0s</div>
+            <div class="timer-label">Round</div>
+            <div id="ledgerRound" class="ledger-round">0 / 20</div>
+        </div>
+
+        <div class="ledger-status">
+            <div>Clef: <span id="ledgerClefLabel">—</span></div>
+            <div>Region: <span id="ledgerRangeLabel">—</span></div>
+            <div>Answered: <span id="ledgerTotal">0</span> · Correct: <span id="ledgerCorrect">0</span> · Accuracy: <span id="ledgerAccuracy">0%</span></div>
+        </div>
+
+        <div class="ledger-staff-card">
+            <div
+                id="ledgerStaff"
+                class="ledger-staff vexflow-display"
+                role="img"
+                aria-live="off"
+                aria-label="Ledger staff display"
+                data-staff-min-width="200"
+                data-staff-target-width="320"
+                data-staff-max-width="360"
+                data-staff-base-height="172"
+                data-staff-scale="2.2"
+                data-staff-scale-y="3.6"
+                data-staff-scale-desktop="0.95"
+                data-staff-scale-y-desktop="2.2"
+                data-staff-target-width-desktop="200"
+                data-staff-max-width-desktop="230"
+                data-staff-base-height-desktop="132"
+                data-staff-scale-mobile="1.3"
+                data-staff-scale-y-mobile="6.2"
+                data-staff-target-width-mobile="190"
+                data-staff-max-width-mobile="220"
+                data-staff-min-width-mobile="170"
+                data-staff-base-height-mobile="148"
+                data-staff-breakpoint="900"
+            ></div>
+            <p id="ledgerFeedback" class="ledger-feedback" aria-live="polite">Press “Start Quiz” to generate a note.</p>
+        </div>
+
+        <div class="ledger-answer-grid" role="group" aria-label="Select the note name">
+            <button class="control-btn ui-pill" data-ledger-note="C" disabled>C</button>
+            <button class="control-btn ui-pill" data-ledger-note="D" disabled>D</button>
+            <button class="control-btn ui-pill" data-ledger-note="E" disabled>E</button>
+            <button class="control-btn ui-pill" data-ledger-note="F" disabled>F</button>
+            <button class="control-btn ui-pill" data-ledger-note="G" disabled>G</button>
+            <button class="control-btn ui-pill" data-ledger-note="A" disabled>A</button>
+            <button class="control-btn ui-pill" data-ledger-note="B" disabled>B</button>
+        </div>
+
+        <p class="ledger-tip">No audio for this exercise—focus on reading ledger lines visually. All prompts stay within C major.</p>
+    </div>
+
+    <script type="module" src="/js/LedgerQuiz.js?v=20251128a"></script>
+</body>
+</html>
