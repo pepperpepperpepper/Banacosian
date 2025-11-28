@@ -18,6 +18,17 @@
         <div class="ledger-controls">
             <button class="control-btn ui-pill" id="ledgerStartBtn">Start Quiz</button>
             <button class="control-btn ui-pill" id="ledgerNextBtn" disabled>Skip</button>
+            <button class="control-btn ui-pill" id="ledgerSettingsToggle" aria-expanded="false" aria-controls="ledgerSettingsPanel" aria-haspopup="true">Settings</button>
+        </div>
+
+        <div id="ledgerSettingsPanel" class="ledger-settings" hidden>
+            <div class="settings-actions">
+                <button class="control-btn ui-pill" id="ledgerSelectAllBtn" type="button">Select All</button>
+                <button class="control-btn ui-pill" id="ledgerClearAllBtn" type="button">Clear All</button>
+                <button class="control-btn ui-pill" id="ledgerApplyBtn" type="button">Apply & Restart</button>
+            </div>
+            <div id="ledgerNoteToggles" class="ledger-note-toggles" role="group" aria-label="Included notes"></div>
+            <p class="muted">Uncheck a note to remove it from the quiz. Changes are saved and apply when you restart.</p>
         </div>
 
         <div class="ledger-timer-row" aria-live="polite">
@@ -60,6 +71,7 @@
                 data-staff-breakpoint="900"
             ></div>
             <p id="ledgerFeedback" class="ledger-feedback" aria-live="polite">Press “Start Quiz” to generate a note.</p>
+            <div id="ledgerSummary" class="ledger-summary" hidden aria-live="polite"></div>
         </div>
 
         <div class="ledger-answer-grid" role="group" aria-label="Select the note name">
