@@ -16,6 +16,7 @@
     const SolfegeLibraryCtor = globalScope?.SolfegeLibrary || null;
     const SolfegeTonePlayerCtor = globalScope?.SolfegeTonePlayer || null;
     const SolfegeStaffCtor = globalScope?.SolfegeStaff || null;
+    const SolfegeConductorCtor = globalScope?.SolfegeConductor || null;
 
     class SolfegeTrainer {
         constructor() {
@@ -44,6 +45,7 @@
             this.melodyLibrary = SolfegeLibraryCtor ? new SolfegeLibraryCtor({ cacheToken }) : null;
             const initialVoiceId = this.audioModule?.currentTimbreId || 'sine';
             this.tonePlayer = SolfegeTonePlayerCtor ? new SolfegeTonePlayerCtor({ voiceId: initialVoiceId }) : null;
+            this.conductor = SolfegeConductorCtor ? new SolfegeConductorCtor() : null;
 
             this.currentSequence = [];
             this.currentMelodyPlan = null;
@@ -58,7 +60,6 @@
             this.playbackAbortReason = null;
             this.currentCycleKind = null;
             this.pausedAssessmentPending = false;
-            this.pausedReplayWasEnabled = false;
             this.needsSequenceTimerReset = false;
             this.singWindowBeats = DEFAULT_SING_WINDOW_BEATS;
 
@@ -75,17 +76,16 @@
             this.bindAudioUnlock();
             this.updateCountOffDisplay('');
             this.disableAssessmentButtons();
-            this.elements.replayBtn.disabled = true;
             this.updateStartButtonLabel();
             window.addEventListener('beforeunload', () => {
                 try { this.audioModule.reset(); } catch (err) { console.warn('[Solfege] Audio reset failed', err); }
+                try { this.conductor?.dispose?.(); } catch (err) { console.warn('[Solfege] Conductor dispose failed', err); }
             });
         }
 
         cacheDom() {
             this.elements = {
                 startBtn: document.getElementById('solfegeStartBtn'),
-                replayBtn: document.getElementById('solfegeReplayBtn'),
                 pauseBtn: document.getElementById('solfegePauseBtn'),
                 settingsToggle: document.getElementById('settingsToggle'),
                 settingsPanel: document.getElementById('settingsPanel'),
@@ -167,7 +167,6 @@
         bindEvents() {
             this.elements.startBtn?.addEventListener('click', () => this.startSession());
             this.elements.pauseBtn?.addEventListener('click', () => this.togglePause());
-            this.elements.replayBtn?.addEventListener('click', () => this.handleReplay());
             this.elements.correctBtn?.addEventListener('click', () => this.handleAssessment(true));
             this.elements.wrongBtn?.addEventListener('click', () => this.handleAssessment(false));
 
@@ -309,7 +308,8 @@
             if (Number.isFinite(beats) && beats > 0) {
                 return beats;
             }
-            return this.getBeatsPerMeasure();
+            const perMeasure = this.getBeatsPerMeasure();
+            return perMeasure * 2 || 4;
         }
 
         getCountWord(beatNumber) {
@@ -462,9 +462,7 @@
             }
 
             this.pausedAssessmentPending = this.awaitingAssessment;
-            this.pausedReplayWasEnabled = !this.elements.replayBtn.disabled;
             this.disableAssessmentButtons();
-            this.elements.replayBtn.disabled = true;
             this.needsSequenceTimerReset = false;
 
             if (this.pendingNextTimeout) {
@@ -483,6 +481,9 @@
                 this.needsSequenceTimerReset = true;
             }
             void this.stopTonePlayback();
+            if (this.conductor && typeof this.conductor.cancelPending === 'function') {
+                this.conductor.cancelPending();
+            }
         }
 
         resumeSession() {
@@ -508,19 +509,12 @@
             } else if (pending?.action === 'awaitAssessment') {
                 if (this.pausedAssessmentPending) {
                     this.enableAssessmentButtons();
-                    if (this.pausedReplayWasEnabled) {
-                        this.elements.replayBtn.disabled = false;
-                    }
                 }
             } else if (this.awaitingAssessment && this.pausedAssessmentPending) {
                 this.enableAssessmentButtons();
-                if (this.pausedReplayWasEnabled) {
-                    this.elements.replayBtn.disabled = false;
-                }
             }
 
             this.pausedAssessmentPending = false;
-            this.pausedReplayWasEnabled = false;
             if (pending?.action !== 'restartCycle') {
                 this.needsSequenceTimerReset = false;
             }
@@ -562,12 +556,14 @@
         async startSession() {
             if (this.isPlaybackInProgress) return;
             await this.stopTonePlayback();
+            if (this.conductor && typeof this.conductor.cancelPending === 'function') {
+                this.conductor.cancelPending();
+            }
             this.sessionActive = true;
             this.isPaused = false;
             this.resumePlan = null;
             this.playbackAbortReason = null;
             this.pausedAssessmentPending = false;
-            this.pausedReplayWasEnabled = false;
             this.needsSequenceTimerReset = false;
             this.currentMelodyPlan = null;
             this.singWindowBeats = DEFAULT_SING_WINDOW_BEATS;
@@ -642,9 +638,6 @@
             this.notationPresented = false;
             this.uiModule.updateSequenceDisplay(this.currentSequence, { dictationType: 'melodic' });
             this.disableAssessmentButtons();
-            if (this.elements.replayBtn) {
-                this.elements.replayBtn.disabled = true;
-            }
             this.awaitingAssessment = false;
             this.scoringModule.startNewSequence();
             await this.playFullCycle({ isReplay: false });
@@ -763,7 +756,9 @@
             }
             try {
                 const utterance = new window.SpeechSynthesisUtterance(label);
-                utterance.rate = Math.min(1.25, Math.max(0.75, this.getTempoBpm() / 90));
+                const tempo = Math.max(40, Math.min(180, this.getTempoBpm()));
+                const normalizedRate = Math.min(1.6, Math.max(1.05, tempo / 70));
+                utterance.rate = normalizedRate;
                 utterance.pitch = 1.0;
                 utterance.volume = 0.9;
                 window.speechSynthesis.speak(utterance);
@@ -788,14 +783,22 @@
             }
         }
 
-        playCountCue(label, { isDownbeat = false } = {}) {
+        playCountCue(label, { isDownbeat = false, allowFallback = true } = {}) {
             const usedSpeech = this.speakCountLabel(label);
-            if (!usedSpeech) {
+            if (!usedSpeech && allowFallback) {
                 this.playFallbackClick(isDownbeat);
             }
         }
 
+        playMetronomeClick({ isDownbeat = false } = {}) {
+            this.playFallbackClick(isDownbeat);
+        }
+
         async playCountOff() {
+            if (this.conductor) {
+                await this.playCountOffWithConductor();
+                return;
+            }
             const totalBeats = this.getBeatsPerMeasure();
             if (totalBeats <= 0) return;
             this.throwIfPlaybackAborted();
@@ -806,16 +809,67 @@
                 this.throwIfPlaybackAborted();
                 const isLastBeat = beat === totalBeats;
                 const spokenCue = isLastBeat ? 'Sing' : this.getCountWord(beat);
-                const displayCue = isLastBeat ? 'SING' : (spokenCue || '').toString().toUpperCase();
-                this.updateCountOffDisplay(`Count-off ${label} — ${displayCue}`);
-                this.playCountCue(spokenCue, { isDownbeat: beat === 1 || isLastBeat });
-                await this.delay(beatDurationMs);
-                this.throwIfPlaybackAborted();
+                const displayCue = isLastBeat
+                    ? 'SING'
+                    : `Count-off ${label} — ${(spokenCue || '').toString().toUpperCase()}`;
+                this.updateCountOffDisplay(displayCue);
+                this.playCountCue(spokenCue, {
+                    isDownbeat: beat === 1 || isLastBeat,
+                    allowFallback: !isLastBeat,
+                });
+                if (!isLastBeat) {
+                    await this.delay(beatDurationMs);
+                    this.throwIfPlaybackAborted();
+                }
+            }
+            this.updateCountOffDisplay('SING');
+        }
+
+        async playCountOffWithConductor() {
+            const beats = this.getBeatsPerMeasure();
+            const tempo = this.getTempoBpm();
+            const label = this.getTimeSignatureLabel();
+            const buildDisplay = (beat, isLast) => {
+                if (isLast) {
+                    return 'SING';
+                }
+                const cue = (this.getCountWord(beat) || '').toString().toUpperCase();
+                return `Count-off ${label} — ${cue}`;
+            };
+            const buildWord = (beat, isLast) => {
+                if (isLast) return 'sing';
+                const cue = this.getCountWord(beat);
+                return cue ? cue.toLowerCase() : null;
+            };
+            try {
+                await this.conductor.playCountOff({
+                    beats,
+                    tempoBpm: tempo,
+                    beatsPerMeasure: beats,
+                    shouldAbort: () => !!this.playbackAbortReason,
+                    buildDisplay,
+                    buildWord,
+                    onDisplay: ({ label: displayText }) => {
+                        if (displayText) {
+                            this.updateCountOffDisplay(displayText);
+                        }
+                    },
+                });
+            } catch (err) {
+                if (err && err.code === 'CONDUCTOR_ABORTED') {
+                    this.throwIfPlaybackAborted();
+                } else {
+                    throw err;
+                }
             }
             this.updateCountOffDisplay('SING');
         }
 
         async runSingMeasure() {
+            if (this.conductor) {
+                await this.runSingMeasureWithConductor();
+                return;
+            }
             const beats = this.getSingWindowBeats();
             if (!Number.isFinite(beats) || beats <= 0) {
                 await this.delay(300);
@@ -824,14 +878,40 @@
             this.throwIfPlaybackAborted();
             const beatDurationMs = this.getBeatDurationMs();
             const totalBeats = Math.max(1, Math.round(beats));
+            const beatsPerMeasure = Math.max(1, this.getBeatsPerMeasure());
             for (let beat = 1; beat <= totalBeats; beat += 1) {
                 this.throwIfPlaybackAborted();
-                const spokenCue = this.getCountWord(beat);
-                const displayCue = (spokenCue || '').toString().toUpperCase();
-                this.updateCountOffDisplay(`Sing • ${displayCue}`);
-                this.playCountCue(spokenCue, { isDownbeat: beat === 1 });
+                const displayCue = `${beat}/${totalBeats}`;
+                this.updateCountOffDisplay(`SING • ${displayCue}`);
+                const isDownbeat = ((beat - 1) % beatsPerMeasure) === 0;
+                this.playMetronomeClick({ isDownbeat });
                 await this.delay(beatDurationMs);
                 this.throwIfPlaybackAborted();
+            }
+            this.updateCountOffDisplay('Playback incoming…');
+        }
+
+        async runSingMeasureWithConductor() {
+            const beats = Math.max(1, Math.round(this.getSingWindowBeats()));
+            const tempo = this.getTempoBpm();
+            const beatsPerMeasure = this.getBeatsPerMeasure();
+            try {
+                await this.conductor.playSingWindow({
+                    beats,
+                    tempoBpm: tempo,
+                    beatsPerMeasure,
+                    shouldAbort: () => !!this.playbackAbortReason,
+                    buildDisplay: (beat) => `SING • ${beat}/${beats}`,
+                    onDisplay: ({ label }) => {
+                        this.updateCountOffDisplay(label || 'SING');
+                    },
+                });
+            } catch (err) {
+                if (err && err.code === 'CONDUCTOR_ABORTED') {
+                    this.throwIfPlaybackAborted();
+                } else {
+                    throw err;
+                }
             }
             this.updateCountOffDisplay('Playback incoming…');
         }
@@ -907,7 +987,6 @@
             this.currentCycleKind = isReplay ? 'replay' : 'primary';
             const wasAwaiting = this.awaitingAssessment;
             this.disableAssessmentButtons();
-            this.elements.replayBtn.disabled = true;
             try {
                 await this.audioModule.initializeAudio();
                 this.throwIfPlaybackAborted();
@@ -932,7 +1011,6 @@
                 }
                 this.updateCountOffDisplay('');
                 if ((this.awaitingAssessment || wasAwaiting) && !this.isPaused) {
-                    this.elements.replayBtn.disabled = false;
                     this.enableAssessmentButtons();
                     this.uiModule.updateFeedback('How did it feel? Mark your result.');
                 }
@@ -956,13 +1034,6 @@
             }
         }
 
-        handleReplay() {
-            if (!this.sessionActive || this.currentSequence.length === 0 || this.isPlaybackInProgress || this.isPaused) {
-                return;
-            }
-            this.playFullCycle({ isReplay: true });
-        }
-
         disableAssessmentButtons() {
             if (this.elements.correctBtn) this.elements.correctBtn.disabled = true;
             if (this.elements.wrongBtn) this.elements.wrongBtn.disabled = true;
@@ -979,7 +1050,6 @@
             }
             this.awaitingAssessment = false;
             this.disableAssessmentButtons();
-            this.elements.replayBtn.disabled = true;
             const userSequence = isCorrect ? this.currentSequence.slice() : [];
             const result = this.scoringModule.checkSequence(userSequence, this.currentSequence, { dictationType: 'melodic' });
             this.scoringModule.updateScore();
@@ -1010,9 +1080,11 @@
             this.playbackAbortReason = null;
             this.needsSequenceTimerReset = false;
             void this.stopTonePlayback();
+            if (this.conductor && typeof this.conductor.cancelPending === 'function') {
+                this.conductor.cancelPending();
+            }
             this.updateStartButtonLabel();
             this.disableAssessmentButtons();
-            this.elements.replayBtn.disabled = true;
             if (this.pendingNextTimeout) {
                 clearTimeout(this.pendingNextTimeout);
                 this.pendingNextTimeout = null;

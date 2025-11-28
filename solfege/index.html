@@ -19,7 +19,6 @@
             <div class="main-action-row">
                 <button class="control-btn ui-pill" id="solfegeStartBtn">Start Session</button>
                 <button class="control-btn ui-pill" id="solfegePauseBtn" disabled>Pause</button>
-                <button class="control-btn ui-pill" id="solfegeReplayBtn" disabled>Replay Melody</button>
                 <button class="control-btn ui-pill" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel" aria-haspopup="true">Settings</button>
             </div>
             <div class="settings-row" id="settingsPanel" hidden>
@@ -88,9 +87,6 @@
             <div id="countOffDisplay" class="sequence-display" aria-live="polite"></div>
         </div>
 
-        <div id="sequenceDisplay" class="sequence-display" aria-live="polite"></div>
-        <div id="userSequenceDisplay" class="sequence-display" aria-live="polite"></div>
-
         <div
             id="staff-vexflow"
             class="vexflow-display solfege-staff-display interaction-draggable"
@@ -104,7 +100,6 @@
         </div>
 
         <div class="timer-display">
-            <div class="timer" id="timer">00:00</div>
             <div class="round-progress">
                 Score: <span id="correct">0</span> / <span id="total">0</span>
                 (<span id="percentage">0</span>%)
@@ -120,7 +115,7 @@
             2. Each session runs for 10 rounds. You always hear the reference first, then the in-tempo count-off ending with “SING.”<br>
             3. Stay in time and sing through the written melody during the silent window that follows the count-off.<br>
             4. As soon as that window ends, the original melody plays back so you can check yourself.<br>
-            5. Mark whether you matched it. A new melody begins immediately after your choice (Replay replays the last answer tone-only).
+            5. Mark whether you matched it. A new melody begins immediately after your choice.
         </div>
 
         <div class="data-controls">
@@ -144,6 +139,8 @@
                 '/js/modules/MusicTheory.js',
                 '/js/modules/UI.js',
                 '/js/modules/Scoring.js',
+                '/js/modules/SolfegeCountAudio.js',
+                '/js/modules/SolfegeConductor.js',
                 '/js/modules/SolfegeLibrary.js',
                 '/js/modules/SolfegeTonePlayer.js',
                 '/js/modules/SolfegeStaff.js',
