@@ -1009,8 +1009,8 @@ class KeyboardModule {
                     const keyEl = this.pointerDownMap.get(e.pointerId);
                     if (keyEl) {
                         keyEl.classList.remove('pressed');
-                        this.pointerDownMap.delete(e.pointerId);
                     }
+                    this.pointerDownMap.delete(e.pointerId);
                     const note = this.pointerNoteMap.get(e.pointerId);
                     if (note) {
                         this.stopSustainForNote(note);
@@ -1046,8 +1046,8 @@ class KeyboardModule {
                     const keyEl = this.pointerDownMap.get(id);
                     if (keyEl) {
                         keyEl.classList.remove('pressed');
-                        this.pointerDownMap.delete(id);
                     }
+                    this.pointerDownMap.delete(id);
                     const note = this.pointerNoteMap.get(id);
                     if (note) {
                         this.stopSustainForNote(note);
