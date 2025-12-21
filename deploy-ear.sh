@@ -48,8 +48,8 @@ aws s3 sync . "s3://${BUCKET}/" --delete \
   --exclude "*.html" --exclude "*.css" --exclude "*.js" --exclude "*.json" --exclude "*.webmanifest" \
   --only-show-errors
 
-echo "Syncing CSS/JS/JSON (must-revalidate cache-control)..."
-aws s3 sync . "s3://${BUCKET}/" \
+echo "Uploading CSS/JS/JSON (must-revalidate cache-control)..."
+aws s3 cp . "s3://${BUCKET}/" --recursive \
   --cache-control 'public, max-age=0, must-revalidate' \
   --metadata-directive REPLACE \
   "${COMMON_EXCLUDES[@]}" \
