@@ -316,6 +316,11 @@ class KeyboardModule {
             if (!this.previewConfig.enableHover || !this.audioPreviewService) {
                 return;
             }
+            // If the user is holding a button (dragging), don't trigger hover previews.
+            // This prevents double notes while drag-to-play is active.
+            if (typeof event.buttons === 'number' && event.buttons !== 0) {
+                return;
+            }
             // Require actual movement and respect initial activation block
             const nowTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
             if (!this.hoverPrimed || nowTs < this.activationBlockUntil) {
@@ -1057,6 +1062,13 @@ class KeyboardModule {
                 this.boundPointerMove = (e) => {
                     // Only handle active drags we started
                     if (!this.pointerDownMap.has(e.pointerId)) return;
+                    const pointerType = this.pointerTypeMap.get(e.pointerId) || e.pointerType || 'mouse';
+                    // Safety: if we ever miss a pointerup for mouse, stop drag-to-play as soon as
+                    // we observe the button is no longer pressed.
+                    if (pointerType === 'mouse' && typeof e.buttons === 'number' && e.buttons === 0) {
+                        this._releasePointerState(e.pointerId);
+                        return;
+                    }
                     const isSustain = this.audioModule && typeof this.audioModule.isSustainTimbre === 'function' && this.audioModule.isSustainTimbre();
                     const container = this.pianoKeysContainer;
                     const el = document.elementFromPoint(e.clientX, e.clientY);

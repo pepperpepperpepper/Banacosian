@@ -156,7 +156,7 @@
     const KeyboardCtor = (window.KeyboardModule || function(){});
     const keyboard = new KeyboardCtor(theory, audio);
     keyboard.setAudioPreviewService?.(previewService, {
-      enableHover: true,
+      enableHover: false,
       hoverOptions: { allowWhilePlaying: true },
       playOptions: { allowWhilePlaying: true },
     });
