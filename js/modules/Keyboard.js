@@ -58,6 +58,9 @@ class KeyboardModule {
 
         if (typeof window !== 'undefined') {
             window.addEventListener('resize', this.handleResize);
+            // If the window loses focus, ensure we don't leave stuck pointers/notes.
+            this._boundResetOnBlur = () => { this.reset(); };
+            window.addEventListener('blur', this._boundResetOnBlur);
             // Clean up state if the tab is hidden or the page is being backgrounded
             this._boundResetIfHidden = () => {
                 try {
@@ -100,19 +103,44 @@ class KeyboardModule {
     }
 
     /**
+     * Whether the given note is currently allowed based on scale mode settings.
+     * @param {string} actualNote
+     * @returns {boolean}
+     */
+    isNoteAllowed(actualNote) {
+        if (!actualNote) return false;
+        if (this.scaleType === 'chromatic') return true;
+        if (!this.diatonicNotes || this.diatonicNotes.length === 0) {
+            this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
+        }
+        return this.diatonicNotes.includes(actualNote);
+    }
+
+    /**
+     * Internal: release a pointer's pressed/sustain state and forget it.
+     * @param {number|string} pointerId
+     */
+    _releasePointerState(pointerId) {
+        if (pointerId === null || pointerId === undefined) return;
+        const keyEl = this.pointerDownMap.get(pointerId);
+        if (keyEl && keyEl.classList) {
+            keyEl.classList.remove('pressed');
+        }
+        const note = this.pointerNoteMap.get(pointerId);
+        if (note) {
+            this.stopSustainForNote(note);
+        }
+        this.pointerDownMap.delete(pointerId);
+        this.pointerNoteMap.delete(pointerId);
+        this.pointerTypeMap.delete(pointerId);
+    }
+
+    /**
      * Start sustaining a note with reference counting so multiple pointers can hold it.
      */
     startSustainForNote(actualNote) {
         if (!actualNote) return;
-        // Respect mode filtering when not chromatic
-        if (this.scaleType !== 'chromatic') {
-            if (!this.diatonicNotes || this.diatonicNotes.length === 0) {
-                this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
-            }
-            if (!this.diatonicNotes.includes(actualNote)) {
-                return;
-            }
-        }
+        if (!this.isNoteAllowed(actualNote)) return;
         const freq = this.musicTheory.getNoteFrequency(actualNote);
         if (!Number.isFinite(freq)) return;
         const count = this.sustainCounts.get(actualNote) || 0;
@@ -370,7 +398,8 @@ class KeyboardModule {
         if (!actualNote) {
             return null;
         }
-        if (this.audioPreviewService && typeof this.audioPreviewService.previewPitch === 'function') {
+        const usePreview = overrides && overrides.usePreview === true;
+        if (usePreview && this.audioPreviewService && typeof this.audioPreviewService.previewPitch === 'function') {
             const merged = {
                 ...(this.previewConfig.playOptions || {}),
                 ...overrides,
@@ -939,14 +968,7 @@ class KeyboardModule {
         actualNote = physicalNote;
         if (!actualNote) return;
 
-        if (this.scaleType !== 'chromatic') {
-            if (!this.diatonicNotes || this.diatonicNotes.length === 0) {
-                this.diatonicNotes = this.musicTheory.generateDiatonicNotes(this.mode, this.tonicLetter);
-            }
-            if (!this.diatonicNotes.includes(actualNote)) {
-                return;
-            }
-        }
+        if (!this.isNoteAllowed(actualNote)) return;
         
         // Visual feedback on key press (managed by pointer/touch handlers when enabled)
         const key = document.querySelector(`.white-key[data-note="${actualNote}"], .black-key[data-note="${actualNote}"]`);
@@ -988,6 +1010,8 @@ class KeyboardModule {
                     const target = e.target && e.target.closest ? e.target.closest('.white-key, .black-key') : null;
                     if (!target || !this.pianoKeysContainer.contains(target)) return;
                     e.preventDefault();
+                    // Defensive: if we missed a pointerup, clean up stale state for this pointerId
+                    this._releasePointerState(e.pointerId);
                     const note = target.dataset.note;
                     if (!note || target.classList.contains('disabled')) return;
                     try { target.setPointerCapture && target.setPointerCapture(e.pointerId); } catch (_) {}
@@ -1006,54 +1030,25 @@ class KeyboardModule {
             }
             if (!this.boundPointerUp) {
                 this.boundPointerUp = (e) => {
-                    const keyEl = this.pointerDownMap.get(e.pointerId);
-                    if (keyEl) {
-                        keyEl.classList.remove('pressed');
-                    }
-                    this.pointerDownMap.delete(e.pointerId);
-                    const note = this.pointerNoteMap.get(e.pointerId);
-                    if (note) {
-                        this.stopSustainForNote(note);
-                        this.pointerNoteMap.delete(e.pointerId);
-                    }
-                    this.pointerTypeMap.delete(e.pointerId);
+                    this._releasePointerState(e.pointerId);
                 };
-                window.addEventListener('pointerup', this.boundPointerUp, { passive: true });
-                window.addEventListener('pointercancel', this.boundPointerUp, { passive: true });
-                window.addEventListener('pointerleave', this.boundPointerUp, { passive: true });
+                window.addEventListener('pointerup', this.boundPointerUp, { passive: true, capture: true });
+                window.addEventListener('pointercancel', this.boundPointerUp, { passive: true, capture: true });
+                window.addEventListener('pointerleave', this.boundPointerUp, { passive: true, capture: true });
             }
             if (!this.boundMouseUp) {
                 this.boundMouseUp = () => {
                     // Fallback: in case pointerup didn't fire for mouse, release any mouse-held notes
                     for (const [id, type] of Array.from(this.pointerTypeMap.entries())) {
                         if (type !== 'mouse') continue;
-                        const keyEl = this.pointerDownMap.get(id);
-                        if (keyEl) keyEl.classList.remove('pressed');
-                        this.pointerDownMap.delete(id);
-                        const note = this.pointerNoteMap.get(id);
-                        if (note) {
-                            this.stopSustainForNote(note);
-                            this.pointerNoteMap.delete(id);
-                        }
-                        this.pointerTypeMap.delete(id);
+                        this._releasePointerState(id);
                     }
                 };
-                window.addEventListener('mouseup', this.boundMouseUp, { passive: true });
+                window.addEventListener('mouseup', this.boundMouseUp, { passive: true, capture: true });
             }
             if (!this.boundLostCapture) {
                 this.boundLostCapture = (e) => {
-                    const id = e.pointerId;
-                    const keyEl = this.pointerDownMap.get(id);
-                    if (keyEl) {
-                        keyEl.classList.remove('pressed');
-                    }
-                    this.pointerDownMap.delete(id);
-                    const note = this.pointerNoteMap.get(id);
-                    if (note) {
-                        this.stopSustainForNote(note);
-                        this.pointerNoteMap.delete(id);
-                    }
-                    this.pointerTypeMap.delete(id);
+                    this._releasePointerState(e.pointerId);
                 };
                 // Listen at capture to catch from any key element
                 document.addEventListener('lostpointercapture', this.boundLostCapture, true);

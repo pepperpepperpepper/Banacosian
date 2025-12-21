@@ -2,6 +2,7 @@
   // /keyboard page controller
   const $ = (sel) => document.querySelector(sel);
   const FALLBACK_KEY_SIGNATURES = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'];
+  let audioUnlockArmed = false;
 
   const state = {
     layout: null,
@@ -17,6 +18,53 @@
   };
 
   function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+  function setupGlobalAudioUnlock(audioModule) {
+    if (audioUnlockArmed || !audioModule) return;
+    audioUnlockArmed = true;
+
+    const unlock = async () => {
+      try {
+        if (typeof audioModule.ensureAudioRunning === 'function') {
+          const ok = await audioModule.ensureAudioRunning();
+          if (ok) cleanup();
+          return;
+        }
+
+        if (!audioModule.audioContext && typeof audioModule.initializeAudio === 'function') {
+          await audioModule.initializeAudio();
+        }
+        const ctx = (typeof audioModule.getAudioContext === 'function')
+          ? audioModule.getAudioContext()
+          : (audioModule.audioContext || null);
+        if (!ctx) return;
+        if (ctx.state !== 'running') {
+          try { await ctx.resume(); } catch (_) {}
+        }
+        if (ctx.state === 'running') {
+          cleanup();
+        }
+      } catch (_) {
+        // best-effort only
+      }
+    };
+
+    const captureOpts = { capture: true };
+    const cleanup = () => {
+      document.removeEventListener('pointerdown', unlock, captureOpts);
+      document.removeEventListener('mousedown', unlock);
+      document.removeEventListener('touchstart', unlock);
+      document.removeEventListener('click', unlock);
+      document.removeEventListener('keydown', unlock);
+    };
+
+    // Ensure audio unlock happens on the earliest possible user gesture (pointerdown capture).
+    document.addEventListener('pointerdown', unlock, captureOpts);
+    document.addEventListener('mousedown', unlock);
+    document.addEventListener('touchstart', unlock);
+    document.addEventListener('click', unlock);
+    document.addEventListener('keydown', unlock);
+  }
 
   function buildViewLayout(baseLayout) {
     if (!baseLayout) return null;
@@ -99,6 +147,7 @@
     const $chromaticPref = $('#keyboardChromaticPref');
 
     const audio = new (window.AudioModule || function(){})();
+    setupGlobalAudioUnlock(audio);
     const theory = new (window.MusicTheoryModule || function(){})();
     const previewService = new (window.AudioPreviewService || function(){})({
       audioModule: audio,
@@ -410,26 +459,3 @@
     main();
   }
 })();
-    // Ensure audio unlock happens on the earliest possible user gesture (pointerdown capture)
-    (function setupGlobalAudioUnlock(){
-      const getCtx = () => (typeof audio.getAudioContext === 'function' ? audio.getAudioContext() : audio.audioContext);
-      const unlock = async () => {
-        const ctx = getCtx();
-        if (!ctx) return;
-        if (ctx.state === 'suspended') {
-          try { await ctx.resume(); } catch (e) { /* ignore */ }
-        }
-        if (ctx.state === 'running') {
-          document.removeEventListener('pointerdown', unlock, { capture: true });
-          document.removeEventListener('mousedown', unlock);
-          document.removeEventListener('touchstart', unlock);
-          document.removeEventListener('click', unlock);
-          document.removeEventListener('keydown', unlock);
-        }
-      };
-      document.addEventListener('pointerdown', unlock, { capture: true });
-      document.addEventListener('mousedown', unlock);
-      document.addEventListener('touchstart', unlock);
-      document.addEventListener('click', unlock);
-      document.addEventListener('keydown', unlock);
-    })();

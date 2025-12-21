@@ -23,6 +23,41 @@ class AudioModule {
     }
 
     /**
+     * Expose the underlying AudioContext (if initialized).
+     * @returns {AudioContext|null}
+     */
+    getAudioContext() {
+        return this.audioContext || null;
+    }
+
+    /**
+     * Ensure AudioContext exists and is running.
+     * @returns {Promise<boolean>} true if running
+     */
+    async ensureAudioRunning() {
+        try {
+            if (!this.audioContext || this.audioContext.state === 'closed') {
+                this.audioContext = null;
+                // Avoid awaiting here so the subsequent resume() call can still be
+                // invoked synchronously inside the current user gesture handler.
+                try {
+                    const initPromise = this.initializeAudio();
+                    if (initPromise && typeof initPromise.catch === 'function') {
+                        initPromise.catch(() => {});
+                    }
+                } catch (_) {}
+            }
+            if (!this.audioContext) return false;
+            if (this.audioContext.state !== 'running') {
+                try { await this.audioContext.resume(); } catch (_) {}
+            }
+            return this.audioContext.state === 'running';
+        } catch (_) {
+            return false;
+        }
+    }
+
+    /**
      * Initialize the Web Audio API context
      */
     async initializeAudio() {
@@ -38,7 +73,7 @@ class AudioModule {
 
     /**
      * Play a single tone for preview purposes.
-     * Modified to allow polyphony (chords) by NOT stopping previous voices.
+     * Monophonic: stops the previous preview voice before starting a new one.
      * @param {number} frequency 
      * @param {number} duration 
      */
@@ -46,13 +81,8 @@ class AudioModule {
         // Monophonic preview: stop the previous preview voice before starting a new one
         try { this._stopActivePreviewVoice(0.03); } catch (_) {}
 
-        if (!this.audioContext) {
-            await this.initializeAudio();
-        }
-
-        if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
-        }
+        const ok = await this.ensureAudioRunning();
+        if (!ok) return;
 
         if (typeof frequency !== 'number' || !Number.isFinite(frequency)) {
             return;
@@ -92,13 +122,8 @@ class AudioModule {
      * @param {number} duration - The duration in seconds (default: 0.5)
      */
     async playTone(frequency, duration = 0.5) {
-        if (!this.audioContext) {
-            await this.initializeAudio();
-        }
-
-        if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
-        }
+        const ok = await this.ensureAudioRunning();
+        if (!ok) return;
 
         if (typeof frequency !== 'number' || !Number.isFinite(frequency)) {
             console.warn('[AudioModule] Skipping tone with invalid frequency:', frequency);
@@ -135,12 +160,8 @@ class AudioModule {
         if (!Array.isArray(frequencies) || frequencies.length === 0) {
             return;
         }
-        if (!this.audioContext) {
-            await this.initializeAudio();
-        }
-        if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
-        }
+        const ok = await this.ensureAudioRunning();
+        if (!ok) return;
 
         const sanitized = frequencies
             .map((freq) => (typeof freq === 'number' && Number.isFinite(freq) ? freq : null))
@@ -187,12 +208,8 @@ class AudioModule {
         if (!Array.isArray(frequencies) || frequencies.length === 0) {
             return;
         }
-        if (!this.audioContext) {
-            await this.initializeAudio();
-        }
-        if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
-        }
+        const ok = await this.ensureAudioRunning();
+        if (!ok) return;
 
         const sanitized = frequencies
             .map((freq) => (typeof freq === 'number' && Number.isFinite(freq) ? freq : null))
@@ -332,15 +349,11 @@ class AudioModule {
             pending.cancel = false; // reset any stale cancel
         }
         try {
-            if (!this.audioContext) {
-                await this.initializeAudio();
-            }
-            if (this.audioContext.state === 'suspended') {
-                await this.audioContext.resume();
-            }
+            const ok = await this.ensureAudioRunning();
+            if (!ok) return null;
             if (!Number.isFinite(frequency)) return null;
-            if (pending.cancel) { this.pendingSustainStarts.delete(key); return null; }
-            if (this.activeSustainVoices.has(key)) { this.pendingSustainStarts.delete(key); return key; }
+            if (pending.cancel) return null;
+            if (this.activeSustainVoices.has(key)) return key;
 
             const cfg = this.getTimbreConfig(this.currentTimbreId) || {};
             const waveform = cfg.type || 'sine';
@@ -433,14 +446,6 @@ class AudioModule {
                 // Ignore errors if already closed
             }
         }
-    }
-
-    /**
-     * Get the audio context
-     * @returns {AudioContext|null}
-     */
-    getAudioContext() {
-        return this.audioContext;
     }
 
     /**
