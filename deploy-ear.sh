@@ -40,11 +40,20 @@ COMMON_EXCLUDES=(
 
 echo "Deploying to s3://${BUCKET}/"
 
-echo "Syncing non-HTML assets (immutable cache-control)..."
+echo "Syncing immutable assets (images/fonts/etc)..."
 aws s3 sync . "s3://${BUCKET}/" --delete \
   --cache-control 'public, max-age=31536000, immutable' \
   --metadata-directive REPLACE \
   "${COMMON_EXCLUDES[@]}" \
+  --exclude "*.html" --exclude "*.css" --exclude "*.js" --exclude "*.json" --exclude "*.webmanifest" \
+  --only-show-errors
+
+echo "Syncing CSS/JS/JSON (must-revalidate cache-control)..."
+aws s3 sync . "s3://${BUCKET}/" \
+  --cache-control 'public, max-age=0, must-revalidate' \
+  --metadata-directive REPLACE \
+  "${COMMON_EXCLUDES[@]}" \
+  --exclude "*" --include "*.css" --include "*.js" --include "*.json" --include "*.webmanifest" \
   --only-show-errors
 
 echo "Uploading HTML (no-cache cache-control)..."
