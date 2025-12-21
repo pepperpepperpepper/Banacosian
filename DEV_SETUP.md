@@ -107,6 +107,28 @@ When ready to deploy to Android app:
 2. The Android WebView will load these files
 3. Test thoroughly on Android device
 
+## Web Deployment (ear.uh-oh.wtf)
+
+The production website is hosted on S3 + CloudFront (not on the dev server).
+
+### One-shot deploy (local)
+
+```bash
+./deploy-ear.sh
+```
+
+Requires AWS credentials with access to:
+- S3 bucket `ear.uh-oh.wtf`
+- CloudFront distribution `E232GY8CG5NMHX` (for invalidations)
+
+### Automatic deploy (GitHub Actions)
+
+This repo includes a workflow at `.github/workflows/deploy-ear.yml` which deploys on pushes to `master`.
+
+Add these GitHub repo secrets:
+- `BANACOSIAN_AWS_ACCESS_KEY_ID`
+- `BANACOSIAN_AWS_SECRET_ACCESS_KEY`
+
 ## File Structure
 
 ```
