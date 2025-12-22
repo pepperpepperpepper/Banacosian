@@ -56,7 +56,7 @@ class MelodicDictation {
                 ? ROUND_PHASES.AWAIT_INPUT
                 : 'await_input';
             this.keyboardModule.setAudioPreviewService(this.audioPreview, {
-                enableHover: true,
+                enableHover: false,
                 playOptions: {
                     phaseGuard: { allowed: [idlePhase, awaitInputPhase] },
                     allowWhilePlaying: false,

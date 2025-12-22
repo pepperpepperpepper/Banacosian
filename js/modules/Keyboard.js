@@ -293,7 +293,14 @@ class KeyboardModule {
         } catch { this.activationBlockUntil = Date.now() + 350; }
         this.hoverPrimed = false;
         if (!this.boundHoverPrimeMove) {
-            this.boundHoverPrimeMove = () => { this.hoverPrimed = true; };
+            this.boundHoverPrimeMove = (ev) => {
+                // Only prime hover previews from actual mouse movement so touch interactions
+                // don't immediately activate hover-to-preview when switching inputs.
+                if (usePointer && ev && ev.pointerType && ev.pointerType !== 'mouse') {
+                    return;
+                }
+                this.hoverPrimed = true;
+            };
             if (usePointer) {
                 window.addEventListener('pointermove', this.boundHoverPrimeMove, { passive: true });
             } else {
@@ -1062,10 +1069,21 @@ class KeyboardModule {
                 this.boundPointerMove = (e) => {
                     // Only handle active drags we started
                     if (!this.pointerDownMap.has(e.pointerId)) return;
-                    const pointerType = this.pointerTypeMap.get(e.pointerId) || e.pointerType || 'mouse';
-                    // Safety: if we ever miss a pointerup for mouse, stop drag-to-play as soon as
-                    // we observe the button is no longer pressed.
-                    if (pointerType === 'mouse' && typeof e.buttons === 'number' && e.buttons === 0) {
+                    const storedPointerType = this.pointerTypeMap.get(e.pointerId) || null;
+                    const eventPointerType = e.pointerType || null;
+                    // Defensive: if the browser reuses pointerIds across input types (or we missed
+                    // a pointerup), treat any pointerType mismatch as stale state and release.
+                    if (storedPointerType && eventPointerType && storedPointerType !== eventPointerType) {
+                        this._releasePointerState(e.pointerId);
+                        return;
+                    }
+                    // Safety: if we ever miss a pointerup, stop drag-to-play as soon as we
+                    // observe the pointer is no longer pressed. Use *event* state (not stored)
+                    // so switching from touch -> mouse can't keep a stale drag latched.
+                    const buttons = (typeof e.buttons === 'number') ? e.buttons : null;
+                    const pressure = (typeof e.pressure === 'number') ? e.pressure : null;
+                    const notPressed = (buttons === 0) || (buttons === null && pressure === 0);
+                    if (notPressed && (eventPointerType || storedPointerType) !== 'touch') {
                         this._releasePointerState(e.pointerId);
                         return;
                     }
