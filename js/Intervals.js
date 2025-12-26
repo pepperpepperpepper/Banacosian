@@ -163,6 +163,7 @@
       direction: 'up',
       type: 'melodic',
       revealed: false,
+      answered: false,
       hadWrongGuess: false,
       nextTimeout: null,
       showAnswer: true,
@@ -305,10 +306,14 @@
           }
         }
       }
-      // Optional: show a transient highlight pass
-      try {
-        await staff.replayOnStaff([root, other], { dictationMode: state.type, useTemporaryLayout: true, noteDuration: 550, gapDuration: 140 });
-      } catch {}
+      // Optional: highlight notes on staff during replay, but never reveal the answer
+      // before the user has answered (or explicitly clicked Reveal).
+      const shouldReplayOnStaff = state.revealed || (state.answered && state.showAnswer);
+      if (shouldReplayOnStaff) {
+        try {
+          await staff.replayOnStaff([root, other], { dictationMode: state.type, useTemporaryLayout: false, noteDuration: 550, gapDuration: 140 });
+        } catch {}
+      }
       // Resume timer after playback completes
       try { if (scoring && typeof scoring.resumeSequenceTimer === 'function') scoring.resumeSequenceTimer(); } catch {}
     }
@@ -337,6 +342,7 @@
         state.hadWrongGuess = true;
       }
       state.revealed = true;
+      state.answered = true;
       // Resume timer if it was running before reveal
       if (wasRunning && typeof scoring.resumeSequenceTimer === 'function') scoring.resumeSequenceTimer();
     }
@@ -373,6 +379,7 @@
       btn.tabIndex = 0;
       const correct = Number(n) === Number(state.semitones);
       state.hadWrongGuess = !correct;
+      state.answered = true;
 
       // Mark selection result and freeze choices
       if (correct) {
@@ -441,6 +448,7 @@
       state.rootMidi = pickRoot(lo, hi);
       state.otherMidi = computeOther(state.rootMidi, state.semitones, state.direction, TREBLE_RANGE);
       state.revealed = false;
+      state.answered = false;
       setStaffMode(state.type);
       try { staff.clearStaffNotes(); } catch {}
       renderFeedback(FEEDBACK.ready, 'info');
