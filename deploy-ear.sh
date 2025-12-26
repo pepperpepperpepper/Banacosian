@@ -40,6 +40,60 @@ COMMON_EXCLUDES=(
 
 echo "Deploying to s3://${BUCKET}/"
 
+maybe_sync_solfege_dataset() {
+  if [[ ! -d "raw_data" ]]; then
+    return
+  fi
+
+  local force="${EAR_DEPLOY_RAW_DATA:-}"
+  local has_musicxml="false"
+  local has_midi="false"
+
+  # Fast check: avoid scanning local raw_data/ on every deploy unless it's missing remotely
+  if [[ "${force}" == "1" ]]; then
+    has_musicxml="false"
+    has_midi="false"
+  else
+    if aws s3 ls "s3://${BUCKET}/raw_data/musicxml/" 2>/dev/null | head -n 1 | grep -q "."; then
+      has_musicxml="true"
+    fi
+    if aws s3 ls "s3://${BUCKET}/raw_data/midi/" 2>/dev/null | head -n 1 | grep -q "."; then
+      has_midi="true"
+    fi
+  fi
+
+  if [[ -f "raw_data/solfege_manifest.json" ]]; then
+    if [[ "${force}" == "1" ]] || ! aws s3 ls "s3://${BUCKET}/raw_data/solfege_manifest.json" >/dev/null 2>&1; then
+      echo "Uploading Solfege manifest..."
+      aws s3 cp "raw_data/solfege_manifest.json" "s3://${BUCKET}/raw_data/solfege_manifest.json" \
+        --cache-control 'public, max-age=0, must-revalidate' \
+        --metadata-directive REPLACE \
+        --content-type 'application/json' \
+        --only-show-errors
+    fi
+  fi
+
+  if [[ "${has_musicxml}" != "true" && -d "raw_data/musicxml" ]]; then
+    echo "Uploading Solfege MusicXML dataset (this is large; set EAR_DEPLOY_RAW_DATA=1 to force re-upload)..."
+    aws s3 sync "raw_data/musicxml" "s3://${BUCKET}/raw_data/musicxml" --delete \
+      --cache-control 'public, max-age=31536000, immutable' \
+      --metadata-directive REPLACE \
+      --content-type 'application/vnd.recordare.musicxml+xml' \
+      --only-show-errors
+  fi
+
+  if [[ "${has_midi}" != "true" && -d "raw_data/midi" ]]; then
+    echo "Uploading Solfege MIDI dataset..."
+    aws s3 sync "raw_data/midi" "s3://${BUCKET}/raw_data/midi" --delete \
+      --cache-control 'public, max-age=31536000, immutable' \
+      --metadata-directive REPLACE \
+      --content-type 'audio/midi' \
+      --only-show-errors
+  fi
+}
+
+maybe_sync_solfege_dataset
+
 echo "Syncing immutable assets (images/fonts/etc)..."
 aws s3 sync . "s3://${BUCKET}/" --delete \
   --cache-control 'public, max-age=31536000, immutable' \
