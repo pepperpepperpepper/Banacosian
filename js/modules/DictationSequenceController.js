@@ -11,6 +11,12 @@
             if (app.uiModule && typeof app.uiModule.clearCountdown === 'function') {
                 app.uiModule.clearCountdown();
             }
+            if (app.keyboardModule && typeof app.keyboardModule.reset === 'function') {
+                app.keyboardModule.reset();
+            }
+            if (app.audioModule && typeof app.audioModule.stopAllTransientVoices === 'function') {
+                app.audioModule.stopAllTransientVoices();
+            }
             app.uiController.showStatusArea();
             if (typeof app.staffModule.setDictationMode === 'function') {
                 app.staffModule.setDictationMode(app.dictationType);
@@ -173,8 +179,12 @@
                 ? app.getReferenceNotes(tonic1, tonic2)
                 : [tonic1, tonic2, tonic1];
             if (referenceNotes.length > 0) {
+                const isSingleReferenceTone = referenceNotes.length === 1;
+                const referencePreviewDurationMs = isSingleReferenceTone ? 600 : 300;
+                const referenceToneDurationSeconds = isSingleReferenceTone ? 1.2 : 0.6;
+                const referencePostDelayMs = isSingleReferenceTone ? 300 : 800;
                 app.setRoundPhase(ROUND_PHASES.REFERENCE_NOTES, {
-                    feedback: referenceNotes.length === 1
+                    feedback: isSingleReferenceTone
                         ? `Playing tonic (${tonicName})...`
                         : `Playing reference notes (${tonicName})...`,
                 });
@@ -184,7 +194,7 @@
                     referencePreviewPromise = app.staffModule.replaySequenceOnStaff(
                         referenceNotes,
                         {
-                            noteDuration: 300,
+                            noteDuration: referencePreviewDurationMs,
                             gapDuration: 0,
                             useTemporaryLayout: true,
                             dictationMode: 'melodic',
@@ -197,13 +207,16 @@
 
                 for (let i = 0; i < referenceNotes.length; i += 1) {
                     const refNote = referenceNotes[i];
-                    await app.audioModule.playTone(app.musicTheory.getNoteFrequency(refNote), 0.6);
+                    await app.audioModule.playTone(
+                        app.musicTheory.getNoteFrequency(refNote),
+                        referenceToneDurationSeconds,
+                    );
                     if (i < referenceNotes.length - 1) {
                         await app.delay(300);
                     }
                 }
 
-                await app.delay(referenceNotes.length === 1 ? 200 : 800);
+                await app.delay(referencePostDelayMs);
                 try {
                     await referencePreviewPromise;
                 } catch (previewError) {
@@ -217,7 +230,8 @@
             const sequenceLabel = app.dictationType === 'harmonic' ? 'Now the harmony...' : 'Now the sequence...';
             app.setRoundPhase(ROUND_PHASES.SEQUENCE_PLAYBACK, { feedback: sequenceLabel });
             if (referenceNotes.length > 0) {
-                await app.delay(referenceNotes.length === 1 ? 300 : 500);
+                const isSingleReferenceTone = referenceNotes.length === 1;
+                await app.delay(isSingleReferenceTone ? 300 : 500);
             }
 
             const melodicNoteDurationSeconds = 0.6;

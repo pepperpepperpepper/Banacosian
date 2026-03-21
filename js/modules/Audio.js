@@ -20,6 +20,8 @@ class AudioModule {
         this.pendingSustainStarts = new Map(); // key -> { cancel: boolean }
         // Track the active preview voice to enforce monophonic previews
         this.activePreviewVoice = null;
+        // Track short-lived playback voices so they can be cut before the next prompt starts
+        this.activeTransientVoices = new Set();
     }
 
     /**
@@ -146,6 +148,11 @@ class AudioModule {
         gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
         gainNode.gain.linearRampToValueAtTime(peakGain, this.audioContext.currentTime + 0.05);
         gainNode.gain.exponentialRampToValueAtTime(Math.max(peakGain * 0.03, 0.015), this.audioContext.currentTime + duration);
+
+        this._registerTransientVoice({
+            oscillators: [oscillator],
+            gain: gainNode,
+        });
 
         oscillator.start(this.audioContext.currentTime);
         oscillator.stop(this.audioContext.currentTime + duration);
@@ -430,11 +437,23 @@ class AudioModule {
         }
     }
 
+    stopAllTransientVoices(releaseSec = 0.03) {
+        if (!this.audioContext || this.activeTransientVoices.size === 0) {
+            return;
+        }
+        const voices = Array.from(this.activeTransientVoices);
+        this.activeTransientVoices.clear();
+        voices.forEach((voice) => {
+            this._releaseTransientVoice(voice, releaseSec);
+        });
+    }
+
     /**
      * Reset the audio module, closing the context and clearing active voices.
      * Useful for cleanup on page unload or tab switch to prevent ghost notes.
      */
     async reset() {
+        this.stopAllTransientVoices(0.01);
         this.activeSustainVoices.clear();
         this.pendingSustainStarts.clear();
         if (this.audioContext) {
@@ -468,6 +487,44 @@ class AudioModule {
             }
         } catch (_) {}
         this.activePreviewVoice = null;
+    }
+
+    _registerTransientVoice(voice) {
+        if (!voice || !Array.isArray(voice.oscillators) || voice.oscillators.length === 0) {
+            return voice;
+        }
+        voice.remainingOscillators = voice.oscillators.length;
+        this.activeTransientVoices.add(voice);
+        voice.oscillators.forEach((oscillator) => {
+            try {
+                oscillator.onended = () => {
+                    voice.remainingOscillators -= 1;
+                    if (voice.remainingOscillators <= 0) {
+                        this.activeTransientVoices.delete(voice);
+                    }
+                };
+            } catch (_) {}
+        });
+        return voice;
+    }
+
+    _releaseTransientVoice(voice, releaseSec = 0.03) {
+        if (!voice || !this.audioContext) return;
+        const release = Math.max(0.005, Number(releaseSec) || 0.03);
+        try {
+            const now = this.audioContext.currentTime;
+            if (voice.gain && voice.gain.gain) {
+                const current = voice.gain.gain.value;
+                voice.gain.gain.cancelScheduledValues(now);
+                voice.gain.gain.setValueAtTime(current, now);
+                voice.gain.gain.linearRampToValueAtTime(0.0001, now + release);
+            }
+            (voice.oscillators || []).forEach((oscillator) => {
+                try {
+                    oscillator.stop(now + release + 0.005);
+                } catch (_) {}
+            });
+        } catch (_) {}
     }
 }
 
