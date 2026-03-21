@@ -182,7 +182,9 @@
                 const isSingleReferenceTone = referenceNotes.length === 1;
                 const referencePreviewDurationMs = isSingleReferenceTone ? 600 : 300;
                 const referenceToneDurationSeconds = isSingleReferenceTone ? 1.2 : 0.6;
-                const referencePostDelayMs = isSingleReferenceTone ? 300 : 800;
+                const referencePostDelayMs = isSingleReferenceTone
+                    ? Math.round(referenceToneDurationSeconds * 1000)
+                    : 800;
                 app.setRoundPhase(ROUND_PHASES.REFERENCE_NOTES, {
                     feedback: isSingleReferenceTone
                         ? `Playing tonic (${tonicName})...`
