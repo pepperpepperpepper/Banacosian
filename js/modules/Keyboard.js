@@ -28,6 +28,7 @@ class KeyboardModule {
         this.pointerTypeMap = new Map();
         this.managePressedVisually = true;
         this.onNotePlayedCallback = null;
+        this.notePlaybackGate = null;
         this.hasLeadingBlack = false;
         this.hasTrailingBlack = false;
         this.updateMetricsHandle = null;
@@ -116,6 +117,19 @@ class KeyboardModule {
         return this.diatonicNotes.includes(actualNote);
     }
 
+    isNotePlaybackAllowed(actualNote, options = {}) {
+        if (!actualNote) return false;
+        if (typeof this.notePlaybackGate !== 'function') {
+            return true;
+        }
+        try {
+            return this.notePlaybackGate(actualNote, options) !== false;
+        } catch (error) {
+            console.warn('[Keyboard] note gate rejected playback:', error);
+            return false;
+        }
+    }
+
     /**
      * Internal: release a pointer's pressed/sustain state and forget it.
      * @param {number|string} pointerId
@@ -141,6 +155,7 @@ class KeyboardModule {
     startSustainForNote(actualNote) {
         if (!actualNote) return;
         if (!this.isNoteAllowed(actualNote)) return;
+        if (!this.isNotePlaybackAllowed(actualNote, { source: 'keyboard' })) return;
         const freq = this.musicTheory.getNoteFrequency(actualNote);
         if (!Number.isFinite(freq)) return;
         const count = this.sustainCounts.get(actualNote) || 0;
@@ -179,6 +194,10 @@ class KeyboardModule {
     /** Set whether overlapping sounds are allowed (polyphony). */
     setAllowOverlap(flag) {
         this.allowOverlap = !!flag;
+    }
+
+    setNotePlaybackGate(callback) {
+        this.notePlaybackGate = typeof callback === 'function' ? callback : null;
     }
 
     setAudioPreviewService(service, options = {}) {
@@ -981,6 +1000,7 @@ class KeyboardModule {
         if (!actualNote) return;
 
         if (!this.isNoteAllowed(actualNote)) return;
+        if (!this.isNotePlaybackAllowed(actualNote, { source: 'keyboard' })) return;
         
         // Visual feedback on key press (managed by pointer/touch handlers when enabled)
         const key = document.querySelector(`.white-key[data-note="${actualNote}"], .black-key[data-note="${actualNote}"]`);
@@ -992,15 +1012,15 @@ class KeyboardModule {
             setTimeout(() => key.classList.remove('pressed'), 150);
         }
         
+        // Report the note immediately so callers can react on key-down.
+        if (onNotePlayed) {
+            onNotePlayed(actualNote);
+        }
+
         // Play the note
         const playback = this.playNoteSound(actualNote);
         if (playback && typeof playback.then === 'function') {
             await playback;
-        }
-
-        // Call the callback with the actual note played
-        if (onNotePlayed) {
-            onNotePlayed(actualNote);
         }
     }
 
@@ -1026,6 +1046,7 @@ class KeyboardModule {
                     this._releasePointerState(e.pointerId);
                     const note = target.dataset.note;
                     if (!note || target.classList.contains('disabled')) return;
+                    if (!this.isNotePlaybackAllowed(note, { source: 'keyboard' })) return;
                     try { target.setPointerCapture && target.setPointerCapture(e.pointerId); } catch (_) {}
                     this.pointerDownMap.set(e.pointerId, target);
                     this.pointerTypeMap.set(e.pointerId, e.pointerType || 'mouse');
@@ -1132,6 +1153,7 @@ class KeyboardModule {
                     e.preventDefault();
                     const note = target.dataset.note;
                     if (!note || target.classList.contains('disabled')) continue;
+                    if (!this.isNotePlaybackAllowed(note, { source: 'keyboard' })) continue;
                     target.dataset.touchId = String(t.identifier);
                     target.classList.add('pressed');
                     const isSustain = this.audioModule && typeof this.audioModule.isSustainTimbre === 'function' && this.audioModule.isSustainTimbre();

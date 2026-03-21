@@ -116,6 +116,9 @@
             const app = this.app;
             if (app.audioModule.getIsPlaying()) return;
 
+            if (typeof app.lockPlaybackAnswerInput === 'function') {
+                app.lockPlaybackAnswerInput();
+            }
             app.audioModule.setIsPlaying(true);
             app.uiController.setPlayButtonState(true);
             try { if (typeof app.scoringModule.pauseSequenceTimer === 'function') app.scoringModule.pauseSequenceTimer(); } catch {}
@@ -212,6 +215,10 @@
             } else {
                 for (let i = 0; i < app.currentSequence.length; i += 1) {
                     const note = app.currentSequence[i];
+                    const isFinalNote = i === app.currentSequence.length - 1;
+                    if (isFinalNote && typeof app.unlockPlaybackAnswerInput === 'function') {
+                        app.unlockPlaybackAnswerInput();
+                    }
                     app.uiModule.highlightPlayingNote(i);
                     console.log(
                         'Playing note:',

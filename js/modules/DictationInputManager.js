@@ -72,7 +72,12 @@
 
             // 5. Block if audio is playing
             if (app.audioModule.getIsPlaying()) {
-                return;
+                const canAcceptDuringPlayback = typeof app.canAcceptInputDuringPlayback === 'function'
+                    ? app.canAcceptInputDuringPlayback(source)
+                    : false;
+                if (!canAcceptDuringPlayback) {
+                    return;
+                }
             }
 
             // 6. Handle Answer Input

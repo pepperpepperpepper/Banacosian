@@ -39,6 +39,7 @@ class MelodicDictation {
         this.timbre = this.audioModule.getCurrentTimbreId();
         this.autoPlayNext = false;
         this.staffPendingSubmission = false;
+        this.answerInputUnlockedDuringPlayback = false;
         this.lastAppliedInputMode = null;
         this.practiceSequence = [];
         this.practicePreviewActive = false;
@@ -122,6 +123,9 @@ class MelodicDictation {
 
         this.staffModule.setFontPreference(this.staffFont);
         this.keyboardModule.setDisabledKeysStyle(this.disabledKeysStyle);
+        if (typeof this.keyboardModule.setNotePlaybackGate === 'function') {
+            this.keyboardModule.setNotePlaybackGate((note, options = {}) => this.canPlayKeyboardNote(note, options));
+        }
 
         // Initialize keyboard module with current settings (possibly restored)
         this.keyboardModule.setScaleType(this.scaleType);
@@ -272,6 +276,42 @@ class MelodicDictation {
 
     hasActiveSequence() {
         return Array.isArray(this.currentSequence) && this.currentSequence.length > 0;
+    }
+
+    lockPlaybackAnswerInput() {
+        this.answerInputUnlockedDuringPlayback = false;
+    }
+
+    unlockPlaybackAnswerInput() {
+        this.answerInputUnlockedDuringPlayback = true;
+    }
+
+    canAcceptInputDuringPlayback(source = 'keyboard') {
+        const normalizedSource = source === 'staff' ? 'staff' : 'keyboard';
+        if (normalizedSource !== 'keyboard') {
+            return false;
+        }
+        return this.inputMode === 'keyboard'
+            && this.dictationType === 'melodic'
+            && this.hasActiveSequence()
+            && this.answerInputUnlockedDuringPlayback === true;
+    }
+
+    canPlayKeyboardNote(_note, options = {}) {
+        const source = options && options.source ? options.source : 'keyboard';
+        if (source !== 'keyboard') {
+            return true;
+        }
+        if (this.inputMode !== 'keyboard') {
+            return false;
+        }
+        if (!this.audioModule || typeof this.audioModule.getIsPlaying !== 'function') {
+            return true;
+        }
+        if (!this.audioModule.getIsPlaying()) {
+            return true;
+        }
+        return this.canAcceptInputDuringPlayback(source);
     }
 
     getPracticeStackLimit() {

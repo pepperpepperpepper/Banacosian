@@ -17,6 +17,27 @@ require_cmd() {
 
 require_cmd aws
 
+s3_prefix_has_objects() {
+  local prefix="$1"
+  local key_count
+
+  key_count="$(
+    aws s3api list-objects-v2 \
+      --bucket "${BUCKET}" \
+      --prefix "${prefix}" \
+      --max-keys 1 \
+      --query 'KeyCount' \
+      --output text 2>/dev/null || echo "0"
+  )"
+
+  [[ "${key_count}" =~ ^[0-9]+$ ]] && (( key_count > 0 ))
+}
+
+s3_object_exists() {
+  local key="$1"
+  aws s3api head-object --bucket "${BUCKET}" --key "${key}" >/dev/null 2>&1
+}
+
 COMMON_EXCLUDES=(
   --exclude ".git/*"
   --exclude ".github/*"
@@ -54,16 +75,16 @@ maybe_sync_solfege_dataset() {
     has_musicxml="false"
     has_midi="false"
   else
-    if aws s3 ls "s3://${BUCKET}/raw_data/musicxml/" 2>/dev/null | head -n 1 | grep -q "."; then
+    if s3_prefix_has_objects "raw_data/musicxml/"; then
       has_musicxml="true"
     fi
-    if aws s3 ls "s3://${BUCKET}/raw_data/midi/" 2>/dev/null | head -n 1 | grep -q "."; then
+    if s3_prefix_has_objects "raw_data/midi/"; then
       has_midi="true"
     fi
   fi
 
   if [[ -f "raw_data/solfege_manifest.json" ]]; then
-    if [[ "${force}" == "1" ]] || ! aws s3 ls "s3://${BUCKET}/raw_data/solfege_manifest.json" >/dev/null 2>&1; then
+    if [[ "${force}" == "1" ]] || ! s3_object_exists "raw_data/solfege_manifest.json"; then
       echo "Uploading Solfege manifest..."
       aws s3 cp "raw_data/solfege_manifest.json" "s3://${BUCKET}/raw_data/solfege_manifest.json" \
         --cache-control 'public, max-age=0, must-revalidate' \
