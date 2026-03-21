@@ -81,6 +81,27 @@
                     <option value="show" selected="selected">Correct Answer Replay: Show</option>
                     <option value="skip">Correct Answer Replay: Skip</option>
                 </select>
+                <select id="introNotesMode" class="select-pill ui-pill" aria-label="Intro notes behavior">
+                    <option value="octave_each" selected="selected">Intro Notes: Octave tonic each sequence</option>
+                    <option value="tonic_each">Intro Notes: Single tonic each sequence</option>
+                    <option value="tonic_round">Intro Notes: Single tonic round start only</option>
+                </select>
+                <select id="correctAnswerDelay" class="select-pill ui-pill" aria-label="Delay after correct answer">
+                    <option value="0">Delay After Correct: Instant</option>
+                    <option value="1" selected="selected">Delay After Correct: 1 second</option>
+                    <option value="2">Delay After Correct: 2 seconds</option>
+                    <option value="3">Delay After Correct: 3 seconds</option>
+                    <option value="4">Delay After Correct: 4 seconds</option>
+                    <option value="5">Delay After Correct: 5 seconds</option>
+                </select>
+                <select id="incorrectAnswerDelay" class="select-pill ui-pill" aria-label="Delay after incorrect answer">
+                    <option value="0">Delay After Incorrect: Instant</option>
+                    <option value="1">Delay After Incorrect: 1 second</option>
+                    <option value="2">Delay After Incorrect: 2 seconds</option>
+                    <option value="3">Delay After Incorrect: 3 seconds</option>
+                    <option value="4" selected="selected">Delay After Incorrect: 4 seconds</option>
+                    <option value="5">Delay After Incorrect: 5 seconds</option>
+                </select>
                 <select id="timbreSelect" class="select-pill ui-pill" aria-label="Select timbre"></select>
                 <select id="staffFont" class="select-pill ui-pill" aria-label="Select staff font"></select>
             </div>

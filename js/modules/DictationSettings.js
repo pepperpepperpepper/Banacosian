@@ -11,6 +11,9 @@
         'staffFont',
         'disabledKeysStyle',
         'answerRevealMode',
+        'introNotesMode',
+        'correctAnswerDelay',
+        'incorrectAnswerDelay',
         'inputMode',
     ];
 

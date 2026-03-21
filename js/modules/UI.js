@@ -134,6 +134,21 @@ class UIModule {
         if (answerRevealModeSelect && typeof callbacks.onAnswerRevealModeChange === 'function') {
             answerRevealModeSelect.addEventListener('change', callbacks.onAnswerRevealModeChange);
         }
+
+        const introNotesModeSelect = document.getElementById('introNotesMode');
+        if (introNotesModeSelect && typeof callbacks.onIntroNotesModeChange === 'function') {
+            introNotesModeSelect.addEventListener('change', callbacks.onIntroNotesModeChange);
+        }
+
+        const correctAnswerDelaySelect = document.getElementById('correctAnswerDelay');
+        if (correctAnswerDelaySelect && typeof callbacks.onCorrectAnswerDelayChange === 'function') {
+            correctAnswerDelaySelect.addEventListener('change', callbacks.onCorrectAnswerDelayChange);
+        }
+
+        const incorrectAnswerDelaySelect = document.getElementById('incorrectAnswerDelay');
+        if (incorrectAnswerDelaySelect && typeof callbacks.onIncorrectAnswerDelayChange === 'function') {
+            incorrectAnswerDelaySelect.addEventListener('change', callbacks.onIncorrectAnswerDelayChange);
+        }
     }
 
     /**
@@ -410,9 +425,19 @@ class UIModule {
      * @param {Function} onComplete - Callback when countdown completes
      */
     startCountdown(seconds = 4, onComplete) {
-        let countdown = seconds;
-        
-        if (seconds === 1) {
+        const parsedSeconds = Number(seconds);
+        const countdownSeconds = Number.isFinite(parsedSeconds) ? Math.max(0, Math.ceil(parsedSeconds)) : 0;
+
+        this.clearCountdown();
+
+        if (countdownSeconds <= 0) {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        let countdown = countdownSeconds;
+
+        if (countdownSeconds === 1) {
             // For correct answers - just a brief pause
             this.updateFeedback('Next sequence...');
             
@@ -559,6 +584,15 @@ class UIModule {
             answerRevealMode: document.getElementById('answerRevealMode')
                 ? document.getElementById('answerRevealMode').value
                 : undefined,
+            introNotesMode: document.getElementById('introNotesMode')
+                ? document.getElementById('introNotesMode').value
+                : undefined,
+            correctAnswerDelay: document.getElementById('correctAnswerDelay')
+                ? document.getElementById('correctAnswerDelay').value
+                : undefined,
+            incorrectAnswerDelay: document.getElementById('incorrectAnswerDelay')
+                ? document.getElementById('incorrectAnswerDelay').value
+                : undefined,
             inputMode: document.getElementById('inputMode')
                 ? document.getElementById('inputMode').value
                 : undefined
@@ -597,6 +631,15 @@ class UIModule {
         if (values.answerRevealMode !== undefined) {
             this.setAnswerRevealModeValue(values.answerRevealMode);
         }
+        if (values.introNotesMode !== undefined) {
+            this.setIntroNotesModeValue(values.introNotesMode);
+        }
+        if (values.correctAnswerDelay !== undefined) {
+            this.setCorrectAnswerDelayValue(values.correctAnswerDelay);
+        }
+        if (values.incorrectAnswerDelay !== undefined) {
+            this.setIncorrectAnswerDelayValue(values.incorrectAnswerDelay);
+        }
         if (values.inputMode !== undefined) {
             this.setInputModeValue(values.inputMode);
         }
@@ -621,6 +664,27 @@ UIModule.prototype.setAnswerRevealModeValue = function setAnswerRevealModeValue(
     const select = document.getElementById('answerRevealMode');
     if (select && value) {
         select.value = value;
+    }
+};
+
+UIModule.prototype.setIntroNotesModeValue = function setIntroNotesModeValue(value) {
+    const select = document.getElementById('introNotesMode');
+    if (select && value) {
+        select.value = value;
+    }
+};
+
+UIModule.prototype.setCorrectAnswerDelayValue = function setCorrectAnswerDelayValue(value) {
+    const select = document.getElementById('correctAnswerDelay');
+    if (select && value !== undefined && value !== null) {
+        select.value = String(value);
+    }
+};
+
+UIModule.prototype.setIncorrectAnswerDelayValue = function setIncorrectAnswerDelayValue(value) {
+    const select = document.getElementById('incorrectAnswerDelay');
+    if (select && value !== undefined && value !== null) {
+        select.value = String(value);
     }
 };
 

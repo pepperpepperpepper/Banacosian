@@ -8,6 +8,9 @@
 
         generateNewSequence() {
             const app = this.app;
+            if (app.uiModule && typeof app.uiModule.clearCountdown === 'function') {
+                app.uiModule.clearCountdown();
+            }
             app.uiController.showStatusArea();
             if (typeof app.staffModule.setDictationMode === 'function') {
                 app.staffModule.setDictationMode(app.dictationType);
@@ -21,6 +24,16 @@
                 app.practiceSequence = [];
             }
             app.clearStaffInputTracking({ clearPractice: false });
+
+            const currentRound = app.scoringModule && app.scoringModule.currentRound
+                ? app.scoringModule.currentRound
+                : null;
+            const isRoundStart = !!currentRound
+                && currentRound.total === 0
+                && currentRound.startTime === null;
+            if (isRoundStart && typeof app.resetRoundIntroCue === 'function') {
+                app.resetRoundIntroCue();
+            }
 
             app.scoringModule.startNewSequence();
             try { if (typeof app.scoringModule.pauseSequenceTimer === 'function') app.scoringModule.pauseSequenceTimer(); } catch {}
@@ -156,45 +169,56 @@
                 tonic2 = (currentRange.whiteKeys && currentRange.whiteKeys[1]) || tonic1;
             }
 
-            app.setRoundPhase(ROUND_PHASES.REFERENCE_NOTES, {
-                feedback: `Playing reference notes (${tonicName})...`,
-            });
+            const referenceNotes = (typeof app.getReferenceNotes === 'function')
+                ? app.getReferenceNotes(tonic1, tonic2)
+                : [tonic1, tonic2, tonic1];
+            if (referenceNotes.length > 0) {
+                app.setRoundPhase(ROUND_PHASES.REFERENCE_NOTES, {
+                    feedback: referenceNotes.length === 1
+                        ? `Playing tonic (${tonicName})...`
+                        : `Playing reference notes (${tonicName})...`,
+                });
 
-            const referenceNotes = [tonic1, tonic2, tonic1];
-            let referencePreviewPromise = Promise.resolve();
-            try {
-                referencePreviewPromise = app.staffModule.replaySequenceOnStaff(
-                    referenceNotes,
-                    {
-                        noteDuration: 300,
-                        gapDuration: 0,
-                        useTemporaryLayout: true,
-                        dictationMode: 'melodic',
-                    },
-                );
-            } catch (previewError) {
-                console.warn('Unable to start reference staff preview:', previewError);
-                referencePreviewPromise = Promise.resolve();
-            }
-
-            for (let i = 0; i < referenceNotes.length; i += 1) {
-                const refNote = referenceNotes[i];
-                await app.audioModule.playTone(app.musicTheory.getNoteFrequency(refNote), 0.6);
-                if (i < referenceNotes.length - 1) {
-                    await app.delay(300);
+                let referencePreviewPromise = Promise.resolve();
+                try {
+                    referencePreviewPromise = app.staffModule.replaySequenceOnStaff(
+                        referenceNotes,
+                        {
+                            noteDuration: 300,
+                            gapDuration: 0,
+                            useTemporaryLayout: true,
+                            dictationMode: 'melodic',
+                        },
+                    );
+                } catch (previewError) {
+                    console.warn('Unable to start reference staff preview:', previewError);
+                    referencePreviewPromise = Promise.resolve();
                 }
-            }
 
-            await app.delay(800);
-            try {
-                await referencePreviewPromise;
-            } catch (previewError) {
-                console.warn('Reference staff preview failed:', previewError);
+                for (let i = 0; i < referenceNotes.length; i += 1) {
+                    const refNote = referenceNotes[i];
+                    await app.audioModule.playTone(app.musicTheory.getNoteFrequency(refNote), 0.6);
+                    if (i < referenceNotes.length - 1) {
+                        await app.delay(300);
+                    }
+                }
+
+                await app.delay(referenceNotes.length === 1 ? 200 : 800);
+                try {
+                    await referencePreviewPromise;
+                } catch (previewError) {
+                    console.warn('Reference staff preview failed:', previewError);
+                }
+                if (typeof app.markRoundIntroCuePlayed === 'function') {
+                    app.markRoundIntroCuePlayed();
+                }
             }
 
             const sequenceLabel = app.dictationType === 'harmonic' ? 'Now the harmony...' : 'Now the sequence...';
             app.setRoundPhase(ROUND_PHASES.SEQUENCE_PLAYBACK, { feedback: sequenceLabel });
-            await app.delay(500);
+            if (referenceNotes.length > 0) {
+                await app.delay(referenceNotes.length === 1 ? 300 : 500);
+            }
 
             const melodicNoteDurationSeconds = 0.6;
             const melodicNoteSpacingMs = 700;
@@ -314,7 +338,10 @@
             if (app.scoringModule.isRoundComplete()) {
                 this.completeRound();
             } else {
-                app.beginNextSequenceCountdown(result.isCorrect ? 1 : 4, () => {
+                const nextDelaySeconds = typeof app.getNextSequenceDelaySeconds === 'function'
+                    ? app.getNextSequenceDelaySeconds(result.isCorrect)
+                    : (result.isCorrect ? 1 : 4);
+                app.beginNextSequenceCountdown(nextDelaySeconds, () => {
                     this.generateNewSequence();
                 });
             }
@@ -340,10 +367,16 @@
                     app.staffFont,
                     app.disabledKeysStyle,
                     app.answerRevealMode,
+                    app.introNotesMode,
+                    app.correctAnswerDelay,
+                    app.incorrectAnswerDelay,
                     app.inputMode,
                 ),
             );
 
+            if (typeof app.resetRoundIntroCue === 'function') {
+                app.resetRoundIntroCue();
+            }
             app.setRoundPhase(ROUND_PHASES.IDLE, {
                 feedback: `Round Complete! ${roundResult.accuracy}% accuracy in ${roundResult.duration}. Click "Start" to begin the next round.`,
                 feedbackClass: 'correct',

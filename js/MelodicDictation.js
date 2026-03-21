@@ -6,6 +6,9 @@ const MIN_SEQUENCE_LENGTH = 2;
 const MAX_SEQUENCE_LENGTH = 5;
 const DEFAULT_SEQUENCE_LENGTH = 3;
 const DEFAULT_ANSWER_REVEAL_MODE = 'show';
+const DEFAULT_INTRO_NOTES_MODE = 'octave_each';
+const DEFAULT_CORRECT_ANSWER_DELAY_SECONDS = 1;
+const DEFAULT_INCORRECT_ANSWER_DELAY_SECONDS = 4;
 class MelodicDictation {
     constructor() {
         // Initialize modules
@@ -31,6 +34,9 @@ class MelodicDictation {
         this.staffFont = 'bravura';
         this.disabledKeysStyle = 'hatched';
         this.answerRevealMode = DEFAULT_ANSWER_REVEAL_MODE;
+        this.introNotesMode = DEFAULT_INTRO_NOTES_MODE;
+        this.correctAnswerDelay = DEFAULT_CORRECT_ANSWER_DELAY_SECONDS;
+        this.incorrectAnswerDelay = DEFAULT_INCORRECT_ANSWER_DELAY_SECONDS;
         this.inputMode = 'keyboard';
         this.availableTonics = this.musicTheory.getAvailableTonicsForMode
             ? this.musicTheory.getAvailableTonicsForMode(this.mode)
@@ -40,6 +46,7 @@ class MelodicDictation {
         this.autoPlayNext = false;
         this.staffPendingSubmission = false;
         this.answerInputUnlockedDuringPlayback = false;
+        this.roundIntroCuePlayed = false;
         this.lastAppliedInputMode = null;
         this.practiceSequence = [];
         this.practicePreviewActive = false;
@@ -83,6 +90,9 @@ class MelodicDictation {
                     staffFont: this.staffFont,
                     disabledKeysStyle: this.disabledKeysStyle,
                     answerRevealMode: DEFAULT_ANSWER_REVEAL_MODE,
+                    introNotesMode: DEFAULT_INTRO_NOTES_MODE,
+                    correctAnswerDelay: DEFAULT_CORRECT_ANSWER_DELAY_SECONDS,
+                    incorrectAnswerDelay: DEFAULT_INCORRECT_ANSWER_DELAY_SECONDS,
                     inputMode: this.inputMode,
                 },
                 minSequenceLength: MIN_SEQUENCE_LENGTH,
@@ -231,6 +241,9 @@ class MelodicDictation {
                 staffFont: this.staffFont,
                 disabledKeysStyle: this.disabledKeysStyle,
                 answerRevealMode: this.answerRevealMode,
+                introNotesMode: this.introNotesMode,
+                correctAnswerDelay: this.correctAnswerDelay,
+                incorrectAnswerDelay: this.incorrectAnswerDelay,
                 inputMode: this.inputMode
             });
             if (typeof this.staffModule.setDictationMode === 'function') {
@@ -312,6 +325,34 @@ class MelodicDictation {
             return true;
         }
         return this.canAcceptInputDuringPlayback(source);
+    }
+
+    resetRoundIntroCue() {
+        this.roundIntroCuePlayed = false;
+    }
+
+    markRoundIntroCuePlayed() {
+        this.roundIntroCuePlayed = true;
+    }
+
+    getReferenceNotes(tonic1, tonic2 = tonic1) {
+        if (!tonic1) {
+            return [];
+        }
+
+        switch (this.introNotesMode) {
+        case 'tonic_each':
+            return [tonic1];
+        case 'tonic_round':
+            return this.roundIntroCuePlayed ? [] : [tonic1];
+        case 'octave_each':
+        default:
+            return [tonic1, tonic2 || tonic1, tonic1];
+        }
+    }
+
+    getNextSequenceDelaySeconds(isCorrect) {
+        return isCorrect ? this.correctAnswerDelay : this.incorrectAnswerDelay;
     }
 
     getPracticeStackLimit() {
@@ -526,6 +567,9 @@ class MelodicDictation {
             onStaffFontChange: (e) => this.settingsHandlers.handleStaffFontChange(e),
             onDisabledKeysStyleChange: (e) => this.settingsHandlers.handleDisabledKeysStyleChange(e),
             onAnswerRevealModeChange: (e) => this.settingsHandlers.handleAnswerRevealModeChange(e),
+            onIntroNotesModeChange: (e) => this.settingsHandlers.handleIntroNotesModeChange(e),
+            onCorrectAnswerDelayChange: (e) => this.settingsHandlers.handleCorrectAnswerDelayChange(e),
+            onIncorrectAnswerDelayChange: (e) => this.settingsHandlers.handleIncorrectAnswerDelayChange(e),
             onInputModeChange: (e) => this.inputManager.handleInputModeChange(e),
             onStaffSubmit: () => this.inputManager.handleStaffSubmit()
         });
@@ -610,6 +654,9 @@ class MelodicDictation {
             staffFont: this.staffFont,
             disabledKeysStyle: this.disabledKeysStyle,
             answerRevealMode: this.answerRevealMode,
+            introNotesMode: this.introNotesMode,
+            correctAnswerDelay: this.correctAnswerDelay,
+            incorrectAnswerDelay: this.incorrectAnswerDelay,
             inputMode: this.inputMode,
         });
     }
@@ -629,6 +676,9 @@ class MelodicDictation {
                 this.staffFont,
                 this.disabledKeysStyle,
                 this.answerRevealMode,
+                this.introNotesMode,
+                this.correctAnswerDelay,
+                this.incorrectAnswerDelay,
                 this.inputMode
             );
             const message = await this.storageModule.saveToGoogleDrive(settings);
@@ -663,6 +713,21 @@ class MelodicDictation {
                 this.keyboardModule.positionBlackKeys();
                 this.audioModule.setTimbre(this.timbre);
                 this.staffModule.setFontPreference(this.staffFont);
+                this.uiModule.setFormValues({
+                    difficulty: this.sequenceLength,
+                    tonic: this.tonic,
+                    scaleType: this.scaleType,
+                    dictationType: this.dictationType,
+                    mode: this.mode,
+                    timbre: this.timbre,
+                    staffFont: this.staffFont,
+                    disabledKeysStyle: this.disabledKeysStyle,
+                    answerRevealMode: this.answerRevealMode,
+                    introNotesMode: this.introNotesMode,
+                    correctAnswerDelay: this.correctAnswerDelay,
+                    incorrectAnswerDelay: this.incorrectAnswerDelay,
+                    inputMode: this.inputMode,
+                });
                 if (typeof this.staffModule.setDictationMode === 'function') {
                     this.staffModule.setDictationMode(this.dictationType);
                 }

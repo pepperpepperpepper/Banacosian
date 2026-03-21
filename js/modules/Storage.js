@@ -146,9 +146,26 @@ class StorageModule {
      * @param {string} staffFont - Selected staff font id
      * @param {string} disabledKeysStyle - Disabled key rendering style
      * @param {string} answerRevealMode - Correct answer replay preference
+     * @param {string} introNotesMode - Intro note playback preference
+     * @param {number} correctAnswerDelay - Delay after correct answers in seconds
+     * @param {number} incorrectAnswerDelay - Delay after incorrect answers in seconds
      * @returns {Object} Settings object
      */
-    getCurrentSettings(sequenceLength, scaleType, dictationType, mode, tonic, timbre, staffFont, disabledKeysStyle, answerRevealMode, inputMode) {
+    getCurrentSettings(
+        sequenceLength,
+        scaleType,
+        dictationType,
+        mode,
+        tonic,
+        timbre,
+        staffFont,
+        disabledKeysStyle,
+        answerRevealMode,
+        introNotesMode,
+        correctAnswerDelay,
+        incorrectAnswerDelay,
+        inputMode,
+    ) {
         const snapshot = {
             sequenceLength: sequenceLength,
             scaleType: scaleType,
@@ -159,6 +176,9 @@ class StorageModule {
             staffFont: staffFont,
             disabledKeysStyle: disabledKeysStyle,
             answerRevealMode: answerRevealMode,
+            introNotesMode: introNotesMode,
+            correctAnswerDelay: correctAnswerDelay,
+            incorrectAnswerDelay: incorrectAnswerDelay,
             inputMode: inputMode
         };
         if (this.settingsManager && typeof this.settingsManager.buildSnapshot === 'function') {

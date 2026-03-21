@@ -48,9 +48,33 @@
             if (settings.answerRevealMode) {
                 app.answerRevealMode = settings.answerRevealMode === 'skip' ? 'skip' : 'show';
             }
+            app.introNotesMode = this.normalizeIntroNotesMode(settings.introNotesMode ?? app.introNotesMode);
+            app.correctAnswerDelay = this.normalizeNextSequenceDelay(
+                settings.correctAnswerDelay ?? app.correctAnswerDelay,
+                app.correctAnswerDelay,
+            );
+            app.incorrectAnswerDelay = this.normalizeNextSequenceDelay(
+                settings.incorrectAnswerDelay ?? app.incorrectAnswerDelay,
+                app.incorrectAnswerDelay,
+            );
             if (settings.inputMode) {
                 app.inputMode = settings.inputMode === 'staff' ? 'staff' : 'keyboard';
             }
+        }
+
+        normalizeIntroNotesMode(rawValue) {
+            if (rawValue === 'tonic_each' || rawValue === 'tonic_round') {
+                return rawValue;
+            }
+            return 'octave_each';
+        }
+
+        normalizeNextSequenceDelay(rawValue, fallback = 1) {
+            const parsed = Number.parseInt(rawValue, 10);
+            if (!Number.isFinite(parsed)) {
+                return Number.isFinite(fallback) ? fallback : 1;
+            }
+            return Math.min(Math.max(parsed, 0), 10);
         }
 
         normalizeSequenceLength(rawValue) {
@@ -126,6 +150,9 @@
             }
 
             app.clearStaffInputTracking({ clearPractice: false, resetStaff: false });
+            if (typeof app.resetRoundIntroCue === 'function') {
+                app.resetRoundIntroCue();
+            }
             app.staffPendingSubmission = false;
             app.updateStaffSubmitState();
             app.staffModule.clearStaffNotes();
@@ -190,6 +217,33 @@
             app.persistSettings();
         }
 
+        handleIntroNotesModeChange(event) {
+            const app = this.app;
+            const requestedMode = event && event.target ? event.target.value : null;
+            app.introNotesMode = this.normalizeIntroNotesMode(requestedMode);
+            app.uiModule.setIntroNotesModeValue(app.introNotesMode);
+            if (typeof app.resetRoundIntroCue === 'function') {
+                app.resetRoundIntroCue();
+            }
+            app.persistSettings();
+        }
+
+        handleCorrectAnswerDelayChange(event) {
+            const app = this.app;
+            const requestedDelay = event && event.target ? event.target.value : app.correctAnswerDelay;
+            app.correctAnswerDelay = this.normalizeNextSequenceDelay(requestedDelay, app.correctAnswerDelay);
+            app.uiModule.setCorrectAnswerDelayValue(app.correctAnswerDelay);
+            app.persistSettings();
+        }
+
+        handleIncorrectAnswerDelayChange(event) {
+            const app = this.app;
+            const requestedDelay = event && event.target ? event.target.value : app.incorrectAnswerDelay;
+            app.incorrectAnswerDelay = this.normalizeNextSequenceDelay(requestedDelay, app.incorrectAnswerDelay);
+            app.uiModule.setIncorrectAnswerDelayValue(app.incorrectAnswerDelay);
+            app.persistSettings();
+        }
+
         handleTonicChange(event) {
             const app = this.app;
             try {
@@ -222,6 +276,9 @@
                     app.practiceSequence = [];
                 }
                 app.clearStaffInputTracking({ clearPractice: false });
+                if (typeof app.resetRoundIntroCue === 'function') {
+                    app.resetRoundIntroCue();
+                }
                 app.staffPendingSubmission = false;
                 app.updateStaffSubmitState();
                 app.staffModule.clearStaffNotes();
@@ -266,6 +323,9 @@
                     app.practiceSequence = [];
                 }
                 app.clearStaffInputTracking({ clearPractice: false });
+                if (typeof app.resetRoundIntroCue === 'function') {
+                    app.resetRoundIntroCue();
+                }
                 app.staffPendingSubmission = false;
                 app.updateStaffSubmitState();
                 app.staffModule.clearStaffNotes();
