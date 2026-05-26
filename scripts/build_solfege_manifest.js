@@ -21,6 +21,8 @@ function normalizeMode(value) {
     return value.toLowerCase();
 }
 
+const KNOWN_SOURCES = new Set(['essen', 'llm']);
+
 function parseFilename(fileName) {
     const baseName = fileName.replace(/\.musicxml$/i, '');
     const parts = baseName.split('_');
@@ -41,12 +43,19 @@ function parseFilename(fileName) {
     if (!fs.existsSync(midiPath)) {
         return null;
     }
+    // The first variant token labels the generator that produced this entry:
+    // legacy contour-enum files lead with a numeric token ('0', '22', ...),
+    // Essen folksong imports lead with 'essen', and LLM-generated tunes lead
+    // with 'llm'. The runtime weights the random picker per source so a
+    // bigger bucket doesn't drown out a smaller, higher-quality one.
+    const source = KNOWN_SOURCES.has(variant[0]) ? variant[0] : 'contour';
     return {
         id,
         slug: baseName,
         mode,
         tonic,
         variant,
+        source,
         musicxml: `/raw_data/musicxml/${baseName}.musicxml`,
         midi: `/raw_data/midi/${baseName}.mid`,
     };

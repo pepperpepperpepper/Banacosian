@@ -1,0 +1,349 @@
+X:1
+T:Major easy 12-bar
+M:4/4
+L:1/8
+K:C
+G,4 G,2 G,2 | G,2 G,2 F,2 G,2 | E,4 C,4 | E,3 F, G,2 A,2 | A,2 G,4 F,2 | E,8 | G,4 G,2 G,2 | G,2 G,2 F,2 G,2 | E,4 C,4 | E,2 F, G, A,2 G,2 | G,2 F, E, D,2 D,2 | C,8 |]
+
+X:2
+T:Major easy 12-bar
+M:4/4
+L:1/8
+K:C
+E4 E2 E2 | G4 F4 | E2 D2 C2 F2 | E4 F4 | E2 D2 C2 B,2 | A,4 G,4 | D4 D4 | E4 F4 | E2 D2 C2 B,2 | A,4 G,4 | D4 E4 | C8 |]
+
+X:3
+T:Major easy 8-bar
+M:3/4
+L:1/8
+K:C
+C4 C2 | C4 C2 | G4 G2 | G4 F2 | F4 F2 | F4 G2 | E2 D4 | C6 |]
+
+X:4
+T:Major easy 8-bar
+M:3/4
+L:1/8
+K:C
+C2 C2 C2 | D4 G2 | G4 E2 | D4 G2 | E4 C2 | D4 B,2 | C6 | C4 z2 |]
+
+X:5
+T:Major easy 12-bar
+M:4/4
+L:1/8
+K:C
+F4 F4 | F4 F2 D2 | C2 D2 E2 F2 | G4 z2 G2 | A4 G2 G2 | F4 F2 D2 | C2 D2 E2 F2 | G4 z2 G2 | A4 G2 G2 | F6 F2 | E4 D4 | C8 |]
+
+X:6
+T:Major easy 8-bar
+M:4/4
+L:1/8
+K:C
+C,2 | G,2 G, G, A,2 A,2 | G,2 G,2 E,2 C,2 | G,2 G, G, A,2 A,2 | G,2 G,2 E,2 G,2 | F,2 E,2 D,2 G,2 | F,2 E,2 D,2 F,2 | E,2 D,2 C,2 z2 |]
+
+X:7
+T:Major easy 8-bar
+M:4/4
+L:1/8
+K:C
+A,2 A,2 C2 C2 | A,2 A,2 G,2 G,2 | C2 C2 D2 D2 | E4 z4 | E3 E E2 E2 | G4 E2 E2 | D2 C2 C2 B,2 | C4 z4 |]
+
+X:8
+T:Major easy 8-bar
+M:4/4
+L:1/8
+K:C
+G4 E2 F2 | G4 z4 | E2 F2 G2 F2 | E2 D2 C4 | E2 F2 G2 F2 | E2 D2 C4 | E4 D2 D2 | C8 |]
+
+X:9
+T:Major easy 16-bar
+M:3/4
+L:1/8
+K:C
+G4 G2 | E4 F2 | G4 G2 | E6 | G4 G2 | E4 F2 | G4 G2 | E6 | E4 E2 | E4 D2 | E4 G2 | F6 | E4 E2 | D4 C2 | D4 D2 | C6 |]
+
+X:10
+T:Major easy 16-bar
+M:3/4
+L:1/8
+K:C
+C2 | C4 C2 | B,4 B,2 | C4 A,2 | G,4 G,2 | A,2 B,2 C2 | B,4 A,2 | G,4 F,2 | E,4 D,2 | E,4 E,2 | G,4 G,2 | E,4 D,2 | C,4 C,2 | E,4 F,2 | E,2 D,4 | C,4 z2 |]
+
+X:11
+T:Major easy 8-bar
+M:2/4
+L:1/8
+K:C
+C2 C2 | E2 E2 | D D D2 | C2 G,2 | C4 | E4 | D2 D2 | C4 |]
+
+X:12
+T:Major easy 8-bar
+M:4/4
+L:1/8
+K:C
+G, | G, C B, A, G, A, B, C | D2 C B, C2 z G, | G, C B, A, G, A, B, C | D2 C B, C2 z G, | G, C C2 C2 C C | G, D D2 z2 B, B, | B, C C2 z3 z |]
+
+X:13
+T:Major medium 16-bar
+M:3/4
+L:1/8
+K:C
+C2 | C4 F2 | E4 D2 | F2 G2 E2 | D4 A2 | G4 G2 | E4 E2 | F2 G2 E2 | D4 C2 | E4 F2 | G4 A2 | G2 F E D2 | C4 D2 | G4 F2 | E4 D2 | C4 z2 |]
+
+X:14
+T:Major medium 16-bar
+M:3/4
+L:1/8
+K:C
+C2 C2 D2 | E4 F2 | E2 D4 | C4 G2 | A4 G2 | G4 E2 | F4 F2 | E4 G2 | A4 G2 | G4 E2 | F2 E2 D2 | C4 F2 | E4 D2 | E4 F2 | G2 F E D2 | C6 |]
+
+X:15
+T:Major medium 16-bar
+M:4/4
+L:1/8
+K:C
+G2 | G2 E2 C2 D2 | E F G4 E2 | F4 E4 | z2 G2 G4 | E2 D4 C2 | F2 D2 G4 | E4 z2 E2 | E E E F G2 G2 | G2 F E D4 | C2 B, A, G,4 | z2 G,2 C2 C2 | D2 D2 E F G2 | E2 E2 D2 C2 | E4 D4 | C8 |]
+
+X:16
+T:Major medium 16-bar
+M:4/4
+L:1/8
+K:C
+E4 E2 E2 | G4 F2 F2 | E4 D2 D2 | C4 D4 | E4 E4 | G4 F2 F2 | E4 D2 D2 | C4 F4 | E3 D C2 B,2 | A,4 G,4 | D4 D4 | E4 F4 | E3 D C2 B,2 | A,4 G,4 | D4 D4 | C8 |]
+
+X:17
+T:Major medium 16-bar
+M:4/4
+L:1/8
+K:C
+C8 | E4 D4 | E4 F4 | G4 z2 A2 | G4 E4 | C8 | C8 | E4 D4 | E4 F4 | G4 z2 A2 | G4 E4 | C4 G4 | E4 D4 | C4 G,4 | D2 E2 F2 E2 | C8 |]
+
+X:18
+T:Major medium 16-bar
+M:3/4
+L:1/8
+K:C
+C2 | C4 C2 | B,4 B,2 | C4 A,2 | G,4 G,2 | A,3 B, C2 | B,4 A,2 | G,4 F,2 | E,4 D,2 | E,4 F,2 | G,4 F,2 | E,2 D,4 | C,4 F,2 | E,2 D,3 C, | C,4 B,,2 | C,4 z2 |]
+
+X:19
+T:Major medium 12-bar
+M:4/4
+L:1/8
+K:C
+G2 G2 A2 G2 | E2 F2 G2 z C | D2 E2 F2 E2 | G4 D2 F2 | E2 D2 C2 z C | D2 D2 G2 F2 | E2 D2 C2 D2 | B, G, A,2 G,2 z C | D2 E2 C2 E2 | G2 F2 G2 z E | F2 D2 C2 B,2 | C8 |]
+
+X:20
+T:Major medium 12-bar
+M:4/4
+L:1/8
+K:C
+G2 G2 A2 G2 | E2 A2 G2 z E | D2 E2 F G A2 | G4 D2 F2 | E2 D D C2 z C | D2 D D G A G F | E2 D2 C2 D2 | B, G, A,2 G,2 z G, | C2 E D C D E F | G2 A A G2 z E | F E D2 E E D2 | C8 |]
+
+X:21
+T:Major medium 16-bar
+M:3/4
+L:1/8
+K:C
+G,2 | C3 G, C2 | E3 C E2 | G6 | D4 D2 | E3 F G2 | G3 F E2 | D4 z2 | z4 G2 | G3 G G G | G3 E C2 | F3 G A2 | G4 F2 | E3 E E2 | D3 E D2 | C4 z2 |]
+
+X:22
+T:Major medium 12-bar
+M:3/4
+L:1/8
+K:C
+C C C | G3 A A2 | G2 F2 G G | E2 C2 C2 | C2 C2 G2 | F3 E D2 | C2 D2 E2 | D2 G,2 z2 | G,2 A,2 B,2 | D4 G2 | E2 D2 E2 | C2 z z3 |]
+
+X:23
+T:Major hard 16-bar
+M:4/4
+L:1/8
+K:C
+C2 G,2 C2 E2 | D C B, A, G,4 | D2 D2 D2 D2 | D2 G2 G2 F2 | E2 E2 E2 E2 | E D E F G4 | A3 G F2 D2 | D4 C2 z2 | C2 E3/2 D/2 C2 E E | D E F E D2 z2 | D2 F E D2 E F | G A G F E2 z2 | E2 E2 E2 E2 | E D E F G4 | A3 G F2 D2 | D4 C2 z2 |]
+
+X:24
+T:Major hard 16-bar
+M:2/4
+L:1/8
+K:C
+B,2 A, B, | G,2 A, B, | A,3 A,/2 B,/2 | A, G, A,2 | A,3 G, | A,2 A,2 | A, B, A, G, | A,2 z2 | B,2 A, B, | G,2 A, B, | E, E,/2 F,/2 E, D, | E, A,, C,2 | C,3 A,, | C,2 C,2 | C, D, C, A,, | C,2 z2 |]
+
+X:25
+T:Major hard 16-bar
+M:2/4
+L:1/8
+K:C
+A G | A G2 E | G3/2 E/2 D D | G2 E2 | E E/2 E/2 C2 | D4 | D3/2 C/2 G,2 | D A, C2 | G G/2 G/2 C D | C D C C | A, C D2 | G A G3/2 G/2 | C E D/2 C/2 A, | C A, G, G, | C A, G, G, | C2 z2 |]
+
+X:26
+T:Major hard 14-bar
+M:2/4
+L:1/8
+K:C
+C3/2 C/2 C2 | G3/2 G/2 A2 | G2 F E | D2 z G | G F E D | C2 D2 | A,2 A,2 | G,2 z G, | C2 C2 | D2 G F | E2 E2 | E4 | E D D E | C4 |]
+
+X:27
+T:Minor easy 16-bar
+M:3/4
+L:1/8
+K:Am
+E,4 E,2 | E,4 F,2 | E,2 D,2 D,2 | C,4 C,2 | E,4 E,2 | A,4 A,2 | G,2 F,2 F,2 | E,4 E,2 | G,4 G,2 | A,4 A,2 | E,4 E,2 | C,4 C,2 | D,4 D,2 | E,4 D,2 | C,2 B,,2 B,,2 | A,,6 |]
+
+X:28
+T:Minor easy 8-bar
+M:3/4
+L:1/8
+K:Am
+E C D E3 | E C E D3 | E C D A,3 | A, A, D D3 | A, C D E3 | E D A, C3 | C C E D3 | C A, C A,3 |]
+
+X:29
+T:Minor easy 12-bar
+M:2/4
+L:1/8
+K:Am
+C A, C D | E3 D | E4 | D G E D | C3 A, | C4 | C2 E2 | D E D C | A,2 G, A, | C2 D C | A,3 G, | A,4 |]
+
+X:30
+T:Minor easy 8-bar
+M:3/4
+L:1/8
+K:Am
+E C D E3 | E C E D3 | E C D A,3 | A, A, D D3 | A, C D E3 | E D A, C3 | C C E D3 | C A, C A,3 |]
+
+X:31
+T:Minor easy 12-bar
+M:2/4
+L:1/8
+K:Am
+D E D E | C E D2 | C2 A, z | A, D C D | D A, C A, | G,2 A,2 | G, A, C C | D A, G, G, | A, C D A, | C A, G, G, | C2 A, z | C2 A, z |]
+
+X:32
+T:Minor easy 10-bar
+M:4/4
+L:1/8
+K:Am
+G,2 | C2 D2 E2 F2 | E2 D2 C2 G,2 | C2 D2 E2 F2 | E2 D2 C2 E2 | C4 B,2 A,2 | A,4 G,2 G,2 | C2 C2 D2 D2 | G2 D2 E2 E2 | D2 B,2 A,2 z2 |]
+
+X:33
+T:Minor easy 8-bar
+M:2/4
+L:1/8
+K:Am
+A,3/2 A,/2 A, C | D E3 | D C E2 | E D2 C | A,/2 C/2 A,2 C | D E E D | C A, D C | A,4 |]
+
+X:34
+T:Minor easy 8-bar
+M:4/4
+L:1/8
+K:Am
+E E3 D/2 E/2 D2 E | D/2 E/2 D/2 C/2 A,2 A,/2 C/2 D2 E | D C/2 A,/2 A,2 A,/2 C/2 D2 E | A, D/2 C/2 A,2 A, C2 A, | A, A,3 A,/2 C/2 D2 E | D/2 E/2 D/2 C/2 A,2 A, C2 D/2 E/2 | D C/2 A,/2 A,2 A,/2 C/2 D2 E | C D/2 C/2 A,2 A, A,3 |]
+
+X:35
+T:Minor medium 16-bar
+M:2/4
+L:1/8
+K:Am
+A, A, D2 | E E D3/2 E/2 | D D/2 C/2 A,2 | C D2 E | D/2 E/2 D2 C | A, C A,2 | D3 C | A, C2 z | A, A,/2 C/2 D2 | E E/2 C/2 D3/2 E/2 | D C A,2 | A, C2 D/2 E/2 | D C A,2 | C A,/2 C/2 D3/2 E/2 | D3 C | A, A,3 |]
+
+X:36
+T:Minor medium 8-bar
+M:3/4
+L:1/8
+K:Am
+C A,/2 C/2 E3/2 D/2 E2 | G E/2 D/2 C3/2 A,/2 C2 | C E D3/2 C/2 A,2 | C D/2 E/2 A,3/2 G,/2 A,2 | C C/2 A,/2 E3/2 D/2 E2 | G E/2 D/2 C3/2 A,/2 C2 | C E D3/2 C/2 A,2 | C D/2 E/2 A,3/2 G,/2 A,2 |]
+
+X:37
+T:Minor medium 12-bar
+M:2/4
+L:1/8
+K:Am
+E,/2 G,/2 E, G, E,/2 G,/2 | E, G, G, E,/2 G,/2 | A,2 A,/2 G,/2 E,/2 G,/2 | E,4 | A, A,/2 B,/2 B,/2 A,/2 G, | A, B, B,/2 A,/2 G, | E, E, D,/2 C,/2 A,, | D, E,/2 G,/2 E, D,/2 C,/2 | D,/2 C,/2 A,,/2 C,/2 A,,2 | E, E, D,/2 C,/2 A,, | D, E,/2 G,/2 E, D,/2 C,/2 | D,/2 C,/2 A,,/2 C,/2 A,,2 |]
+
+X:38
+T:Minor medium 16-bar
+M:2/4
+L:1/8
+K:Am
+A, A, D D | A, D/2 C/2 A,/2 C/2 A, | G,2 A,2 | A, D C D | G,2 A,2 | D C A, C | G,2 A,2 | A, A, C C | C E E C | D2 D2 | A, D C D | G,2 A,2 | C C C E | D4 | A,2 D C | G,2 A,2 |]
+
+X:39
+T:Minor medium 16-bar
+M:2/4
+L:1/8
+K:Am
+A, A,2 G, | E,2 G,2 | A,3 G, | A,4 | A,3 B, | A, B, G, E, | D,3 B,, | D,4 | E,3 G, | A,2 A, B, | A,2 G, E, | D,2 A,,2 | E, E,2 G, | E, G, C, B,, | A,,3 G,, | A,,4 |]
+
+X:40
+T:Minor medium 12-bar
+M:2/4
+L:1/8
+K:Am
+A,2 A,/2 C/2 A,/2 G,/2 | E, G,/2 E,/2 D,3/2 E,/2 | A,2 A,/2 C/2 A,/2 G,/2 | E,2 E,2 | E, E,/2 G,/2 A, A,/2 G,/2 | E,/2 E,/2 G,/2 A,/2 E,2 | G, G,/2 E,/2 D,3/2 C,/2 | A,,4 | E, E,/2 G,/2 A, A,/2 G,/2 | E,/2 E,/2 G,/2 A,/2 E,2 | G, G,/2 E,/2 D,3/2 C,/2 | A,,4 |]
+
+X:41
+T:Minor medium 12-bar
+M:2/4
+L:1/8
+K:Am
+A, A,/2 G,/2 E, G, | A,3/2 C/2 A, G, | A, A,/2 G,/2 E, G, | A,4 | A, A, A, G, | A, C A, G, | A, A,/2 G,/2 E, E,/2 G,/2 | A,4 | A, A,/2 G,/2 A, G, | E,3/2 G,/2 C, D, | C, C,/2 D,/2 E, C, | A,,4 |]
+
+X:42
+T:Minor medium 12-bar
+M:2/4
+L:1/8
+K:Am
+G, E, G, E, | G, C A, G, | G, E,3 | G, C A, G, | G, E,3 | G, E,/2 G,/2 C, D, | C, E, D, C, | A,, A,,2 C, | D,3 G, | E,3 D, | C, E, D, C, | A,, A,,3 |]
+
+X:43
+T:Minor medium 14-bar
+M:2/4
+L:1/8
+K:Am
+E, G, A, G,/2 ^F,/2 | E, G, A, G,/2 E,/2 | E, G, G,/2 A,/2 ^F, | E,4 | E, G, A, G,/2 E,/2 | D, E,/2 D,/2 C, D, | E, G, C, D, | E, D,/2 E,/2 C, B,, | A,,4 | E, G, A, G,/2 E,/2 | D, E,/2 D,/2 C, D, | E, G, C, D, | E, D,/2 E,/2 C, B,, | A,,4 |]
+
+X:44
+T:Minor medium 14-bar
+M:2/4
+L:1/8
+K:Am
+G/2 E/2 E/2 D/2 E E | D/2 E/2 D/2 C/2 D2 | G/2 E/2 E/2 D/2 E E | C/2 D/2 C/2 E/2 D2 | D E D E | E/2 D/2 C/2 E/2 D2 | D E D E | E A A/2 G/2 E | D E z G | E/2 D/2 C D2 | C/2 D/2 C/2 D/2 E2 | E/2 G/2 E/2 C/2 D3/2 E/2 | D2 B,/2 D/2 B,/2 G,/2 | A,4 |]
+
+X:45
+T:Minor hard 16-bar
+M:2/4
+L:1/8
+K:Am
+G G/2 E/2 A2 | A3/2 E/2 D2 | E A A G/2 E/2 | D D C A,/2 C/2 | D4 | G E/2 D/2 C C/2 D/2 | E3 G | E3/2 G/2 D z | D3/2 C/2 A, z | E A A G/2 E/2 | D4 | G3 C | D3/2 C/2 A, z | A,3/2 G,/2 A, z | A,3/2 G,/2 C z | A,3/2 G,/2 A,2 |]
+
+X:46
+T:Minor hard 16-bar
+M:2/4
+L:1/8
+K:Am
+A, C A,/2 G,/2 E,/2 G,/2 | A, A,2 G, | C A,/2 G,/2 E, G, | A, G, E,2 | A, E,/2 G,/2 A, G, | E, G,2 E, | E,3/2 G,/2 C, D, | G, E,3 | D,/2 E,/2 D,/2 C,/2 A,, C, | E, D, z A,/2 A,/2 | A,/2 C/2 A,/2 G,/2 G, E, | G, E,/2 D,/2 C, D, | z E, C, D, | G, E, G,2 | D, E,/2 G,/2 D, C, | A,,4 |]
+
+X:47
+T:Minor hard 16-bar
+M:2/4
+L:1/8
+K:Am
+D D/2 E/2 G G | A G/2 E/2 D2 | D/2 E/2 G A G/2 E/2 | G/2 D/2 E D2 | D/2 C/2 A,3 | A, C D E | D/2 E/2 D C2 | D E D/2 C/2 A,/2 C/2 | D2 z2 | D3/2 E/2 D C | A,/2 B,/2 A,/2 G,/2 A,2 | G/2 G E/2 D A,/2 C/2 | D2 z2 | D/2 E/2 G A G/2 E/2 | G/2 D/2 E2 D | D/2 C/2 A,3 |]
+
+X:48
+T:Minor hard 14-bar
+M:2/4
+L:1/8
+K:Am
+D G G E/2 D/2 | G/2 E/2 E/2 D/2 C/2 A,/2 C/2 D/2 | G/2 E/2 D3 | D G G E/2 D/2 | G/2 E/2 E/2 D/2 C/2 A,/2 C/2 D/2 | G/2 E/2 D3 | G,/2 G, A,/2 C C/2 A,/2 | D/2 G/2 E/2 G/2 C C | D G/2 E/2 D/2 E/2 D/2 B,/2 | D/2 E/2 D/2 G,/2 A, A, | G,/2 E,/2 G,/2 A,/2 G,2 | D/2 E/2 D/2 B,/2 A, A, | D/2 E/2 D/2 B,/2 B,/2 A,/2 G,/2 B,/2 | A,4 |]
+
+X:49
+T:Minor hard 16-bar
+M:2/4
+L:1/8
+K:Am
+A, A, A, C | E, A, G,2 | A, A, C E, | D,4 | D, E, G, A, | E, D, C,2 | A,, E, D, B,, | A,,4 | D, C, D, E, | G,4 | D, C, D, E, | G,4 | D, E, G, A, | E, D, C,2 | A,, E, D, B,, | A,,4 |]
+
+X:50
+T:Minor hard 13-bar
+M:4/4
+L:1/8
+K:Am
+G,2 | E2 E2 C2 E2 | E2 D2 C2 z2 | F3 E D2 C2 | D2 D2 C2 E F | G G E2 A2 G2 | G F E2 D2 B, C | D D D2 E2 E D | C2 A,2 G,2 G,2 | C C C2 D2 D2 | E4 F4 | C2 A, B, C2 B,2 | A,4 z2 z2 |]

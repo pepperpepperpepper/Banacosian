@@ -17,3 +17,10 @@ android/*.iml
 **/staff.bk/
 .DS_Store
 Thumbs.db
+
+# Python venv (used by scripts/import_essen.py)
+.venv/
+__pycache__/
+
+# Claude Code session state
+.claude/

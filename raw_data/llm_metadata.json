@@ -1,0 +1,5922 @@
+{
+  "8000000_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000000",
+    "difficulty": "easy",
+    "id": 8000000,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000001_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000001",
+    "difficulty": "easy",
+    "id": 8000001,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000002_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000002",
+    "difficulty": "easy",
+    "id": 8000002,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000004_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000004",
+    "difficulty": "easy",
+    "id": 8000004,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000005_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000005",
+    "difficulty": "easy",
+    "id": 8000005,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000009_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000009",
+    "difficulty": "easy",
+    "id": 8000009,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000010_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000010",
+    "difficulty": "easy",
+    "id": 8000010,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000016_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000016",
+    "difficulty": "easy",
+    "id": 8000016,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000018_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000018",
+    "difficulty": "easy",
+    "id": 8000018,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000019_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000019",
+    "difficulty": "easy",
+    "id": 8000019,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000022_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000022",
+    "difficulty": "easy",
+    "id": 8000022,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000024_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000024",
+    "difficulty": "easy",
+    "id": 8000024,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000027_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000027",
+    "difficulty": "easy",
+    "id": 8000027,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000028_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000028",
+    "difficulty": "easy",
+    "id": 8000028,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000029_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000029",
+    "difficulty": "easy",
+    "id": 8000029,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000030_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000030",
+    "difficulty": "easy",
+    "id": 8000030,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000034_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000034",
+    "difficulty": "easy",
+    "id": 8000034,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000035_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000035",
+    "difficulty": "easy",
+    "id": 8000035,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000036_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000036",
+    "difficulty": "easy",
+    "id": 8000036,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000038_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000038",
+    "difficulty": "easy",
+    "id": 8000038,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000039_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000039",
+    "difficulty": "easy",
+    "id": 8000039,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000040_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000040",
+    "difficulty": "easy",
+    "id": 8000040,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000041_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000041",
+    "difficulty": "easy",
+    "id": 8000041,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000042_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000042",
+    "difficulty": "easy",
+    "id": 8000042,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000043_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000043",
+    "difficulty": "easy",
+    "id": 8000043,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000045_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000045",
+    "difficulty": "easy",
+    "id": 8000045,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000047_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000047",
+    "difficulty": "easy",
+    "id": 8000047,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000048_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000048",
+    "difficulty": "easy",
+    "id": 8000048,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000049_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000049",
+    "difficulty": "easy",
+    "id": 8000049,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000050_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000050",
+    "difficulty": "easy",
+    "id": 8000050,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000052_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000052",
+    "difficulty": "easy",
+    "id": 8000052,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000058_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000058",
+    "difficulty": "easy",
+    "id": 8000058,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000061_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000061",
+    "difficulty": "easy",
+    "id": 8000061,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000062_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000062",
+    "difficulty": "easy",
+    "id": 8000062,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000063_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000063",
+    "difficulty": "easy",
+    "id": 8000063,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000064_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000064",
+    "difficulty": "easy",
+    "id": 8000064,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000067_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000067",
+    "difficulty": "easy",
+    "id": 8000067,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000069_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000069",
+    "difficulty": "easy",
+    "id": 8000069,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000070_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000070",
+    "difficulty": "easy",
+    "id": 8000070,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000072_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000072",
+    "difficulty": "easy",
+    "id": 8000072,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000073_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000073",
+    "difficulty": "easy",
+    "id": 8000073,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000074_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000074",
+    "difficulty": "easy",
+    "id": 8000074,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000076_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000076",
+    "difficulty": "easy",
+    "id": 8000076,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000077_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000077",
+    "difficulty": "easy",
+    "id": 8000077,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000079_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000079",
+    "difficulty": "easy",
+    "id": 8000079,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000080_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000080",
+    "difficulty": "easy",
+    "id": 8000080,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000081_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000081",
+    "difficulty": "easy",
+    "id": 8000081,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000082_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000082",
+    "difficulty": "easy",
+    "id": 8000082,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000084_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000084",
+    "difficulty": "easy",
+    "id": 8000084,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000088_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000088",
+    "difficulty": "easy",
+    "id": 8000088,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000089_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000089",
+    "difficulty": "easy",
+    "id": 8000089,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000090_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000090",
+    "difficulty": "easy",
+    "id": 8000090,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000091_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000091",
+    "difficulty": "easy",
+    "id": 8000091,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000094_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000094",
+    "difficulty": "easy",
+    "id": 8000094,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000095_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000095",
+    "difficulty": "easy",
+    "id": 8000095,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000096_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000096",
+    "difficulty": "easy",
+    "id": 8000096,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000097_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000097",
+    "difficulty": "easy",
+    "id": 8000097,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000098_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000098",
+    "difficulty": "easy",
+    "id": 8000098,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000099_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000099",
+    "difficulty": "easy",
+    "id": 8000099,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000100_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000100",
+    "difficulty": "easy",
+    "id": 8000100,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000101_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000101",
+    "difficulty": "easy",
+    "id": 8000101,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000102_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000102",
+    "difficulty": "easy",
+    "id": 8000102,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000103_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000103",
+    "difficulty": "easy",
+    "id": 8000103,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000104_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000104",
+    "difficulty": "easy",
+    "id": 8000104,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000106_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000106",
+    "difficulty": "easy",
+    "id": 8000106,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000108_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000108",
+    "difficulty": "easy",
+    "id": 8000108,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000109_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000109",
+    "difficulty": "easy",
+    "id": 8000109,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000111_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000111",
+    "difficulty": "easy",
+    "id": 8000111,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000116_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000116",
+    "difficulty": "easy",
+    "id": 8000116,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000119_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000119",
+    "difficulty": "easy",
+    "id": 8000119,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000120_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000120",
+    "difficulty": "easy",
+    "id": 8000120,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000121_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000121",
+    "difficulty": "easy",
+    "id": 8000121,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000122_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000122",
+    "difficulty": "easy",
+    "id": 8000122,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000124_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000124",
+    "difficulty": "easy",
+    "id": 8000124,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000125_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000125",
+    "difficulty": "easy",
+    "id": 8000125,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000126_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000126",
+    "difficulty": "easy",
+    "id": 8000126,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000127_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000127",
+    "difficulty": "easy",
+    "id": 8000127,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000129_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000129",
+    "difficulty": "easy",
+    "id": 8000129,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000130_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000130",
+    "difficulty": "easy",
+    "id": 8000130,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000132_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000132",
+    "difficulty": "easy",
+    "id": 8000132,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000133_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000133",
+    "difficulty": "easy",
+    "id": 8000133,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000134_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000134",
+    "difficulty": "easy",
+    "id": 8000134,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000136_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000136",
+    "difficulty": "easy",
+    "id": 8000136,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000137_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000137",
+    "difficulty": "easy",
+    "id": 8000137,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000138_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000138",
+    "difficulty": "easy",
+    "id": 8000138,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000139_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000139",
+    "difficulty": "easy",
+    "id": 8000139,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000140_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000140",
+    "difficulty": "easy",
+    "id": 8000140,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000142_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000142",
+    "difficulty": "easy",
+    "id": 8000142,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000144_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000144",
+    "difficulty": "easy",
+    "id": 8000144,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000145_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000145",
+    "difficulty": "easy",
+    "id": 8000145,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000146_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000146",
+    "difficulty": "easy",
+    "id": 8000146,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000149_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000149",
+    "difficulty": "easy",
+    "id": 8000149,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000150_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000150",
+    "difficulty": "easy",
+    "id": 8000150,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000151_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000151",
+    "difficulty": "easy",
+    "id": 8000151,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000152_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000152",
+    "difficulty": "easy",
+    "id": 8000152,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000155_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000155",
+    "difficulty": "easy",
+    "id": 8000155,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000157_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000157",
+    "difficulty": "easy",
+    "id": 8000157,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000159_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000159",
+    "difficulty": "easy",
+    "id": 8000159,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000160_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000160",
+    "difficulty": "easy",
+    "id": 8000160,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000164_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000164",
+    "difficulty": "easy",
+    "id": 8000164,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000166_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000166",
+    "difficulty": "easy",
+    "id": 8000166,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000167_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000167",
+    "difficulty": "easy",
+    "id": 8000167,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000168_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000168",
+    "difficulty": "easy",
+    "id": 8000168,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000170_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000170",
+    "difficulty": "easy",
+    "id": 8000170,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000172_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000172",
+    "difficulty": "easy",
+    "id": 8000172,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000173_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000173",
+    "difficulty": "easy",
+    "id": 8000173,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000175_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000175",
+    "difficulty": "easy",
+    "id": 8000175,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000176_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000176",
+    "difficulty": "easy",
+    "id": 8000176,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000179_C_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000179",
+    "difficulty": "easy",
+    "id": 8000179,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000180_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000180",
+    "difficulty": "easy",
+    "id": 8000180,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000181_G_4_major_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000181",
+    "difficulty": "easy",
+    "id": 8000181,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000183_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000183",
+    "difficulty": "easy",
+    "id": 8000183,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000184_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000184",
+    "difficulty": "easy",
+    "id": 8000184,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000187_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000187",
+    "difficulty": "easy",
+    "id": 8000187,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000189_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000189",
+    "difficulty": "easy",
+    "id": 8000189,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000190_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000190",
+    "difficulty": "easy",
+    "id": 8000190,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000192_C_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000192",
+    "difficulty": "easy",
+    "id": 8000192,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000194_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000194",
+    "difficulty": "easy",
+    "id": 8000194,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000195_G_4_major_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000195",
+    "difficulty": "easy",
+    "id": 8000195,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000196_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000196",
+    "difficulty": "easy",
+    "id": 8000196,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000197_G_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000197",
+    "difficulty": "easy",
+    "id": 8000197,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000198_C_4_major_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000198",
+    "difficulty": "easy",
+    "id": 8000198,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000200_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000200",
+    "difficulty": "medium",
+    "id": 8000200,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000201_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000201",
+    "difficulty": "medium",
+    "id": 8000201,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000202_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000202",
+    "difficulty": "medium",
+    "id": 8000202,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000203_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000203",
+    "difficulty": "medium",
+    "id": 8000203,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000204_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000204",
+    "difficulty": "medium",
+    "id": 8000204,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000205_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000205",
+    "difficulty": "medium",
+    "id": 8000205,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000209_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000209",
+    "difficulty": "medium",
+    "id": 8000209,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000210_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000210",
+    "difficulty": "medium",
+    "id": 8000210,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000211_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000211",
+    "difficulty": "medium",
+    "id": 8000211,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000212_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000212",
+    "difficulty": "medium",
+    "id": 8000212,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000214_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000214",
+    "difficulty": "medium",
+    "id": 8000214,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000215_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000215",
+    "difficulty": "medium",
+    "id": 8000215,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000216_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000216",
+    "difficulty": "medium",
+    "id": 8000216,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000217_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000217",
+    "difficulty": "medium",
+    "id": 8000217,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000218_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000218",
+    "difficulty": "medium",
+    "id": 8000218,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000219_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000219",
+    "difficulty": "medium",
+    "id": 8000219,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000220_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000220",
+    "difficulty": "medium",
+    "id": 8000220,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000221_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000221",
+    "difficulty": "medium",
+    "id": 8000221,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000222_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000222",
+    "difficulty": "medium",
+    "id": 8000222,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000223_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000223",
+    "difficulty": "medium",
+    "id": 8000223,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000224_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000224",
+    "difficulty": "medium",
+    "id": 8000224,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000225_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000225",
+    "difficulty": "medium",
+    "id": 8000225,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000226_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000226",
+    "difficulty": "medium",
+    "id": 8000226,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000227_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000227",
+    "difficulty": "medium",
+    "id": 8000227,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000228_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000228",
+    "difficulty": "medium",
+    "id": 8000228,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000230_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000230",
+    "difficulty": "medium",
+    "id": 8000230,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000231_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000231",
+    "difficulty": "medium",
+    "id": 8000231,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000233_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000233",
+    "difficulty": "medium",
+    "id": 8000233,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000235_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000235",
+    "difficulty": "medium",
+    "id": 8000235,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000237_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000237",
+    "difficulty": "medium",
+    "id": 8000237,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000239_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000239",
+    "difficulty": "medium",
+    "id": 8000239,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000241_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000241",
+    "difficulty": "medium",
+    "id": 8000241,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000243_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000243",
+    "difficulty": "medium",
+    "id": 8000243,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000244_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000244",
+    "difficulty": "medium",
+    "id": 8000244,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000245_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000245",
+    "difficulty": "medium",
+    "id": 8000245,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000247_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000247",
+    "difficulty": "medium",
+    "id": 8000247,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000249_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000249",
+    "difficulty": "medium",
+    "id": 8000249,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000251_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000251",
+    "difficulty": "medium",
+    "id": 8000251,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000252_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000252",
+    "difficulty": "medium",
+    "id": 8000252,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000257_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000257",
+    "difficulty": "medium",
+    "id": 8000257,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000258_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000258",
+    "difficulty": "medium",
+    "id": 8000258,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000259_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000259",
+    "difficulty": "medium",
+    "id": 8000259,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000261_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000261",
+    "difficulty": "medium",
+    "id": 8000261,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000263_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000263",
+    "difficulty": "medium",
+    "id": 8000263,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000265_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000265",
+    "difficulty": "medium",
+    "id": 8000265,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000266_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000266",
+    "difficulty": "medium",
+    "id": 8000266,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000269_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000269",
+    "difficulty": "medium",
+    "id": 8000269,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000270_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000270",
+    "difficulty": "medium",
+    "id": 8000270,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000273_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000273",
+    "difficulty": "medium",
+    "id": 8000273,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000277_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000277",
+    "difficulty": "medium",
+    "id": 8000277,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000278_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000278",
+    "difficulty": "medium",
+    "id": 8000278,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000280_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000280",
+    "difficulty": "medium",
+    "id": 8000280,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000281_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000281",
+    "difficulty": "medium",
+    "id": 8000281,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000284_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000284",
+    "difficulty": "medium",
+    "id": 8000284,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000285_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000285",
+    "difficulty": "medium",
+    "id": 8000285,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000286_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000286",
+    "difficulty": "medium",
+    "id": 8000286,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000288_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000288",
+    "difficulty": "medium",
+    "id": 8000288,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000291_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000291",
+    "difficulty": "medium",
+    "id": 8000291,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000292_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000292",
+    "difficulty": "medium",
+    "id": 8000292,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000293_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000293",
+    "difficulty": "medium",
+    "id": 8000293,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000295_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000295",
+    "difficulty": "medium",
+    "id": 8000295,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000296_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000296",
+    "difficulty": "medium",
+    "id": 8000296,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000297_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000297",
+    "difficulty": "medium",
+    "id": 8000297,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000298_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000298",
+    "difficulty": "medium",
+    "id": 8000298,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000300_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000300",
+    "difficulty": "medium",
+    "id": 8000300,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000301_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000301",
+    "difficulty": "medium",
+    "id": 8000301,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000302_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000302",
+    "difficulty": "medium",
+    "id": 8000302,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000304_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000304",
+    "difficulty": "medium",
+    "id": 8000304,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000308_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000308",
+    "difficulty": "medium",
+    "id": 8000308,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000309_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000309",
+    "difficulty": "medium",
+    "id": 8000309,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000311_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000311",
+    "difficulty": "medium",
+    "id": 8000311,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000312_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000312",
+    "difficulty": "medium",
+    "id": 8000312,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000315_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000315",
+    "difficulty": "medium",
+    "id": 8000315,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000318_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000318",
+    "difficulty": "medium",
+    "id": 8000318,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000319_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000319",
+    "difficulty": "medium",
+    "id": 8000319,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000321_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000321",
+    "difficulty": "medium",
+    "id": 8000321,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000322_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000322",
+    "difficulty": "medium",
+    "id": 8000322,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000323_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000323",
+    "difficulty": "medium",
+    "id": 8000323,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000324_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000324",
+    "difficulty": "medium",
+    "id": 8000324,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000325_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000325",
+    "difficulty": "medium",
+    "id": 8000325,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000327_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000327",
+    "difficulty": "medium",
+    "id": 8000327,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000328_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000328",
+    "difficulty": "medium",
+    "id": 8000328,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000332_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000332",
+    "difficulty": "medium",
+    "id": 8000332,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000333_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000333",
+    "difficulty": "medium",
+    "id": 8000333,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000335_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000335",
+    "difficulty": "medium",
+    "id": 8000335,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000336_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000336",
+    "difficulty": "medium",
+    "id": 8000336,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000338_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000338",
+    "difficulty": "medium",
+    "id": 8000338,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000340_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000340",
+    "difficulty": "medium",
+    "id": 8000340,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000342_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000342",
+    "difficulty": "medium",
+    "id": 8000342,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000343_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000343",
+    "difficulty": "medium",
+    "id": 8000343,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000346_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000346",
+    "difficulty": "medium",
+    "id": 8000346,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000347_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000347",
+    "difficulty": "medium",
+    "id": 8000347,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000349_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000349",
+    "difficulty": "medium",
+    "id": 8000349,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000350_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000350",
+    "difficulty": "medium",
+    "id": 8000350,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000351_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000351",
+    "difficulty": "medium",
+    "id": 8000351,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000352_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000352",
+    "difficulty": "medium",
+    "id": 8000352,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000353_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000353",
+    "difficulty": "medium",
+    "id": 8000353,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000355_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000355",
+    "difficulty": "medium",
+    "id": 8000355,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000357_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000357",
+    "difficulty": "medium",
+    "id": 8000357,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000358_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000358",
+    "difficulty": "medium",
+    "id": 8000358,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000359_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000359",
+    "difficulty": "medium",
+    "id": 8000359,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000361_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000361",
+    "difficulty": "medium",
+    "id": 8000361,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000367_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000367",
+    "difficulty": "medium",
+    "id": 8000367,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000368_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000368",
+    "difficulty": "medium",
+    "id": 8000368,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000370_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000370",
+    "difficulty": "medium",
+    "id": 8000370,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000371_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000371",
+    "difficulty": "medium",
+    "id": 8000371,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000372_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000372",
+    "difficulty": "medium",
+    "id": 8000372,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000373_G_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000373",
+    "difficulty": "medium",
+    "id": 8000373,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000374_C_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000374",
+    "difficulty": "medium",
+    "id": 8000374,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000375_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000375",
+    "difficulty": "medium",
+    "id": 8000375,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000376_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000376",
+    "difficulty": "medium",
+    "id": 8000376,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000378_G_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000378",
+    "difficulty": "medium",
+    "id": 8000378,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000379_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000379",
+    "difficulty": "medium",
+    "id": 8000379,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000380_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000380",
+    "difficulty": "medium",
+    "id": 8000380,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000381_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000381",
+    "difficulty": "medium",
+    "id": 8000381,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000382_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000382",
+    "difficulty": "medium",
+    "id": 8000382,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000383_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000383",
+    "difficulty": "medium",
+    "id": 8000383,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000384_G_4_major_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000384",
+    "difficulty": "medium",
+    "id": 8000384,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000386_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000386",
+    "difficulty": "medium",
+    "id": 8000386,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000388_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000388",
+    "difficulty": "medium",
+    "id": 8000388,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000389_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000389",
+    "difficulty": "medium",
+    "id": 8000389,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000392_C_4_major_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000392",
+    "difficulty": "medium",
+    "id": 8000392,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000399_C_4_major_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000399",
+    "difficulty": "medium",
+    "id": 8000399,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000402_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000402",
+    "difficulty": "hard",
+    "id": 8000402,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000404_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000404",
+    "difficulty": "hard",
+    "id": 8000404,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000417_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000417",
+    "difficulty": "hard",
+    "id": 8000417,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000420_C_4_major_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000420",
+    "difficulty": "hard",
+    "id": 8000420,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000424_G_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000424",
+    "difficulty": "hard",
+    "id": 8000424,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000427_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000427",
+    "difficulty": "hard",
+    "id": 8000427,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000431_G_4_major_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000431",
+    "difficulty": "hard",
+    "id": 8000431,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000433_G_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000433",
+    "difficulty": "hard",
+    "id": 8000433,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000434_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000434",
+    "difficulty": "hard",
+    "id": 8000434,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000443_G_4_major_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000443",
+    "difficulty": "hard",
+    "id": 8000443,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000452_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000452",
+    "difficulty": "hard",
+    "id": 8000452,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000455_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000455",
+    "difficulty": "hard",
+    "id": 8000455,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000456_C_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000456",
+    "difficulty": "hard",
+    "id": 8000456,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000478_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000478",
+    "difficulty": "hard",
+    "id": 8000478,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000479_C_4_major_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000479",
+    "difficulty": "hard",
+    "id": 8000479,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000487_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000487",
+    "difficulty": "hard",
+    "id": 8000487,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000503_G_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000503",
+    "difficulty": "hard",
+    "id": 8000503,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000509_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000509",
+    "difficulty": "hard",
+    "id": 8000509,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000528_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000528",
+    "difficulty": "hard",
+    "id": 8000528,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000529_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000529",
+    "difficulty": "hard",
+    "id": 8000529,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000531_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000531",
+    "difficulty": "hard",
+    "id": 8000531,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000533_C_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000533",
+    "difficulty": "hard",
+    "id": 8000533,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000537_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000537",
+    "difficulty": "hard",
+    "id": 8000537,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000539_G_4_major_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000539",
+    "difficulty": "hard",
+    "id": 8000539,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000545_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000545",
+    "difficulty": "hard",
+    "id": 8000545,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000548_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000548",
+    "difficulty": "hard",
+    "id": 8000548,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000550_G_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000550",
+    "difficulty": "hard",
+    "id": 8000550,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000554_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000554",
+    "difficulty": "hard",
+    "id": 8000554,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000555_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000555",
+    "difficulty": "hard",
+    "id": 8000555,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000557_C_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000557",
+    "difficulty": "hard",
+    "id": 8000557,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000558_G_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000558",
+    "difficulty": "hard",
+    "id": 8000558,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000560_G_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000560",
+    "difficulty": "hard",
+    "id": 8000560,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000562_C_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000562",
+    "difficulty": "hard",
+    "id": 8000562,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000563_G_4_major_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000563",
+    "difficulty": "hard",
+    "id": 8000563,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "G4"
+  },
+  "8000565_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000565",
+    "difficulty": "hard",
+    "id": 8000565,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000568_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000568",
+    "difficulty": "hard",
+    "id": 8000568,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000573_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000573",
+    "difficulty": "hard",
+    "id": 8000573,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "C4"
+  },
+  "8000578_G_4_major_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000578",
+    "difficulty": "hard",
+    "id": 8000578,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000583_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000583",
+    "difficulty": "hard",
+    "id": 8000583,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000585_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000585",
+    "difficulty": "hard",
+    "id": 8000585,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000586_C_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000586",
+    "difficulty": "hard",
+    "id": 8000586,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "C4"
+  },
+  "8000588_G_4_major_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000588",
+    "difficulty": "hard",
+    "id": 8000588,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "G4"
+  },
+  "8000591_C_4_major_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000591",
+    "difficulty": "hard",
+    "id": 8000591,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "C4"
+  },
+  "8000594_G_4_major_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000594",
+    "difficulty": "hard",
+    "id": 8000594,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000595_G_4_major_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000595",
+    "difficulty": "hard",
+    "id": 8000595,
+    "mode": "major",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "G4"
+  },
+  "8000601_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000601",
+    "difficulty": "easy",
+    "id": 8000601,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000602_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000602",
+    "difficulty": "easy",
+    "id": 8000602,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000603_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000603",
+    "difficulty": "easy",
+    "id": 8000603,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000605_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000605",
+    "difficulty": "easy",
+    "id": 8000605,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000608_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000608",
+    "difficulty": "easy",
+    "id": 8000608,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000610_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000610",
+    "difficulty": "easy",
+    "id": 8000610,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000612_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000612",
+    "difficulty": "easy",
+    "id": 8000612,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000614_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000614",
+    "difficulty": "easy",
+    "id": 8000614,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000618_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000618",
+    "difficulty": "easy",
+    "id": 8000618,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000619_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000619",
+    "difficulty": "easy",
+    "id": 8000619,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000620_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000620",
+    "difficulty": "easy",
+    "id": 8000620,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000621_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000621",
+    "difficulty": "easy",
+    "id": 8000621,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000622_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000622",
+    "difficulty": "easy",
+    "id": 8000622,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000624_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000624",
+    "difficulty": "easy",
+    "id": 8000624,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000625_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000625",
+    "difficulty": "easy",
+    "id": 8000625,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000628_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000628",
+    "difficulty": "easy",
+    "id": 8000628,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000629_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000629",
+    "difficulty": "easy",
+    "id": 8000629,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000630_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000630",
+    "difficulty": "easy",
+    "id": 8000630,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000631_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000631",
+    "difficulty": "easy",
+    "id": 8000631,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000632_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000632",
+    "difficulty": "easy",
+    "id": 8000632,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000634_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000634",
+    "difficulty": "easy",
+    "id": 8000634,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000635_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000635",
+    "difficulty": "easy",
+    "id": 8000635,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000636_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000636",
+    "difficulty": "easy",
+    "id": 8000636,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000637_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000637",
+    "difficulty": "easy",
+    "id": 8000637,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000639_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000639",
+    "difficulty": "easy",
+    "id": 8000639,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000640_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000640",
+    "difficulty": "easy",
+    "id": 8000640,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000643_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000643",
+    "difficulty": "easy",
+    "id": 8000643,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000644_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000644",
+    "difficulty": "easy",
+    "id": 8000644,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000650_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000650",
+    "difficulty": "easy",
+    "id": 8000650,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000651_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000651",
+    "difficulty": "easy",
+    "id": 8000651,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000653_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000653",
+    "difficulty": "easy",
+    "id": 8000653,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000654_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000654",
+    "difficulty": "easy",
+    "id": 8000654,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000655_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000655",
+    "difficulty": "easy",
+    "id": 8000655,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000656_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000656",
+    "difficulty": "easy",
+    "id": 8000656,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000660_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000660",
+    "difficulty": "easy",
+    "id": 8000660,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000662_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000662",
+    "difficulty": "easy",
+    "id": 8000662,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000664_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000664",
+    "difficulty": "easy",
+    "id": 8000664,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000665_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000665",
+    "difficulty": "easy",
+    "id": 8000665,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000666_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000666",
+    "difficulty": "easy",
+    "id": 8000666,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000669_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000669",
+    "difficulty": "easy",
+    "id": 8000669,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000671_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000671",
+    "difficulty": "easy",
+    "id": 8000671,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000672_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000672",
+    "difficulty": "easy",
+    "id": 8000672,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000673_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000673",
+    "difficulty": "easy",
+    "id": 8000673,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000675_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000675",
+    "difficulty": "easy",
+    "id": 8000675,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000676_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000676",
+    "difficulty": "easy",
+    "id": 8000676,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000677_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000677",
+    "difficulty": "easy",
+    "id": 8000677,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000678_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000678",
+    "difficulty": "easy",
+    "id": 8000678,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000680_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000680",
+    "difficulty": "easy",
+    "id": 8000680,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000681_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000681",
+    "difficulty": "easy",
+    "id": 8000681,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000682_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000682",
+    "difficulty": "easy",
+    "id": 8000682,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000683_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000683",
+    "difficulty": "easy",
+    "id": 8000683,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000684_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000684",
+    "difficulty": "easy",
+    "id": 8000684,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000686_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000686",
+    "difficulty": "easy",
+    "id": 8000686,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000687_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000687",
+    "difficulty": "easy",
+    "id": 8000687,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000688_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000688",
+    "difficulty": "easy",
+    "id": 8000688,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000690_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000690",
+    "difficulty": "easy",
+    "id": 8000690,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000691_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000691",
+    "difficulty": "easy",
+    "id": 8000691,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000692_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000692",
+    "difficulty": "easy",
+    "id": 8000692,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000694_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000694",
+    "difficulty": "easy",
+    "id": 8000694,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000695_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000695",
+    "difficulty": "easy",
+    "id": 8000695,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000696_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000696",
+    "difficulty": "easy",
+    "id": 8000696,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000697_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000697",
+    "difficulty": "easy",
+    "id": 8000697,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000698_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000698",
+    "difficulty": "easy",
+    "id": 8000698,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000699_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000699",
+    "difficulty": "easy",
+    "id": 8000699,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000700_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000700",
+    "difficulty": "easy",
+    "id": 8000700,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000701_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000701",
+    "difficulty": "easy",
+    "id": 8000701,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000702_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000702",
+    "difficulty": "easy",
+    "id": 8000702,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000703_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000703",
+    "difficulty": "easy",
+    "id": 8000703,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000704_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000704",
+    "difficulty": "easy",
+    "id": 8000704,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000705_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000705",
+    "difficulty": "easy",
+    "id": 8000705,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000706_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000706",
+    "difficulty": "easy",
+    "id": 8000706,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000707_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000707",
+    "difficulty": "easy",
+    "id": 8000707,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000708_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000708",
+    "difficulty": "easy",
+    "id": 8000708,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000709_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000709",
+    "difficulty": "easy",
+    "id": 8000709,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000710_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000710",
+    "difficulty": "easy",
+    "id": 8000710,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000712_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000712",
+    "difficulty": "easy",
+    "id": 8000712,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000714_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000714",
+    "difficulty": "easy",
+    "id": 8000714,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000715_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000715",
+    "difficulty": "easy",
+    "id": 8000715,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000717_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000717",
+    "difficulty": "easy",
+    "id": 8000717,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000718_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000718",
+    "difficulty": "easy",
+    "id": 8000718,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000721_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000721",
+    "difficulty": "easy",
+    "id": 8000721,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000722_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000722",
+    "difficulty": "easy",
+    "id": 8000722,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000723_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000723",
+    "difficulty": "easy",
+    "id": 8000723,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000725_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000725",
+    "difficulty": "easy",
+    "id": 8000725,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000726_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000726",
+    "difficulty": "easy",
+    "id": 8000726,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000727_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000727",
+    "difficulty": "easy",
+    "id": 8000727,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000728_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000728",
+    "difficulty": "easy",
+    "id": 8000728,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000729_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000729",
+    "difficulty": "easy",
+    "id": 8000729,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000731_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000731",
+    "difficulty": "easy",
+    "id": 8000731,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000732_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000732",
+    "difficulty": "easy",
+    "id": 8000732,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000733_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000733",
+    "difficulty": "easy",
+    "id": 8000733,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000734_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000734",
+    "difficulty": "easy",
+    "id": 8000734,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000736_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000736",
+    "difficulty": "easy",
+    "id": 8000736,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000740_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000740",
+    "difficulty": "easy",
+    "id": 8000740,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000741_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000741",
+    "difficulty": "easy",
+    "id": 8000741,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000745_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000745",
+    "difficulty": "easy",
+    "id": 8000745,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000747_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000747",
+    "difficulty": "easy",
+    "id": 8000747,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000748_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000748",
+    "difficulty": "easy",
+    "id": 8000748,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000749_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000749",
+    "difficulty": "easy",
+    "id": 8000749,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000750_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000750",
+    "difficulty": "easy",
+    "id": 8000750,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000751_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000751",
+    "difficulty": "easy",
+    "id": 8000751,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000753_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000753",
+    "difficulty": "easy",
+    "id": 8000753,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000754_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000754",
+    "difficulty": "easy",
+    "id": 8000754,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000755_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000755",
+    "difficulty": "easy",
+    "id": 8000755,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000756_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000756",
+    "difficulty": "easy",
+    "id": 8000756,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000757_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000757",
+    "difficulty": "easy",
+    "id": 8000757,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000759_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000759",
+    "difficulty": "easy",
+    "id": 8000759,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000760_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000760",
+    "difficulty": "easy",
+    "id": 8000760,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000761_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000761",
+    "difficulty": "easy",
+    "id": 8000761,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000762_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000762",
+    "difficulty": "easy",
+    "id": 8000762,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000763_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000763",
+    "difficulty": "easy",
+    "id": 8000763,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000765_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000765",
+    "difficulty": "easy",
+    "id": 8000765,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000766_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000766",
+    "difficulty": "easy",
+    "id": 8000766,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000767_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000767",
+    "difficulty": "easy",
+    "id": 8000767,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000768_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000768",
+    "difficulty": "easy",
+    "id": 8000768,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000769_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000769",
+    "difficulty": "easy",
+    "id": 8000769,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000770_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000770",
+    "difficulty": "easy",
+    "id": 8000770,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000773_A_3_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000773",
+    "difficulty": "easy",
+    "id": 8000773,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000776_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000776",
+    "difficulty": "easy",
+    "id": 8000776,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000777_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000777",
+    "difficulty": "easy",
+    "id": 8000777,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000778_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000778",
+    "difficulty": "easy",
+    "id": 8000778,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000779_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000779",
+    "difficulty": "easy",
+    "id": 8000779,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000783_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000783",
+    "difficulty": "easy",
+    "id": 8000783,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000784_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000784",
+    "difficulty": "easy",
+    "id": 8000784,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000786_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000786",
+    "difficulty": "easy",
+    "id": 8000786,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000787_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000787",
+    "difficulty": "easy",
+    "id": 8000787,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000788_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000788",
+    "difficulty": "easy",
+    "id": 8000788,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000789_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000789",
+    "difficulty": "easy",
+    "id": 8000789,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000791_E_4_minor_llm_easy_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000791",
+    "difficulty": "easy",
+    "id": 8000791,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000792_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000792",
+    "difficulty": "easy",
+    "id": 8000792,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000793_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000793",
+    "difficulty": "easy",
+    "id": 8000793,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000794_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000794",
+    "difficulty": "easy",
+    "id": 8000794,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000795_E_4_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000795",
+    "difficulty": "easy",
+    "id": 8000795,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000796_E_4_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000796",
+    "difficulty": "easy",
+    "id": 8000796,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000798_A_3_minor_llm_easy_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000798",
+    "difficulty": "easy",
+    "id": 8000798,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000799_A_3_minor_llm_easy_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000799",
+    "difficulty": "easy",
+    "id": 8000799,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000800_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000800",
+    "difficulty": "medium",
+    "id": 8000800,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000801_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000801",
+    "difficulty": "medium",
+    "id": 8000801,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000802_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000802",
+    "difficulty": "medium",
+    "id": 8000802,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000803_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000803",
+    "difficulty": "medium",
+    "id": 8000803,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000804_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000804",
+    "difficulty": "medium",
+    "id": 8000804,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000805_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000805",
+    "difficulty": "medium",
+    "id": 8000805,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000807_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000807",
+    "difficulty": "medium",
+    "id": 8000807,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000808_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000808",
+    "difficulty": "medium",
+    "id": 8000808,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000810_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000810",
+    "difficulty": "medium",
+    "id": 8000810,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000811_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000811",
+    "difficulty": "medium",
+    "id": 8000811,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000812_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000812",
+    "difficulty": "medium",
+    "id": 8000812,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000813_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000813",
+    "difficulty": "medium",
+    "id": 8000813,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000814_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000814",
+    "difficulty": "medium",
+    "id": 8000814,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000817_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000817",
+    "difficulty": "medium",
+    "id": 8000817,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000819_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000819",
+    "difficulty": "medium",
+    "id": 8000819,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000820_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000820",
+    "difficulty": "medium",
+    "id": 8000820,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000821_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000821",
+    "difficulty": "medium",
+    "id": 8000821,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000822_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000822",
+    "difficulty": "medium",
+    "id": 8000822,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000823_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000823",
+    "difficulty": "medium",
+    "id": 8000823,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000824_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000824",
+    "difficulty": "medium",
+    "id": 8000824,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000825_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000825",
+    "difficulty": "medium",
+    "id": 8000825,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000828_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000828",
+    "difficulty": "medium",
+    "id": 8000828,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000830_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000830",
+    "difficulty": "medium",
+    "id": 8000830,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000832_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000832",
+    "difficulty": "medium",
+    "id": 8000832,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000833_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000833",
+    "difficulty": "medium",
+    "id": 8000833,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000837_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000837",
+    "difficulty": "medium",
+    "id": 8000837,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000838_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000838",
+    "difficulty": "medium",
+    "id": 8000838,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000839_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000839",
+    "difficulty": "medium",
+    "id": 8000839,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000841_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000841",
+    "difficulty": "medium",
+    "id": 8000841,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000842_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000842",
+    "difficulty": "medium",
+    "id": 8000842,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000845_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000845",
+    "difficulty": "medium",
+    "id": 8000845,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000848_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000848",
+    "difficulty": "medium",
+    "id": 8000848,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000849_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000849",
+    "difficulty": "medium",
+    "id": 8000849,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000852_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000852",
+    "difficulty": "medium",
+    "id": 8000852,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000855_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000855",
+    "difficulty": "medium",
+    "id": 8000855,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000856_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000856",
+    "difficulty": "medium",
+    "id": 8000856,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000860_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000860",
+    "difficulty": "medium",
+    "id": 8000860,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000861_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000861",
+    "difficulty": "medium",
+    "id": 8000861,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000862_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000862",
+    "difficulty": "medium",
+    "id": 8000862,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000863_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000863",
+    "difficulty": "medium",
+    "id": 8000863,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000865_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000865",
+    "difficulty": "medium",
+    "id": 8000865,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000868_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000868",
+    "difficulty": "medium",
+    "id": 8000868,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000870_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000870",
+    "difficulty": "medium",
+    "id": 8000870,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000871_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000871",
+    "difficulty": "medium",
+    "id": 8000871,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000872_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000872",
+    "difficulty": "medium",
+    "id": 8000872,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000875_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000875",
+    "difficulty": "medium",
+    "id": 8000875,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000876_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000876",
+    "difficulty": "medium",
+    "id": 8000876,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000879_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000879",
+    "difficulty": "medium",
+    "id": 8000879,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000880_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000880",
+    "difficulty": "medium",
+    "id": 8000880,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000882_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000882",
+    "difficulty": "medium",
+    "id": 8000882,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000885_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000885",
+    "difficulty": "medium",
+    "id": 8000885,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000887_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000887",
+    "difficulty": "medium",
+    "id": 8000887,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000888_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000888",
+    "difficulty": "medium",
+    "id": 8000888,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000890_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000890",
+    "difficulty": "medium",
+    "id": 8000890,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000891_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000891",
+    "difficulty": "medium",
+    "id": 8000891,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000892_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000892",
+    "difficulty": "medium",
+    "id": 8000892,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000893_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000893",
+    "difficulty": "medium",
+    "id": 8000893,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000894_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000894",
+    "difficulty": "medium",
+    "id": 8000894,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000896_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000896",
+    "difficulty": "medium",
+    "id": 8000896,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000897_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000897",
+    "difficulty": "medium",
+    "id": 8000897,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000899_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000899",
+    "difficulty": "medium",
+    "id": 8000899,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000901_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000901",
+    "difficulty": "medium",
+    "id": 8000901,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000903_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000903",
+    "difficulty": "medium",
+    "id": 8000903,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000904_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000904",
+    "difficulty": "medium",
+    "id": 8000904,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000905_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000905",
+    "difficulty": "medium",
+    "id": 8000905,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000907_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000907",
+    "difficulty": "medium",
+    "id": 8000907,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000908_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000908",
+    "difficulty": "medium",
+    "id": 8000908,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000909_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000909",
+    "difficulty": "medium",
+    "id": 8000909,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000911_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000911",
+    "difficulty": "medium",
+    "id": 8000911,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000913_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000913",
+    "difficulty": "medium",
+    "id": 8000913,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000915_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000915",
+    "difficulty": "medium",
+    "id": 8000915,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000916_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000916",
+    "difficulty": "medium",
+    "id": 8000916,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000917_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000917",
+    "difficulty": "medium",
+    "id": 8000917,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000918_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000918",
+    "difficulty": "medium",
+    "id": 8000918,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000919_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000919",
+    "difficulty": "medium",
+    "id": 8000919,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000921_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000921",
+    "difficulty": "medium",
+    "id": 8000921,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000922_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000922",
+    "difficulty": "medium",
+    "id": 8000922,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000924_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000924",
+    "difficulty": "medium",
+    "id": 8000924,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000931_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000931",
+    "difficulty": "medium",
+    "id": 8000931,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000932_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000932",
+    "difficulty": "medium",
+    "id": 8000932,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000933_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000933",
+    "difficulty": "medium",
+    "id": 8000933,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000936_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000936",
+    "difficulty": "medium",
+    "id": 8000936,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000937_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000937",
+    "difficulty": "medium",
+    "id": 8000937,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000938_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000938",
+    "difficulty": "medium",
+    "id": 8000938,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000942_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000942",
+    "difficulty": "medium",
+    "id": 8000942,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000943_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000943",
+    "difficulty": "medium",
+    "id": 8000943,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000944_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000944",
+    "difficulty": "medium",
+    "id": 8000944,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000948_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000948",
+    "difficulty": "medium",
+    "id": 8000948,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000949_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000949",
+    "difficulty": "medium",
+    "id": 8000949,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000951_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000951",
+    "difficulty": "medium",
+    "id": 8000951,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000953_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000953",
+    "difficulty": "medium",
+    "id": 8000953,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000954_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000954",
+    "difficulty": "medium",
+    "id": 8000954,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000955_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000955",
+    "difficulty": "medium",
+    "id": 8000955,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000960_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000960",
+    "difficulty": "medium",
+    "id": 8000960,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000964_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000964",
+    "difficulty": "medium",
+    "id": 8000964,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000966_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000966",
+    "difficulty": "medium",
+    "id": 8000966,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000967_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000967",
+    "difficulty": "medium",
+    "id": 8000967,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000968_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000968",
+    "difficulty": "medium",
+    "id": 8000968,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000970_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000970",
+    "difficulty": "medium",
+    "id": 8000970,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8000971_E_4_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000971",
+    "difficulty": "medium",
+    "id": 8000971,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000972_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000972",
+    "difficulty": "medium",
+    "id": 8000972,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000973_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000973",
+    "difficulty": "medium",
+    "id": 8000973,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000977_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000977",
+    "difficulty": "medium",
+    "id": 8000977,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000978_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000978",
+    "difficulty": "medium",
+    "id": 8000978,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000982_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000982",
+    "difficulty": "medium",
+    "id": 8000982,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000983_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000983",
+    "difficulty": "medium",
+    "id": 8000983,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8000984_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000984",
+    "difficulty": "medium",
+    "id": 8000984,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000985_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000985",
+    "difficulty": "medium",
+    "id": 8000985,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000986_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000986",
+    "difficulty": "medium",
+    "id": 8000986,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000987_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000987",
+    "difficulty": "medium",
+    "id": 8000987,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8000988_A_3_minor_llm_medium_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8000988",
+    "difficulty": "medium",
+    "id": 8000988,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000990_E_4_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000990",
+    "difficulty": "medium",
+    "id": 8000990,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000991_A_3_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000991",
+    "difficulty": "medium",
+    "id": 8000991,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8000992_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000992",
+    "difficulty": "medium",
+    "id": 8000992,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8000994_E_4_minor_llm_medium_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8000994",
+    "difficulty": "medium",
+    "id": 8000994,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8000997_A_3_minor_llm_medium_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8000997",
+    "difficulty": "medium",
+    "id": 8000997,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8001001_A_3_minor_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8001001",
+    "difficulty": "hard",
+    "id": 8001001,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001007_E_4_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001007",
+    "difficulty": "hard",
+    "id": 8001007,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8001009_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001009",
+    "difficulty": "hard",
+    "id": 8001009,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8001010_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001010",
+    "difficulty": "hard",
+    "id": 8001010,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8001012_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001012",
+    "difficulty": "hard",
+    "id": 8001012,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8001015_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001015",
+    "difficulty": "hard",
+    "id": 8001015,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001021_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001021",
+    "difficulty": "hard",
+    "id": 8001021,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8001023_A_3_minor_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8001023",
+    "difficulty": "hard",
+    "id": 8001023,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001030_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001030",
+    "difficulty": "hard",
+    "id": 8001030,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8001033_E_4_minor_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8001033",
+    "difficulty": "hard",
+    "id": 8001033,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8001034_E_4_minor_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8001034",
+    "difficulty": "hard",
+    "id": 8001034,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8001040_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001040",
+    "difficulty": "hard",
+    "id": 8001040,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001041_A_3_minor_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8001041",
+    "difficulty": "hard",
+    "id": 8001041,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001046_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001046",
+    "difficulty": "hard",
+    "id": 8001046,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8001049_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001049",
+    "difficulty": "hard",
+    "id": 8001049,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8001058_E_4_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001058",
+    "difficulty": "hard",
+    "id": 8001058,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8001061_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001061",
+    "difficulty": "hard",
+    "id": 8001061,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8001068_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001068",
+    "difficulty": "hard",
+    "id": 8001068,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001076_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001076",
+    "difficulty": "hard",
+    "id": 8001076,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8001080_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001080",
+    "difficulty": "hard",
+    "id": 8001080,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001084_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001084",
+    "difficulty": "hard",
+    "id": 8001084,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8001085_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001085",
+    "difficulty": "hard",
+    "id": 8001085,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8001087_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001087",
+    "difficulty": "hard",
+    "id": 8001087,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001106_A_3_minor_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8001106",
+    "difficulty": "hard",
+    "id": 8001106,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8001110_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001110",
+    "difficulty": "hard",
+    "id": 8001110,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8001111_E_4_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001111",
+    "difficulty": "hard",
+    "id": 8001111,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8001112_E_4_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001112",
+    "difficulty": "hard",
+    "id": 8001112,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8001118_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001118",
+    "difficulty": "hard",
+    "id": 8001118,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8001124_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001124",
+    "difficulty": "hard",
+    "id": 8001124,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001128_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001128",
+    "difficulty": "hard",
+    "id": 8001128,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001129_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001129",
+    "difficulty": "hard",
+    "id": 8001129,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8001131_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001131",
+    "difficulty": "hard",
+    "id": 8001131,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8001135_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001135",
+    "difficulty": "hard",
+    "id": 8001135,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8001138_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001138",
+    "difficulty": "hard",
+    "id": 8001138,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "A3"
+  },
+  "8001141_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001141",
+    "difficulty": "hard",
+    "id": 8001141,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8001142_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001142",
+    "difficulty": "hard",
+    "id": 8001142,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8001143_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001143",
+    "difficulty": "hard",
+    "id": 8001143,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8001144_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001144",
+    "difficulty": "hard",
+    "id": 8001144,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8001155_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001155",
+    "difficulty": "hard",
+    "id": 8001155,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001160_A_3_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001160",
+    "difficulty": "hard",
+    "id": 8001160,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001168_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001168",
+    "difficulty": "hard",
+    "id": 8001168,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8001171_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001171",
+    "difficulty": "hard",
+    "id": 8001171,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001173_E_4_minor_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8001173",
+    "difficulty": "hard",
+    "id": 8001173,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "E4"
+  },
+  "8001178_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001178",
+    "difficulty": "hard",
+    "id": 8001178,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8001180_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001180",
+    "difficulty": "hard",
+    "id": 8001180,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  },
+  "8001183_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001183",
+    "difficulty": "hard",
+    "id": 8001183,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8001184_E_4_minor_llm_hard_8bar": {
+    "bars": 8,
+    "custom_id": "llm_8001184",
+    "difficulty": "hard",
+    "id": 8001184,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "E4"
+  },
+  "8001186_A_3_minor_llm_hard_16bar": {
+    "bars": 16,
+    "custom_id": "llm_8001186",
+    "difficulty": "hard",
+    "id": 8001186,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "4/4",
+    "tonic": "A3"
+  },
+  "8001189_A_3_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001189",
+    "difficulty": "hard",
+    "id": 8001189,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "3/4",
+    "tonic": "A3"
+  },
+  "8001190_E_4_minor_llm_hard_12bar": {
+    "bars": 12,
+    "custom_id": "llm_8001190",
+    "difficulty": "hard",
+    "id": 8001190,
+    "mode": "minor",
+    "source": "llm",
+    "timeSignature": "6/8",
+    "tonic": "E4"
+  }
+}

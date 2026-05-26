@@ -127,8 +127,21 @@
             if (entries.length === 0) {
                 return { entry: null, reason: 'empty-bucket', manifest: summarizeManifest(this.manifest) };
             }
-            const index = Math.floor(Math.random() * entries.length);
-            return { entry: entries[index], reason: null, manifest: summarizeManifest(this.manifest) };
+            // Source-weighted pick: pick a source uniformly, then a tune uniformly
+            // within that source. Without this, the large legacy contour pool
+            // drowns out smaller, higher-quality sources like the Essen folksong
+            // corpus (~8:1 dominance for major mode at present).
+            const bySource = new Map();
+            for (const entry of entries) {
+                const src = entry.source || 'contour';
+                if (!bySource.has(src)) bySource.set(src, []);
+                bySource.get(src).push(entry);
+            }
+            const sources = Array.from(bySource.keys());
+            const chosenSource = sources[Math.floor(Math.random() * sources.length)];
+            const pool = bySource.get(chosenSource);
+            const entry = pool[Math.floor(Math.random() * pool.length)];
+            return { entry, reason: null, manifest: summarizeManifest(this.manifest) };
         }
 
         async getRandomMelody(options = {}) {
