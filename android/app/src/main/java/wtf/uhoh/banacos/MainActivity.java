@@ -1,5 +1,6 @@
 package wtf.uhoh.banacos;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.WebResourceRequest;
@@ -46,7 +47,15 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                return assetLoader.shouldInterceptRequest(request.getUrl());
+                Uri url = request.getUrl();
+                // AssetsPathHandler serves files, not directories, so an in-app link to a
+                // directory URL ("/solfege/", "/ledger/", "/") 404s. Map any trailing-slash
+                // path to its index.html before handing it to the loader.
+                String path = url.getPath();
+                if (path != null && path.endsWith("/")) {
+                    url = url.buildUpon().path(path + "index.html").build();
+                }
+                return assetLoader.shouldInterceptRequest(url);
             }
 
             @Override
