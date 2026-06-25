@@ -2,6 +2,33 @@
     'use strict';
 
     const DEFAULT_MANIFEST_URL = '/raw_data/solfege_manifest.json';
+    // Solfege examples (manifest + per-tune MusicXML/MIDI) are NOT bundled in the
+    // offline APK; they stream from the live host. Under file:// a root-absolute
+    // path like "/raw_data/..." resolves to the filesystem root and 404s, so we
+    // rewrite such paths to an absolute remote URL when not running same-origin on
+    // the web. The web build (http/https origin) is left untouched. An explicit
+    // window.SOLFEGE_ASSET_BASE overrides the detection (e.g. for a virtual host).
+    const REMOTE_ASSET_BASE = 'https://ear.uh-oh.wtf';
+
+    function isAbsoluteUrl(url) {
+        return /^[a-z][a-z0-9+.-]*:\/\//i.test(url) || url.startsWith('//') || url.startsWith('data:') || url.startsWith('blob:');
+    }
+
+    function resolveAssetUrl(url) {
+        if (!url || isAbsoluteUrl(url)) {
+            return url;
+        }
+        let base = '';
+        const override = (typeof globalScope !== 'undefined') ? globalScope.SOLFEGE_ASSET_BASE : undefined;
+        if (typeof override === 'string' && override) {
+            base = override.replace(/\/+$/, '');
+        } else if (typeof location !== 'undefined' && location.protocol === 'file:') {
+            base = REMOTE_ASSET_BASE;
+        } else {
+            return url; // same-origin web context: leave relative/root-absolute paths as-is
+        }
+        return url.startsWith('/') ? `${base}${url}` : `${base}/${url}`;
+    }
     const DEFAULT_DIVISIONS = 480;
     const DURATION_TABLE = [
         { beats: 4, duration: 'w', dots: 0 },
@@ -97,6 +124,7 @@
                     return response.json();
                 })
                 .then((data) => {
+                    this.normalizeEntryUrls(data);
                     this.manifest = data;
                     return data;
                 })
@@ -109,10 +137,22 @@
         }
 
         buildManifestUrl() {
+            const base = resolveAssetUrl(this.manifestUrl);
             if (!this.cacheToken) {
-                return this.manifestUrl;
+                return base;
             }
-            return `${this.manifestUrl}${this.manifestUrl.includes('?') ? '&' : '?'}${this.cacheToken}`;
+            return `${base}${base.includes('?') ? '&' : '?'}${this.cacheToken}`;
+        }
+
+        normalizeEntryUrls(manifest) {
+            if (!manifest || !Array.isArray(manifest.entries)) {
+                return;
+            }
+            for (const entry of manifest.entries) {
+                if (!entry) continue;
+                if (entry.musicxml) entry.musicxml = resolveAssetUrl(entry.musicxml);
+                if (entry.midi) entry.midi = resolveAssetUrl(entry.midi);
+            }
         }
 
         async getRandomEntryForMode(mode) {

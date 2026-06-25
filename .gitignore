@@ -13,6 +13,10 @@ android/.cxx/
 android/captures/
 android/*.iml
 
+# WebView assets are generated at build time by android/prepare-assets.sh
+android/app/src/main/assets/*
+!android/app/src/main/assets/.gitkeep
+
 # Backup or runtime artefacts
 **/staff.bk/
 .DS_Store
